@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Temporary files & transient caches
+*.tmp
+*.temp
+data/temp_bhavcopy/
+data/bhavcopy_cache/
+
+# Optional: Large data tensors & raw parquet files
+# (Uncomment the lines below if you do NOT want 400MB+ binary tensors in Git,
+# or use Git LFS / cloud releases for tensors instead of raw Git tracking)
+# data/tensors/
+# data/metadata/pit_memberships/
