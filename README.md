@@ -71,7 +71,22 @@ print(dead_stock.is_active)  # False
 print(dead_stock.history().tail())
 ```
 
-### 2. Point-in-Time Index Universe Loader (`nse.load`)
+### 2. Official Synthetic Index Time Series (`nse.Index`)
+Query official index levels, OHLCV, and valuation metrics (P/E, P/B, Dividend Yield):
+```python
+# Query Nifty 50, Nifty Bank, India VIX, or any of 206 official NSE indices
+nifty = nse.Index("NIFTY 50")  # or nse.Index("^NSEI")
+print(nifty.history(start="2020-01-01").tail())
+#             Open     High      Low    Close       Volume     Pe    Pb  Div_yield
+# 2026-10-30  22964.5  23118.1  22905.1  23053.1  328562872  19.30  2.83       1.42
+
+# Sectoral & Volatility indices
+bank = nse.Index("NIFTY BANK")
+vix  = nse.Index("INDIA VIX")
+print(vix.history().tail(3))
+```
+
+### 3. Point-in-Time Index Universe Loader (`nse.load`)
 ```python
 # Load full cross-sectional matrix (Date x Ticker) for an index
 n50_close = nse.load("close", universe="nifty50", adjusted=True)

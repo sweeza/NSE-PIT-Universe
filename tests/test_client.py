@@ -1,5 +1,5 @@
 """
-Tests for nseuniverse client package (Ticker & Universe functions).
+Tests for nseuniverse client package (Ticker, Index & Universe functions).
 """
 
 import unittest
@@ -52,6 +52,27 @@ class TestNseUniverseClient(unittest.TestCase):
         hist = t.history(start="2021-08-01", end="2021-08-30")
         self.assertFalse(hist.empty)
         self.assertIn("Close", hist.columns)
+
+    def test_index_levels_and_ratios(self):
+        """Test official index time series and valuation ratios."""
+        nifty = nse.Index("NIFTY 50")
+        self.assertEqual(nifty.symbol, "NIFTY 50")
+        hist = nifty.history(start="2024-01-01", end="2024-01-10")
+        self.assertIn("Close", hist.columns)
+        self.assertIn("Pe", hist.columns)
+        self.assertIn("Pb", hist.columns)
+        self.assertIn("Div_yield", hist.columns)
+        self.assertGreater(hist["Close"].iloc[-1], 20000.0)
+        self.assertGreater(hist["Pe"].iloc[-1], 15.0)
+
+    def test_index_aliases(self):
+        """Test aliases like ^NSEI and BANKNIFTY."""
+        idx1 = nse.Index("^NSEI")
+        self.assertEqual(idx1.symbol, "NIFTY 50")
+        idx2 = nse.Index("BANKNIFTY")
+        self.assertEqual(idx2.symbol, "NIFTY BANK")
+        vix = nse.Index("INDIA VIX")
+        self.assertEqual(vix.symbol, "INDIA VIX")
 
     def test_load_index_matrix(self):
         """Test loading full cross-sectional tensor for an index."""

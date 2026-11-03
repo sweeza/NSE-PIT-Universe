@@ -1,11 +1,14 @@
 """
 nseuniverse: Institutional Point-in-Time Python Client for the Entire National Stock Exchange (NSE) Universe.
 
-Inspired by yfinance, but engineered with zero survivorship bias, zero lookahead bias,
-instant columnar parquets, exact exchange metrics, and point-in-time index memberships.
+Features:
+- nse.Ticker("RELIANCE"): Per-instrument OHLCV, VWAP, Trades, Turnover, splits, bonuses, and metadata.
+- nse.Index("NIFTY 50"): Official synthetic index levels, OHLCV, and valuation ratios (PE, PB, DivYield).
+- nse.load("close", universe="nifty50"): Point-in-Time cross-sectional matrices with zero survivorship bias.
 """
 
 from .ticker import Ticker
+from .index import Index
 from .universe import (
     load,
     load_universe,
@@ -15,7 +18,7 @@ from .universe import (
     TENSOR_NAMES
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Institutional Quantitative Research"
 
 # Convenience aliases
@@ -23,6 +26,7 @@ download = load
 
 __all__ = [
     "Ticker",
+    "Index",
     "load",
     "load_universe",
     "download",
