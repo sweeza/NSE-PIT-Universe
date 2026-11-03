@@ -20,27 +20,28 @@ HEADERS = {
 def fetch_nse_bhavcopy_stream(target_date: date) -> pd.DataFrame:
     """
     Fetches the daily NSE Bhavcopy directly into memory as a pandas DataFrame.
-    Does not leave raw files on disk.
+    Supports both modern UDiFF (post-July 2024) and classic formats.
     """
-    d_str = target_date.strftime("%d%m%Y")
+    ymd = target_date.strftime("%Y%m%d")
     d_ud = target_date.strftime("%d%b%Y").upper()
     yr = target_date.strftime("%Y")
     mon = target_date.strftime("%b").upper()
     
     session = requests.Session()
-    # Initial handshake to acquire cookies
     try:
         session.get("https://www.nseindia.com", headers=HEADERS, timeout=10)
     except Exception:
         pass
 
     # URL formats:
-    # 1. New UDPR format (cmBhavcopy.csv.zip)
-    url_udpr = f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{d_str}_F_0000.csv.zip"
-    # 2. Classic cm format
+    # 1. Modern UDiFF format on nsearchives (YYYYMMDD)
+    url_udpr1 = f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{ymd}_F_0000.csv.zip"
+    # 2. Modern UDiFF format on archives (YYYYMMDD)
+    url_udpr2 = f"https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{ymd}_F_0000.csv.zip"
+    # 3. Classic cm format
     url_classic = f"https://archives.nseindia.com/content/historical/EQUITIES/{yr}/{mon}/cm{d_ud}bhav.csv.zip"
 
-    urls = [url_udpr, url_classic]
+    urls = [url_udpr1, url_udpr2, url_classic]
 
     for url in urls:
         for attempt in range(3):
@@ -48,7 +49,7 @@ def fetch_nse_bhavcopy_stream(target_date: date) -> pd.DataFrame:
                 r = session.get(url, headers=HEADERS, timeout=15)
                 if r.status_code == 200 and len(r.content) > 1000:
                     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-                        csv_name = z.namelist()[0]
+                        csv_name = [n for n in z.namelist() if n.endswith(".csv")][0]
                         with z.open(csv_name) as f:
                             df = pd.read_csv(f)
                             # Normalize columns
@@ -61,18 +62,21 @@ def fetch_nse_bhavcopy_stream(target_date: date) -> pd.DataFrame:
                                 "ISIN_CODE": "ISIN",
                                 "SERIES_NAME": "SERIES",
                                 "SYMBOL_NAME": "SYMBOL",
-                                "TckrSymb": "SYMBOL",
-                                "OpnPric": "OPEN",
-                                "HghPric": "HIGH",
-                                "LwPric": "LOW",
-                                "ClsPric": "CLOSE",
-                                "LastPric": "LAST",
-                                "PrvsClsgPric": "PREVCLOSE",
-                                "TtlTradgVol": "TOTTRDQTY",
-                                "TtlTrfVal": "TOTTRDVAL",
-                                "TtlNbOfTxsExctd": "TOTALTRADES",
+                                "TCKRSYMB": "SYMBOL",
+                                "OPNPRIC": "OPEN",
+                                "HGHPRIC": "HIGH",
+                                "LWPRIC": "LOW",
+                                "CLSPRIC": "CLOSE",
+                                "LASTPRIC": "LAST",
+                                "PRVSCLSGPRIC": "PREVCLOSE",
+                                "TTLTRADGVOL": "TOTTRDQTY",
+                                "TTLTRFVAL": "TOTTRDVAL",
+                                "TTLNBAFTXSEXCTD": "TOTALTRADES",
+                                "TTLNBOTXSEXCTD": "TOTALTRADES",
+                                "TTLNBOFTXSEXCTD": "TOTALTRADES",
+                                "TOTAL_TRADES": "TOTALTRADES",
                                 "ISIN": "ISIN",
-                                "SctySrs": "SERIES",
+                                "SCTYSRS": "SERIES",
                             }
                             df = df.rename(columns=rename_map)
                             return df
