@@ -61,8 +61,11 @@ def update_universe_daily():
     else:
         # Transient In-Memory Stream: Download, extract, verify, and discard without saving raw file to disk
         print(f"  Fetching today's Bhavcopy ({today_str}) in-memory from NSE (Transient Stream)...")
-        # If market session has not produced a bhavcopy yet:
-        print(f"  Bhavcopy for today ({today_str}) is not available yet (post-market release).")
+        from download_bhavcopy_stream import fetch_nse_bhavcopy_stream
+        df_bhav = fetch_nse_bhavcopy_stream(date.today())
+
+    if df_bhav is None or df_bhav.empty:
+        print(f"  Bhavcopy for today ({today_str}) is not available yet or market was closed.")
         print("  Current dataset is up to date with the latest available trading session.")
         print("\n[Step 4/5] Running Pre-Commit Sanity Validation...")
         import validate_universe
