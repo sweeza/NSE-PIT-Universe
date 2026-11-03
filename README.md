@@ -34,6 +34,60 @@ An institutional-grade, mathematically verified canonical market data store cove
 
 ---
 
+## 📦 Lightweight Python Client (`pip install nseuniverse`)
+
+The repository includes `nseuniverse` — an institutional Python client providing a `yfinance`-like developer experience, but with zero survivorship bias, exact exchange metrics, and on-demand cloud caching.
+
+### Installation
+```bash
+pip install git+https://github.com/sweeza/NSE-PIT-Universe.git
+```
+
+### 1. `yfinance`-style Ticker Interface (`nse.Ticker`)
+```python
+import nseuniverse as nse
+
+# Query any of the 6,089 NSE instruments (Active, SME, ETF, or Delisted)
+stock = nse.Ticker("RELIANCE")
+
+# Comprehensive metadata
+print(stock.info)
+# {'symbol': 'RELIANCE', 'asset_class': 'EQUITY', 'sector': 'Oil Gas & Consumable Fuels', 
+#  'isin': 'INE002A01018', 'listing_date': '29-NOV-1995', 'current_indices': ['nifty50', ...]}
+
+# Full Corporate Actions & Split/Bonus Histories
+print(stock.actions)
+print(stock.bonuses)
+print(stock.splits)
+
+# Historical OHLCV + VWAP, Turnover, and Trades
+# Backwards-adjusted for splits & bonuses by default
+df = stock.history(start="2020-01-01", adjusted=True)
+print(df.tail())
+
+# Delisted / Defunct stocks work natively with 0 survivorship bias
+dead_stock = nse.Ticker("3IINFOTECH")
+print(dead_stock.is_active)  # False
+print(dead_stock.history().tail())
+```
+
+### 2. Point-in-Time Index Universe Loader (`nse.load`)
+```python
+# Load full cross-sectional matrix (Date x Ticker) for an index
+n50_close = nse.load("close", universe="nifty50", adjusted=True)
+it_volume  = nse.load("volume", universe="niftyit", adjusted=True)
+
+# Load multiple aligned fields for backtesting
+panel = nse.load_universe(
+    fields=["open", "high", "low", "close", "volume", "vwap"],
+    universe="nifty200",
+    adjusted=True,
+    forward_fill=True
+)
+```
+
+---
+
 ## 💻 Python Loader API (`nseuniverse_io.py`)
 
 ```python
