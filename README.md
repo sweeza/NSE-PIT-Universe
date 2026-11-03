@@ -54,15 +54,17 @@ sme_close = nio.load_tensor("close", asset_type="SME")
 # 4. Filter by Sector / Industry
 tech_stocks = nio.load_tensor("close", universe="nifty500", sector="Information Technology")
 
-# 5. Extract multiple fields with in-memory forward filling for backtests
+# 5. Extract multiple fields with in-memory forward filling and split/bonus adjustments
 panel = nio.load_universe(
     fields=["open", "high", "low", "close", "volume", "vwap"],
     universe="nifty200",
-    forward_fill=True
+    adjusted=True,       # Dynamic in-memory backward adjustment for splits & bonuses
+    forward_fill=True    # Continuous non-stale price lines
 )
 
-# 6. Access Master Security Master
+# 6. Access Master Security Master & Corporate Actions
 sec_master = nio.get_security_master()
+ca_ledger  = nio.get_corporate_actions()
 ```
 
 ---

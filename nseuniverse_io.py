@@ -4,7 +4,9 @@ nseuniverse_io: Canonical Unified Loader Library for All NSE Instruments.
 Features:
 - Access to 12 Synchronous Market Data Tensors (open, high, low, close, volume, turnover,
   trades, vwap, last, prevclose, series, isin).
-- Zero-Taint Invariant: Default forward_fill=False returns pure exchange data.
+- Zero-Taint Invariant: Default forward_fill=False, adjusted=False returns pure exchange data.
+- In-Memory Corporate Action Adjustment: Optional adjusted=True smoothly backwards-adjusts prices
+  and forward-scales volumes for all stock splits and bonuses without altering raw disk parquets.
 - In-Memory Forward-Fill: Optional forward_fill=True provides continuous backtesting price lines
   without mutating disk parquets.
 - Universe Filtering:
@@ -26,6 +28,11 @@ import numpy as np
 import config
 
 _SEC_MASTER_CACHE: Optional[pd.DataFrame] = None
+_CA_CACHE: Optional[pd.DataFrame] = None
+
+PRICE_FIELDS = {"open", "high", "low", "close", "vwap", "last", "prevclose"}
+VOLUME_FIELDS = {"volume", "tottrdqty"}
+
 
 def get_security_master(reload: bool = False) -> pd.DataFrame:
     """Returns the comprehensive NSE Master Security Master."""
@@ -37,12 +44,61 @@ def get_security_master(reload: bool = False) -> pd.DataFrame:
     return _SEC_MASTER_CACHE
 
 
+def get_corporate_actions(reload: bool = False) -> pd.DataFrame:
+    """Returns the verified applied corporate actions table (splits & bonuses)."""
+    global _CA_CACHE
+    if _CA_CACHE is None or reload:
+        ca_file = config.METADATA_DIR / "applied_corporate_actions.parquet"
+        if not ca_file.exists():
+            return pd.DataFrame()
+        _CA_CACHE = pd.read_parquet(ca_file)
+    return _CA_CACHE
+
+
+def compute_adjustment_factors(
+    dates: pd.DatetimeIndex,
+    tickers: List[str],
+    ca_df: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """
+    Computes vectorized cumulative backward adjustment factors for given dates and tickers.
+    
+    Formula for price at date t prior to ex_date with multiplier M:
+        Adj_Factor(t) = Product_{ex_date > t}(Multiplier)
+        Price_adj(t) = Price_raw(t) / Adj_Factor(t)
+        Volume_adj(t) = Volume_raw(t) * Adj_Factor(t)
+    """
+    if ca_df is None:
+        ca_df = get_corporate_actions()
+
+    if ca_df.empty:
+        return pd.DataFrame(1.0, index=dates, columns=tickers, dtype=np.float64)
+
+    sub_ca = ca_df[ca_df["ticker"].isin(tickers)]
+    if sub_ca.empty:
+        return pd.DataFrame(1.0, index=dates, columns=tickers, dtype=np.float64)
+
+    ca_grouped = sub_ca.groupby("ticker")
+    factors_dict = {}
+
+    for ticker, grp in ca_grouped:
+        grp_sorted = grp.sort_values("ex_date_dt")
+        f = np.ones(len(dates), dtype=np.float64)
+        for _, row in grp_sorted.iterrows():
+            idx = dates.searchsorted(row["ex_date_dt"])
+            f[:idx] *= row["multiplier"]
+        factors_dict[ticker] = f
+
+    return pd.DataFrame(factors_dict, index=dates).reindex(columns=tickers, fill_value=1.0)
+
+
 def load_tensor(
     name: str,
     universe: str = "master",
     asset_class: Optional[str] = None,
     sector: Optional[str] = None,
     forward_fill: bool = False,
+    adjusted: bool = False,
 ) -> pd.DataFrame:
     """
     Loads a single market data tensor or metadata DataFrame by name.
@@ -67,6 +123,10 @@ def load_tensor(
     forward_fill : bool, default False
         If True, applies bounded forward filling in-memory for backtesting engines.
         Disk parquets remain 100% pure.
+    adjusted : bool, default False
+        If True, dynamically applies in-memory split and bonus adjustments to price tensors
+        (dividing by cumulative multiplier) and volume tensors (multiplying by cumulative multiplier).
+        Disk parquets remain 100% pure raw unadjusted base data.
 
     Returns
     -------
@@ -77,8 +137,7 @@ def load_tensor(
     if key in ("security_master", "sec_master"):
         return get_security_master()
     if key in ("corporate_actions", "ca"):
-        ca_file = config.METADATA_DIR / "applied_corporate_actions.parquet"
-        return pd.read_parquet(ca_file) if ca_file.exists() else pd.DataFrame()
+        return get_corporate_actions()
 
     if key not in config.TENSOR_FILES:
         raise ValueError(f"Unknown tensor '{name}'. Choose from: {list(config.TENSOR_FILES.keys())}")
@@ -124,7 +183,16 @@ def load_tensor(
         else:
             raise ValueError(f"Unknown universe '{universe}'. Supported: {list(config.PIT_INDEX_FILES.keys())} or 'master'")
 
-    # 4. Optional In-Memory Forward-Fill for Backtest Engines
+    # 4. Optional In-Memory Dynamic Corporate Action Adjustment (Splits & Bonuses)
+    if adjusted:
+        if key in PRICE_FIELDS:
+            factors = compute_adjustment_factors(df.index, df.columns.tolist())
+            df = df / factors
+        elif key in VOLUME_FIELDS:
+            factors = compute_adjustment_factors(df.index, df.columns.tolist())
+            df = df * factors
+
+    # 5. Optional In-Memory Forward-Fill for Backtest Engines
     if forward_fill:
         df = df.ffill()
 
@@ -137,6 +205,7 @@ def load_universe(
     asset_class: Optional[str] = None,
     sector: Optional[str] = None,
     forward_fill: bool = False,
+    adjusted: bool = False,
 ) -> dict:
     """
     Loads multiple tensors into a dictionary of DataFrames aligned to the same universe.
@@ -145,6 +214,13 @@ def load_universe(
         fields = ["open", "high", "low", "close", "volume", "vwap"]
 
     return {
-        f: load_tensor(f, universe=universe, asset_class=asset_class, sector=sector, forward_fill=forward_fill)
+        f: load_tensor(
+            f,
+            universe=universe,
+            asset_class=asset_class,
+            sector=sector,
+            forward_fill=forward_fill,
+            adjusted=adjusted,
+        )
         for f in fields
     }
