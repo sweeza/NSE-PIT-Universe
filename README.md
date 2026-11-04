@@ -1,17 +1,17 @@
 # 🏛️ Canonical All-Instrument NSE Universe (2004 – Present)
 
-An institutional-grade, mathematically verified canonical market data store covering **all 6,089 NSE instruments** across **5,657 trading sessions (2004 to present)**, strictly derived from official National Stock Exchange of India (NSE) Bhavcopies.
+An institutional-grade, mathematically verified canonical market data store covering **4,446 consolidated NSE instruments** across **5,659 trading sessions (2004 to present)**, strictly derived from official National Stock Exchange of India (NSE) Bhavcopies.
 
 ---
 
 ## 🌟 Key Capabilities & Architectural Guarantees
 
-1. **Total Instrument Coverage (All Scrips):**
-   - Tracks every instrument that ever traded on the NSE from 2004 to present:
-     - **Equities (`EQUITY`):** 4,957 scrips (Active listings + historical delistings, bankruptcies, and drops).
-     - **SME Platform (`SME`):** 616 scrips (Series `SM`, `ST`).
-     - **ETFs (`ETF`):** 182 instruments (Equity, Gold, Liquid, Debt ETFs).
-     - **Mutual Funds (`MUTUAL_FUND`):** 331 schemes.
+1. **Total Instrument Coverage & Canonical Entity Consolidation:**
+   - Tracks every instrument that ever traded on the NSE from 2004 to present, resolving historic symbol renames and mergers into continuous canonical instruments:
+     - **Equities (`EQUITY`):** 3,470 consolidated scrips (Active listings + historical delistings, bankruptcies, and drops).
+     - **SME Platform (`SME`):** 592 scrips (Series `SM`, `ST`).
+     - **Mutual Funds (`MUTUAL_FUND`):** 260 schemes.
+     - **ETFs (`ETF`):** 122 instruments (Equity, Gold, Liquid, Debt ETFs).
      - **Debt & Hybrid (`DEBT_INVIT_REIT`):** InvITs, REITs, Sovereign Gold Bonds, and Debt instruments.
 
 2. **Official NSE Sectoral & Broad-Market Selectors:**
@@ -22,7 +22,7 @@ An institutional-grade, mathematically verified canonical market data store cove
 
 3. **Full-Spectrum Extended Tensor Schema (12 Synchronous Matrices):**
    - `open.parquet`, `high.parquet`, `low.parquet`, `close.parquet`, `volume.parquet`, `turnover.parquet`, `trades.parquet`, `vwap.parquet`, `last.parquet`, `prevclose.parquet`, `series.parquet`, `isin.parquet`.
-   - Dimension: **5,657 dates $\times$ 6,089 tickers**.
+   - Dimension: **5,659 dates $\times$ 4,446 tickers**.
 
 4. **Zero-Taint Invariant (Pure Base Data):**
    - Untraded or suspended sessions on disk are strictly `NaN`.
@@ -47,7 +47,7 @@ pip install git+https://github.com/sweeza/NSE-PIT-Universe.git
 ```python
 import nseuniverse as nse
 
-# Query any of the 6,089 NSE instruments (Active, SME, ETF, or Delisted)
+# Query any of the 4,446 NSE instruments (Active, SME, ETF, or Delisted)
 stock = nse.Ticker("RELIANCE")
 
 # Comprehensive metadata
@@ -140,7 +140,7 @@ ca_ledger  = nio.get_corporate_actions()
 
 ## 🔬 Validation & Audit
 
-Run the 6-stage validation suite anytime:
+Run the 10-invariant validation suite anytime:
 ```bash
 python validate_universe.py
 ```
