@@ -2,6 +2,8 @@
 nseuniverse ticker module: Rich per-instrument interface matching and surpassing yfinance.
 """
 
+import json
+from pathlib import Path
 from typing import Optional, Dict, Any
 import numpy as np
 import pandas as pd
@@ -14,6 +16,7 @@ from .data_source import (
 
 _SEC_MASTER_DF: Optional[pd.DataFrame] = None
 _CA_DF: Optional[pd.DataFrame] = None
+_ALIAS_MAP: Optional[Dict[str, str]] = None
 
 
 def _load_sec_master() -> pd.DataFrame:
@@ -30,11 +33,27 @@ def _load_ca() -> pd.DataFrame:
     return _CA_DF
 
 
+def _load_alias_map() -> Dict[str, str]:
+    global _ALIAS_MAP
+    if _ALIAS_MAP is None:
+        try:
+            alias_path = resolve_file("metadata/symbol_alias_map.json")
+            if alias_path.exists():
+                _ALIAS_MAP = json.loads(alias_path.read_text(encoding="utf-8"))
+            else:
+                _ALIAS_MAP = {}
+        except Exception:
+            _ALIAS_MAP = {}
+    return _ALIAS_MAP
+
+
 def _normalize_ticker(symbol_or_ticker: str) -> str:
     s = symbol_or_ticker.strip().upper()
-    if not s.endswith(".NS"):
-        s = f"{s}.NS"
-    return s
+    pure_sym = s.replace(".NS", "")
+    aliases = _load_alias_map()
+    if pure_sym in aliases:
+        pure_sym = aliases[pure_sym]
+    return f"{pure_sym}.NS"
 
 
 class Ticker:

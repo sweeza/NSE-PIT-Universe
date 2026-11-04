@@ -14,11 +14,13 @@ from .universe import (
     load_universe,
     get_security_master,
     get_corporate_actions,
+    get_tradable_mask,
+    get_tradable_universe_mask,
     INDEX_NAMES,
     TENSOR_NAMES
 )
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Institutional Quantitative Research"
 
 # Convenience aliases
@@ -32,6 +34,8 @@ __all__ = [
     "download",
     "get_security_master",
     "get_corporate_actions",
+    "get_tradable_mask",
+    "get_tradable_universe_mask",
     "INDEX_NAMES",
     "TENSOR_NAMES",
     "__version__",

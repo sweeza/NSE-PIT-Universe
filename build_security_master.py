@@ -115,24 +115,36 @@ def build_security_master():
         except Exception as e:
             print(f"    Warning reading {idx_file.name}: {e}")
 
-    # 3. Discover all unique symbols across cached Bhavcopies (sample across all years + all recent)
-    bhav_cache = list(config.BHAVCOPY_CACHE_DIR.glob("*.parquet"))
-    print(f"  Scanning Bhavcopy archive ({len(bhav_cache)} files) for universe symbols...")
+    # 3. Discover unique symbols from comprehensive archives:
+    # First, ingest historical company symbol master if available from Moshi 15
+    bhav_info = {}  # symbol -> {isin, series, name}
+    csm_file = config.MOSHI_DIR / "Output" / "company_symbol_master.parquet"
+    if csm_file.exists():
+        try:
+            csm = pd.read_parquet(csm_file)
+            for _, row in csm.iterrows():
+                s = str(row["symbol"]).strip()
+                if s and s.lower() != "nan":
+                    bhav_info[s] = {
+                        "series": "EQ",
+                        "isin": str(row["isin"]).strip() if pd.notna(row["isin"]) and str(row["isin"]).strip() else None,
+                        "name": str(row["company_name"]).strip() if pd.notna(row["company_name"]) else s,
+                    }
+            print(f"  Ingested {len(bhav_info):,} symbols from Moshi 15 company symbol master.")
+        except Exception as e:
+            print(f"  Warning reading company symbol master: {e}")
 
-    bhav_info = {} # symbol -> {isin, series, name}
-    
-    # We sample 250 files across the timeline to capture every persistent and transient symbol
-    step = max(1, len(bhav_cache) // 250)
-    sampled_files = bhav_cache[::step] + bhav_cache[-30:] # include latest 30 sessions
-    sampled_files = sorted(list(set(sampled_files)))
+    # Comprehensive discovery across all Bhavcopies (no 250-file sampling)
+    bhav_cache = config.get_bhavcopy_files()
+    print(f"  Scanning complete Bhavcopy archive ({len(bhav_cache):,} files) for universe symbols...")
 
-    for f in sampled_files:
+    for f in bhav_cache:
         try:
             df = pd.read_parquet(f)
             sym_col = "SYMBOL" if "SYMBOL" in df.columns else None
             series_col = "SERIES" if "SERIES" in df.columns else None
             isin_col = "ISIN" if "ISIN" in df.columns else None
-            
+
             if sym_col:
                 for _, row in df[[c for c in [sym_col, series_col, isin_col] if c]].iterrows():
                     s = str(row[sym_col]).strip()
@@ -144,12 +156,12 @@ def build_security_master():
                             "isin": str(row[isin_col]).strip() if isin_col and pd.notna(row[isin_col]) else None,
                         }
                     else:
-                        if not bhav_info[s]["isin"] and isin_col and pd.notna(row[isin_col]):
+                        if not bhav_info[s].get("isin") and isin_col and pd.notna(row[isin_col]):
                             bhav_info[s]["isin"] = str(row[isin_col]).strip()
         except Exception:
             continue
 
-    print(f"  Discovered {len(bhav_info)} distinct symbols across Bhavcopy sample.")
+    print(f"  Discovered {len(bhav_info):,} distinct symbols across Bhavcopy archive.")
 
     # 4. Merge all symbols: Bhavcopy + Active listings + Index constituents + Symbol changes
     all_symbols = set(bhav_info.keys())
@@ -220,6 +232,20 @@ def build_security_master():
         })
 
     sec_df = pd.DataFrame(records).set_index("ticker")
+
+    # If canonical market tensors already exist, align with the consolidated canonical columns
+    if config.TENSOR_FILES["close"].exists():
+        tensor_cols = pd.read_parquet(config.TENSOR_FILES["close"]).columns
+        # Keep canonical columns, reindexing to ensure 100% matrix dimensional parity
+        sec_df = sec_df.reindex(index=tensor_cols)
+        sec_df["symbol"] = sec_df["symbol"].fillna(sec_df.index.str.replace(".NS", "", regex=False))
+        sec_df["company_name"] = sec_df["company_name"].fillna(sec_df["symbol"])
+        sec_df["asset_class"] = sec_df["asset_class"].fillna("EQUITY")
+        sec_df["sector"] = sec_df["sector"].fillna("Unclassified")
+        sec_df["series"] = sec_df["series"].fillna("EQ")
+        bool_cols = [c for c in sec_df.columns if c.startswith("in_") or c.startswith("is_")]
+        sec_df[bool_cols] = sec_df[bool_cols].fillna(False).astype(bool)
+
     config.METADATA_DIR.mkdir(parents=True, exist_ok=True)
     sec_df.to_parquet(config.SECURITY_MASTER_FILE)
 

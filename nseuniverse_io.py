@@ -23,15 +23,34 @@ Features:
 """
 
 from typing import Union, Iterable, List, Optional
+import json
 import pandas as pd
 import numpy as np
 import config
 
 _SEC_MASTER_CACHE: Optional[pd.DataFrame] = None
 _CA_CACHE: Optional[pd.DataFrame] = None
+_ALIAS_CACHE: Optional[dict] = None
 
 PRICE_FIELDS = {"open", "high", "low", "close", "vwap", "last", "prevclose"}
 VOLUME_FIELDS = {"volume", "tottrdqty"}
+
+
+def get_alias_map() -> dict:
+    """Returns the dictionary mapping historical/obsolete symbols to canonical symbols."""
+    global _ALIAS_CACHE
+    if _ALIAS_CACHE is None:
+        alias_file = config.METADATA_DIR / "symbol_alias_map.json"
+        _ALIAS_CACHE = json.loads(alias_file.read_text()) if alias_file.exists() else {}
+    return _ALIAS_CACHE
+
+
+def resolve_ticker(symbol_or_ticker: str) -> str:
+    """Resolves any historical or current NSE symbol/ticker to its canonical .NS ticker."""
+    s = str(symbol_or_ticker).upper().strip().replace(".NS", "")
+    aliases = get_alias_map()
+    can = aliases.get(s, s)
+    return f"{can}.NS"
 
 
 def get_security_master(reload: bool = False) -> pd.DataFrame:
@@ -224,3 +243,105 @@ def load_universe(
         )
         for f in fields
     }
+
+
+def get_tradable_mask(
+    universe: str = "nifty500",
+    min_adtv: float = 20_000_000.0,
+    adtv_window: int = 20,
+    min_price: float = 20.0,
+    max_price: Optional[float] = 50_000.0,
+    asset_class: str = "EQUITY",
+    sector: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Constructs a dynamic Point-in-Time tradable universe boolean mask (Dates x Tickers).
+    Enforces investability, minimum liquidity corridors (ADTV), price corridors,
+    and asset class filtering.
+
+    Parameters
+    ----------
+    universe : str, default 'nifty500'
+        Index or universe selector ('nifty500', 'midsmall400', 'nifty200', 'nifty100',
+        'nifty50', 'largemid250', 'midcap150', 'smallcap250', 'totalmarket', 'master',
+        or sectoral indices like 'niftybank', 'niftyit', etc.).
+    min_adtv : float, default 20_000_000.0 (₹2.0 Crore)
+        Minimum rolling Average Daily Traded Value (Turnover) floor. Set to 0 to disable.
+    adtv_window : int, default 20
+        Rolling window in trading days for ADTV calculation.
+    min_price : float, default 20.0 (₹20)
+        Minimum share price floor (eliminates penny stocks, CIRP/insolvency traps).
+    max_price : float, optional, default 50_000.0 (₹50,000)
+        Maximum share price cap (avoids lot-size distortion / tick anomalies).
+    asset_class : str, default 'EQUITY'
+        Filter by asset class ('EQUITY', 'SME', 'ETF', 'MUTUAL_FUND', 'DEBT_INVIT_REIT').
+    sector : str, optional
+        Filter by official NSE sector/industry name.
+    start : str, optional
+        Start date filter (e.g. '2015-01-01').
+    end : str, optional
+        End date filter (e.g. '2025-12-31').
+
+    Returns
+    -------
+    pd.DataFrame
+        Boolean DataFrame of shape (Dates x Tickers) where True indicates
+        an eligible, tradable instrument on that session.
+    """
+    # 1. Load unadjusted nominal Close price and Turnover across master panel (full history for rolling lookback)
+    close_master = load_tensor(
+        "close",
+        universe="master",
+        asset_class=asset_class,
+        sector=sector,
+        adjusted=False,
+    )
+    turnover_master = load_tensor(
+        "turnover",
+        universe="master",
+        asset_class=asset_class,
+        sector=sector,
+        adjusted=False,
+    )
+
+    # 2. Base active eligibility (valid trading session)
+    mask = close_master.notna() & (close_master > 0)
+
+    # 3. Apply price corridors
+    if min_price is not None and min_price > 0:
+        mask = mask & (close_master >= min_price)
+    if max_price is not None and max_price > 0:
+        mask = mask & (close_master <= max_price)
+
+    # 4. Apply rolling liquidity / ADTV corridor on full exchange trading history
+    if min_adtv is not None and min_adtv > 0:
+        adtv = turnover_master.rolling(window=adtv_window, min_periods=max(1, adtv_window // 2)).mean()
+        mask = mask & (adtv >= min_adtv)
+
+    # 5. Apply Point-in-Time Index Universe Mask if not master
+    univ_key = universe.lower().strip()
+    if univ_key not in ("master", "all"):
+        if univ_key in config.PIT_INDEX_FILES:
+            mask_path = config.PIT_INDEX_FILES[univ_key]
+            index_mask = pd.read_parquet(mask_path)
+            common_dates = mask.index.intersection(index_mask.index)
+            common_cols = mask.columns.intersection(index_mask.columns)
+            active_idx = index_mask.loc[common_dates, common_cols]
+            ever_active = common_cols[active_idx.any(axis=0)]
+            mask = mask.loc[common_dates, ever_active] & active_idx[ever_active]
+        else:
+            raise ValueError(f"Unknown universe '{universe}'. Supported: {list(config.PIT_INDEX_FILES.keys())} or 'master'")
+
+    # 6. Slice date range after rolling computation
+    if start:
+        mask = mask.loc[mask.index >= pd.to_datetime(start)]
+    if end:
+        mask = mask.loc[mask.index <= pd.to_datetime(end)]
+
+    return mask.astype(bool)
+
+
+get_tradable_universe_mask = get_tradable_mask
+

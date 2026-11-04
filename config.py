@@ -13,15 +13,43 @@ PIT_DIR = METADATA_DIR / "pit_memberships"
 TENSOR_DIR = DATA_DIR / "tensors"
 RAW_INDICES_DIR = DATA_DIR / "raw_indices"
 
-# Shared Bhavcopy Cache (reusing the 7,892 cached Bhavcopies archive)
-SHARED_BHAVCOPY_DIR = (
-    Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\04 Fin Markets Feeler\N500 Universe with Bhavcopies\data\bhavcopy_cache")
-)
-BHAVCOPY_CACHE_DIR = SHARED_BHAVCOPY_DIR if SHARED_BHAVCOPY_DIR.exists() else DATA_DIR / "bhavcopy_cache"
+# Shared Bhavcopy Archives (linking the 8,039 cached Bhavcopies archive from Moshi 15)
+MOSHI_DIR = Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\03 Moshi 15\02 Universe")
+MOSHI_APP_DIR = Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\03 Moshi 15\01 Main App - Git Sync\N500 Universe")
 
-# Source Metadata from N500 project
+BHAVCOPY_DIRS = [
+    MOSHI_DIR / "Output" / "bhavcopy_cache",
+    MOSHI_DIR / "bhavcopy_cache",
+    DATA_DIR / "bhavcopy_cache",
+]
+
+# Primary single cache directory for backwards compatibility
+BHAVCOPY_CACHE_DIR = (
+    MOSHI_DIR / "Output" / "bhavcopy_cache"
+    if (MOSHI_DIR / "Output" / "bhavcopy_cache").exists()
+    else DATA_DIR / "bhavcopy_cache"
+)
+
+
+def get_bhavcopy_files() -> list:
+    """
+    Discovers and returns a deduplicated, chronologically sorted list of all
+    available Bhavcopy parquet files across all configured bhavcopy directories.
+    """
+    file_map = {}
+    for d in BHAVCOPY_DIRS:
+        if d.exists():
+            for f in d.glob("*.parquet"):
+                if f.name not in file_map:
+                    file_map[f.name] = f
+    return [file_map[k] for k in sorted(file_map.keys())]
+
+
+# Source Metadata from Moshi 15
 SOURCE_METADATA_DIR = (
-    Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\04 Fin Markets Feeler\N500 Universe with Bhavcopies\data\metadata")
+    MOSHI_DIR / "Output" / "master"
+    if (MOSHI_DIR / "Output" / "master").exists()
+    else MOSHI_APP_DIR / "data" / "metadata"
 )
 
 # Canonical Output Files

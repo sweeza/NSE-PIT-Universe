@@ -1,7 +1,8 @@
 {
-  "timestamp": "2026-11-03T20:15:45.197327",
-  "violations": 0,
+  "timestamp": "2026-11-04T12:04:29.586053",
   "verdict": "PASSED",
-  "total_instruments": 6089,
-  "total_sessions": 5659
+  "violations": 0,
+  "total_instruments": 4446,
+  "total_sessions": 5659,
+  "checks_passed": 10
 }
