@@ -465,6 +465,26 @@ class TestAtomicCommitAndRollback(unittest.TestCase):
         self.assertIsNone(ec._HOLIDAYS_CACHE)
         self.assertIsNone(ec._HOLIDAY_DATES_CACHE)
 
+    def test_daily_updater_network_dropout_resilience(self):
+        """
+        Verifies that update_universe_daily handles network connection dropouts or empty
+        bhavcopy stream downloads gracefully without crashing or contaminating canonical tensors.
+        """
+        import requests
+        from update_universe_daily import update_universe_daily
+
+        with patch("update_universe_daily.sync_official_indices"):
+            with patch("update_universe_daily.get_candidate_sessions", return_value=[date(2026, 11, 12)]):
+                with patch("update_universe_daily.is_trading_day", return_value=True):
+                    with patch("update_universe_daily.fetch_nse_bhavcopy_stream", side_effect=requests.exceptions.ConnectionError("Simulated network dropout")):
+                        # Should complete cleanly without exception
+                        res = update_universe_daily(target_date="2026-11-12", force_validation=False)
+                        self.assertTrue(res)
+
+        # Confirm canonical tensors still exist and row count is unchanged (5,665 sessions)
+        c_df = pd.read_parquet(config.TENSOR_FILES["close"])
+        self.assertEqual(len(c_df), 5665)
+
 
 if __name__ == "__main__":
     unittest.main()

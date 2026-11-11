@@ -359,13 +359,14 @@ def update_universe_daily(
             df_bhav = pd.read_parquet(cached_file)
         else:
             print(f"  Streaming {d_str} Bhavcopy in-memory from official NSE endpoint...")
-            df_bhav = fetch_nse_bhavcopy_stream(target_dt)
-            if df_bhav is not None and not df_bhav.empty:
-                try:
+            try:
+                df_bhav = fetch_nse_bhavcopy_stream(target_dt)
+                if df_bhav is not None and not df_bhav.empty:
                     config.BHAVCOPY_CACHE_DIR.mkdir(parents=True, exist_ok=True)
                     df_bhav.to_parquet(cached_file, compression="zstd")
-                except Exception:
-                    pass
+            except Exception as e:
+                print(f"  Network error fetching Bhavcopy for {d_str}: {e}")
+                df_bhav = None
 
         if df_bhav is None or df_bhav.empty:
             print(f"  Bhavcopy for {d_str} is not published or exchange was closed. Skipping.")

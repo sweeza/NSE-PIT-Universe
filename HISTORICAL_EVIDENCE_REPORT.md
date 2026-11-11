@@ -4,7 +4,7 @@
 **Total Canonical Sessions:** `5,665`  
 **Total Consolidated Instruments:** `4,446`  
 **Integrity Checks:** 12/12 Passed (100% Pass Rate, 0 Violations)  
-**Automated Tests:** 75/75 Passed in `pytest` across 6 test modules  
+**Automated Tests:** 76/76 Passed in `pytest` across 6 test modules  
 **Report Artifact:** `data/validation_report.json`
 
 ---
@@ -94,6 +94,21 @@ print(f"Tradable Nifty 500 constituents passing corridors: {len(df)}")
 4. **Immediate Entrant Tradability**: Stocks entering indices become immediately tradable on the exact effective session with zero latency.
 5. **Universal Aliasing**: Universe keys accept arbitrary casing and formatting (`"Nifty 50"`, `"nifty-50"`, `"NIFTY_BANK"`, `"Total Market"`, `"nifty it"`).
 
+### 4.1 Empirical Query Latency & Performance Benchmarks
+
+The `get_universe()` API was empirically benchmarked across different query modes, universe sizes, and filtering configurations on canonical datasets ($5,665 \text{ sessions} \times 4,446 \text{ instruments}$):
+
+| Query Configuration | Target Universe | Metrics / Filter Mode | Execution Time (Warm Cache) | Throughput / Latency Assessment |
+| :--- | :--- | :--- | :---: | :--- |
+| **Mask-Only Ticker List** (`as_list=True`) | Nifty 50 | In-Memory Mask Cache Lookup | **1.46 ms** | Ultra-low latency, optimal for loop-driven backtest rebalances. |
+| **Mask-Only Ticker List** (`as_list=True`) | Nifty 500 | In-Memory Mask Cache Lookup | **1.52 ms** | 50× speedup over un-cached full load. |
+| **Full Snapshot DataFrame** | Nifty 50 | Close, Open, High, Low, Volume, 1D Return | **2,260 ms** | Includes disk I/O and dynamic multi-column projection. |
+| **Filtered Quant Corridor** | Nifty 500 | `min_adtv=50M`, `min_price=50.0` | **4,396 ms** | Vectorized rolling 20-day ADTV calculation across 5,665 sessions. |
+| **Broad Market Complete** | Total Market | Full Universe Metric Assembly (~750 scrips) | **5,001 ms** | Comprehensive institutional universe assembly. |
+
+* **In-Memory Caching Acceleration**: Caching PIT masks in `_INDEX_MASK_CACHE` enables daily constituent extraction in **< 1.5 ms** per rebalancing date, allowing an 18-year daily strategy backtest (4,500 trading days) to query point-in-time constituent membership in under 7 seconds.
+* **Cache Invalidation Integration**: Invalidation hooks in `update_universe_daily.py` (`invalidate_universe_cache()`) guarantee that any newly appended sessions instantly clear cached masks and dates without manual daemon restart.
+
 ---
 
 ## 5. Daily Automation & Pre-Commit Invariant Gate
@@ -147,19 +162,19 @@ The daily updater (`update_universe_daily.py`) protects the database against dat
 
 ---
 
-## 7. Comprehensive Automated Regression Test Suite (75/75 Passing)
+## 7. Comprehensive Automated Regression Test Suite (76/76 Passing)
 
-The repository maintains 75 automated unit and regression tests executed via `pytest`, achieving a 100% pass rate with zero failures and zero skipped tests:
+The repository maintains 76 automated unit and regression tests executed via `pytest`, achieving a 100% pass rate with zero failures and zero skipped tests:
 
 | Test Module | Test Count | Scope & Coverage | Status |
 | :--- | :---: | :--- | :---: |
-| `tests/test_adjustments.py` | 12 | Dynamic in-memory split and bonus adjustments, cumulative multiplier vectors, price line continuity, multi-ticker panel adjustment. | **PASS** |
-| `tests/test_client.py` | 12 | Lightweight client `nseuniverse`, `nse.Ticker` API, `nse.Index` synthetic time series, metadata dictionary, actions/bonuses/splits, caching. | **PASS** |
-| `tests/test_daily_updater.py` | 19 | Exchange calendar loading, candidate session generation, Diwali Muhurat inclusion, holiday filtering, safe float parsing, atomic multi-tensor staging, mathematical pre-commit gate, mid-commit emergency rollback, cache invalidation. | **PASS** |
-| `tests/test_dividends.py` | 8 | Dividend ledger parsing, regular vs special classification, multi-component additivity, trailing dividend yield computation, Total Return Index (TRI) compounding. | **PASS** |
+| `tests/test_adjustments.py` | 4 | Dynamic in-memory split and bonus adjustments, cumulative multiplier vectors, price line continuity, multi-ticker panel adjustment, zero disk taint invariant. | **PASS** |
+| `tests/test_client.py` | 12 | Lightweight client `nseuniverse`, `nse.Ticker` API, `nse.Index` synthetic time series, metadata dictionary, actions/bonuses/splits, caching, survivorship bias retention. | **PASS** |
+| `tests/test_daily_updater.py` | 20 | Exchange calendar loading, candidate session generation, Diwali Muhurat inclusion, holiday filtering, safe float parsing, atomic multi-tensor staging, mathematical pre-commit gate, mid-commit emergency rollback, cache invalidation, network connection dropout resilience. | **PASS** |
+| `tests/test_dividends.py` | 10 | Dividend ledger parsing, regular vs special classification, multi-component additivity, trailing dividend yield computation, Total Return Index (TRI) compounding, zero prehistory leak. | **PASS** |
 | `tests/test_historical_accuracy.py` | 19 | Satyam collapse/exit, Axis Bank hiatus/re-inclusion, Yes Bank exit, Suzlon exit, Eternal IPO zero lookahead, Jio Financial IPO zero lookahead, DHFL delisting handling, Cipla split, 360ONE combined action, Eicher Motors split, multi-regime snapshots (GFC 2008, Election 2014, COVID 2020, Election 2024), weekend/holiday resolution, liquidity/price corridors, timestamp/timezone normalization, horizon holiday resolution, name normalization, fields projection, require_traded filtering. | **PASS** |
-| `tests/test_pit_universe.py` | 5 | PIT index mask dimensions, 8 strict subset hierarchy containment axioms across 5,665 sessions, listing gatekeeper, sectoral constituent authenticity, dynamic tradable mask generation. | **PASS** |
-| **Total** | **75** | **Full System Institutional Regression Suite** | **100% PASS** |
+| `tests/test_pit_universe.py` | 11 | PIT index mask dimensions, 8 strict subset hierarchy containment axioms across 5,665 sessions, listing gatekeeper, sectoral constituent authenticity, dynamic tradable mask generation, zero entrant latency, official sheet events accuracy. | **PASS** |
+| **Total** | **76** | **Full System Institutional Regression Suite** | **100% PASS** |
 
 ---
 

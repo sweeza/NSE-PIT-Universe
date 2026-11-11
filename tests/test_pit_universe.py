@@ -32,7 +32,7 @@ class TestPointInTimeUniverse(unittest.TestCase):
         cls.tm = pd.read_parquet(config.PIT_INDEX_FILES["totalmarket"])
 
     def test_strict_subset_hierarchy_all_sessions(self):
-        """Assert all 8 subset hierarchy invariants have EXACTLY 0 daily violations across all 5,659 sessions."""
+        """Assert all 8 subset hierarchy invariants have EXACTLY 0 daily violations across all sessions."""
         # 1. Nifty 50 ⊆ Nifty 100
         viol_50_100 = (self.n50 & ~self.n100).sum().sum()
         self.assertEqual(viol_50_100, 0, f"Violations where Nifty 50 not in Nifty 100: {viol_50_100}")

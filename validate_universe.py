@@ -49,7 +49,7 @@ def run_institutional_validation():
     print(f"  [PASS] 100% Dimensional Parity: {T_expected} sessions x {N_expected} canonical instruments.")
 
     # --- Check 2: Mathematical OHLCV & Volume Bounds ---
-    print("\n[Check 2/10] Auditing Mathematical OHLCV Bounds Across 25+ Million Data Points...")
+    print("\n[Check 2/12] Auditing Mathematical OHLCV Bounds Across 25+ Million Data Points...")
     o = tensors["open"].values
     h = tensors["high"].values
     l = tensors["low"].values
@@ -72,13 +72,13 @@ def run_institutional_validation():
     print(f"  [PASS] 0 Mathematical Violations: 100% price and volume bounds preserved.")
 
     # --- Check 3: Zero Phantom Columns ---
-    print("\n[Check 3/10] Auditing Zero Phantom / Zero-Trade Column Invariant...")
+    print("\n[Check 3/12] Auditing Zero Phantom / Zero-Trade Column Invariant...")
     zero_trades = (tensors["close"].notna().sum() == 0).sum()
     assert zero_trades == 0, f"Found {zero_trades} completely unpopulated phantom columns!"
     print(f"  [PASS] Zero Phantom Columns: All {N_expected:,} instruments have genuine trading sessions.")
 
     # --- Check 4: Zero Disk Taint (Natural NaNs) ---
-    print("\n[Check 4/10] Verifying Zero Disk Taint & Natural Sparsity Invariant...")
+    print("\n[Check 4/12] Verifying Zero Disk Taint & Natural Sparsity Invariant...")
     total_cells = c.size
     nan_cells = np.isnan(c).sum()
     nan_pct = nan_cells / total_cells * 100
@@ -86,7 +86,7 @@ def run_institutional_validation():
     print(f"  [PASS] Base Disk Purity Verified: {nan_cells:,} natural NaNs ({nan_pct:.1f}% untraded sparsity).")
 
     # --- Check 5: Point-in-Time Listing Gatekeeper ---
-    print("\n[Check 5/10] Auditing Listing Gatekeeper & Lookahead Invariant...")
+    print("\n[Check 5/12] Auditing Listing Gatekeeper & Lookahead Invariant...")
     # Verify that before each instrument's first traded session, it is strictly NaN
     for col in sec_master.index[::50]: # Spot check every 50th column
         s = tensors["close"][col].dropna()
@@ -97,7 +97,7 @@ def run_institutional_validation():
     print("  [PASS] Zero Listing Lookahead Bias: Securities are strictly NaN prior to listing/first-trade.")
 
     # --- Check 6: Entity Resolution Continuity & 0 Conflict Invariant ---
-    print("\n[Check 6/10] Auditing Entity Resolution & Alias Map Integrity...")
+    print("\n[Check 6/12] Auditing Entity Resolution & Alias Map Integrity...")
     alias_file = config.METADATA_DIR / "symbol_alias_map.json"
     assert alias_file.exists(), "symbol_alias_map.json is missing!"
     aliases = json.loads(alias_file.read_text())
@@ -119,7 +119,7 @@ def run_institutional_validation():
     print("  [PASS] 100% Conflict-free entity resolution verified.")
 
     # --- Check 7: Corporate Action Ledger & Factor Integrity ---
-    print("\n[Check 7/10] Auditing Applied Corporate Actions Ledger...")
+    print("\n[Check 7/12] Auditing Applied Corporate Actions Ledger...")
     ca_df = nio.get_corporate_actions(reload=True)
     assert not ca_df.empty, "Corporate actions table is empty!"
     print(f"  Corporate action events: {len(ca_df):,}")
@@ -129,7 +129,7 @@ def run_institutional_validation():
     print("  [PASS] Corporate action integrity verified.")
 
     # --- Check 8: In-Memory Dynamic Adjustment Invariance ---
-    print("\n[Check 8/10] Auditing Dynamic In-Memory Split & Bonus Adjustment...")
+    print("\n[Check 8/12] Auditing Dynamic In-Memory Split & Bonus Adjustment...")
     c_raw = nio.load_tensor("close", adjusted=False)
     c_adj = nio.load_tensor("close", adjusted=True)
     assert c_raw.shape == c_adj.shape, "Adjusted matrix shape mismatch!"
@@ -142,7 +142,7 @@ def run_institutional_validation():
     print("  [PASS] In-Memory Corporate Action Adjustment is perfectly continuous.")
 
     # --- Check 9: Point-in-Time Index Masks, Zero Lookahead Leaks & Strict Subset Hierarchy ---
-    print("\n[Check 9/10] Auditing Point-in-Time Index Masks, Zero Lookahead & Subset Hierarchy Invariants...")
+    print("\n[Check 9/12] Auditing Point-in-Time Index Masks, Zero Lookahead & Subset Hierarchy Invariants...")
     has_traded = tensors["close"].notna().cummax(axis=0)
 
     # 1. Load all 23 PIT index masks
@@ -155,8 +155,8 @@ def run_institutional_validation():
 
     print(f"  Loaded and dimensionally verified {len(masks)} PIT index masks ({T_expected} sessions x {N_expected} instruments).")
 
-    # 2. Strict Subset Hierarchy Invariants (EXACTLY 0 daily violations across all 5,659 sessions)
-    print("  Auditing 8 Strict Subset Hierarchy Invariants across all 5,659 sessions...")
+    # 2. Strict Subset Hierarchy Invariants (EXACTLY 0 daily violations across all sessions)
+    print(f"  Auditing 8 Strict Subset Hierarchy Invariants across all {T_expected:,} sessions...")
     n50 = masks["nifty50"]
     nn50 = masks["niftynext50"]
     n100 = masks["nifty100"]
@@ -305,7 +305,7 @@ def run_institutional_validation():
     print("  [PASS] Zero Entrant Latency verified: Constituent immediately tradable upon index inclusion.")
 
     # --- Check 10: Spot Check Parity against Raw Bhavcopy ---
-    print("\n[Check 10/11] Historical Raw Exchange Bhavcopy Spot Parity...")
+    print("\n[Check 10/12] Historical Raw Exchange Bhavcopy Spot Parity...")
     bhav_files = config.get_bhavcopy_files()
     assert len(bhav_files) > 0, "No bhavcopy files found!"
     sample_bhav = bhav_files[-1]  # Latest available bhavcopy
@@ -324,7 +324,7 @@ def run_institutional_validation():
     print("  [PASS] Raw Bhavcopy parity 100% verified.")
 
     # --- Check 11: Point-in-Time Dividend Ledger & Dual Adjustment Architecture ---
-    print("\n[Check 11/11] Auditing Point-in-Time Dividend Ledger & Dual Adjustment Architecture...")
+    print("\n[Check 11/12] Auditing Point-in-Time Dividend Ledger & Dual Adjustment Architecture...")
     div_df = nio.get_dividends(reload=True)
     assert not div_df.empty, "Dividends table is empty!"
     assert len(div_df) > 20_000, f"Expected >20k dividend records, got {len(div_df):,}"

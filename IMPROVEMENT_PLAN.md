@@ -111,7 +111,7 @@ flowchart TD
     11. PIT Cash & Special Dividend Ledger with TRI Compounding (25,894 events).
     12. Point-in-Time Universe Query API (`get_universe`) & Historical Invariants.
 - **Comprehensive Regression Suite Execution:**
-  - Execute all 75 unit/regression tests in `pytest` across 6 test modules (`test_adjustments.py`, `test_client.py`, `test_daily_updater.py`, `test_dividends.py`, `test_historical_accuracy.py`, `test_pit_universe.py`).
+  - Execute all 76 unit/regression tests in `pytest` across 6 test modules (`test_adjustments.py`, `test_client.py`, `test_daily_updater.py`, `test_dividends.py`, `test_historical_accuracy.py`, `test_pit_universe.py`).
 - **Validation Report Artifact (`data/validation_report.json`):**
   - Export machine-readable institutional validation results with zero violations.
 - **Historical Evidence Dossier (`HISTORICAL_EVIDENCE_REPORT.md`):**
