@@ -589,7 +589,7 @@
        - Added and exported `register_special_trading_session` and `unregister_special_trading_session` across `exchange_calendar.py`, `nseuniverse`, and `update_universe_daily.py` for dynamic unannounced session registration.
   - **Full Re-Verification Suite**:
     - `python validate_universe.py`: 12/12 institutional invariant checks PASSED across 5,665 sessions $\times$ 4,446 instruments with 0 violations.
-    - `python -m pytest`: 76/76 unit and regression tests PASSED across all 6 test modules in 150.45s (100% pass rate).
+    - `python -m pytest`: 79/79 unit and regression tests PASSED across all 6 test modules (`tests/test_adjustments.py`: 4, `tests/test_client.py`: 12, `tests/test_daily_updater.py`: 23, `tests/test_dividends.py`: 10, `tests/test_historical_accuracy.py`: 19, `tests/test_pit_universe.py`: 11) with 100% pass rate.
     - `data/validation_report.json` timestamp refreshed to 2026-11-11T20:35:28.001672 with verdict PASSED.
   - **Git Push Readiness**:
     - Repository tree clean, all spot-check defects resolved, ready to push to `origin/main`.

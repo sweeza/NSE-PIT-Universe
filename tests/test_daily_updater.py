@@ -22,6 +22,8 @@ from exchange_calendar import (
     get_holiday_dates,
     is_trading_holiday,
     is_special_trading_session,
+    register_special_trading_session,
+    unregister_special_trading_session,
     is_trading_day,
     get_trading_days,
     get_candidate_sessions,
@@ -93,6 +95,28 @@ class TestExchangeCalendar(unittest.TestCase):
         self.assertFalse(is_trading_day("2026-11-07"))
         self.assertFalse(is_special_trading_session("2026-11-15"))  # Regular Sunday
         self.assertFalse(is_trading_day("2026-11-15"))
+
+    def test_dynamic_special_session_registration(self):
+        """Verifies runtime registration and unregistration of unannounced special sessions."""
+        adhoc_date = date(2027, 3, 20)  # Future Saturday
+        try:
+            self.assertFalse(is_special_trading_session(adhoc_date))
+            self.assertFalse(is_trading_day(adhoc_date, check_tensor_history=False))
+
+            # Register dynamic session
+            register_special_trading_session(adhoc_date)
+            self.assertTrue(is_special_trading_session(adhoc_date))
+            self.assertTrue(is_trading_day(adhoc_date, check_tensor_history=False))
+            self.assertIn(adhoc_date, SPECIAL_WEEKEND_SESSIONS)
+
+            # Check candidate generation includes registered special session
+            candidates = get_candidate_sessions(date(2027, 3, 19), date(2027, 3, 21))
+            self.assertIn(adhoc_date, candidates)
+        finally:
+            # Clean up
+            unregister_special_trading_session(adhoc_date)
+            self.assertFalse(is_special_trading_session(adhoc_date))
+            self.assertFalse(is_trading_day(adhoc_date, check_tensor_history=False))
 
     def test_is_trading_day_logic(self):
         """Verifies comprehensive is_trading_day logic across past and future sessions."""
@@ -166,6 +190,9 @@ class TestExchangeCalendar(unittest.TestCase):
         self.assertTrue(callable(nse.get_holidays))
         self.assertTrue(callable(nse.is_trading_day))
         self.assertTrue(callable(nse.is_trading_holiday))
+        self.assertTrue(callable(nse.is_special_trading_session))
+        self.assertTrue(callable(nse.register_special_trading_session))
+        self.assertTrue(callable(nse.unregister_special_trading_session))
         self.assertTrue(callable(nse.get_trading_days))
         self.assertTrue(callable(nse.get_next_trading_day))
         self.assertTrue(callable(nse.get_prev_trading_day))
@@ -482,6 +509,64 @@ class TestAtomicCommitAndRollback(unittest.TestCase):
                         self.assertTrue(res)
 
         # Confirm canonical tensors still exist and row count is unchanged (5,665 sessions)
+        c_df = pd.read_parquet(config.TENSOR_FILES["close"])
+        self.assertEqual(len(c_df), 5665)
+
+    def test_daily_updater_unannounced_special_session_handling(self):
+        """
+        Verifies that update_universe_daily handles an unannounced special weekend session
+        gracefully via special_sessions or force_target_date, cleanly handling empty/closed session.
+        """
+        from update_universe_daily import update_universe_daily
+
+        adhoc_date = "2027-04-17"  # Future Saturday
+        with patch("update_universe_daily.sync_official_indices"):
+            with patch("update_universe_daily.fetch_nse_bhavcopy_stream", return_value=pd.DataFrame()):
+                # Call with special_sessions parameter and dry_run
+                res = update_universe_daily(
+                    target_date=adhoc_date,
+                    special_sessions=[adhoc_date],
+                    force_target_date=True,
+                    dry_run=True,
+                    force_validation=False,
+                )
+                self.assertTrue(res)
+
+        # Confirm canonical tensors are completely untouched
+        c_df = pd.read_parquet(config.TENSOR_FILES["close"])
+        self.assertEqual(len(c_df), 5665)
+
+    def test_daily_updater_zero_active_scrips_handling(self):
+        """
+        Verifies that update_universe_daily skips staging and leaves tensors unchanged
+        if a downloaded bhavcopy contains 0 active matching scrips.
+        """
+        from update_universe_daily import update_universe_daily
+
+        # Dummy DataFrame with no matching canonical symbols
+        dummy_bhav = pd.DataFrame({
+            "SYMBOL": ["UNKNOWN_SCRIP_XYZ", "TEST_JUNK"],
+            "SERIES": ["EQ", "EQ"],
+            "CLOSE": [100.0, 200.0],
+            "OPEN": [100.0, 200.0],
+            "HIGH": [105.0, 205.0],
+            "LOW": [95.0, 195.0],
+            "TOTTRDQTY": [1000, 2000],
+            "TOTTRDVAL": [100000, 400000],
+            "TOTALTRADES": [50, 100],
+            "LAST": [100.0, 200.0],
+            "PREVCLOSE": [98.0, 198.0],
+            "ISIN": ["INE000000000", "INE000000001"],
+        })
+
+        with patch("update_universe_daily.sync_official_indices"):
+            with patch("update_universe_daily.get_candidate_sessions", return_value=[date(2026, 11, 13)]):
+                with patch("update_universe_daily.is_trading_day", return_value=True):
+                    with patch("update_universe_daily.fetch_nse_bhavcopy_stream", return_value=dummy_bhav):
+                        res = update_universe_daily(target_date="2026-11-13", force_validation=False)
+                        self.assertTrue(res)
+
+        # Confirm zero changes committed
         c_df = pd.read_parquet(config.TENSOR_FILES["close"])
         self.assertEqual(len(c_df), 5665)
 

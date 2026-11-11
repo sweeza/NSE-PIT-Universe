@@ -162,19 +162,19 @@ The daily updater (`update_universe_daily.py`) protects the database against dat
 
 ---
 
-## 7. Comprehensive Automated Regression Test Suite (76/76 Passing)
+## 7. Comprehensive Automated Regression Test Suite (79/79 Passing)
 
-The repository maintains 76 automated unit and regression tests executed via `pytest`, achieving a 100% pass rate with zero failures and zero skipped tests:
+The repository maintains 79 automated unit and regression tests executed via `pytest`, achieving a 100% pass rate with zero failures and zero skipped tests:
 
 | Test Module | Test Count | Scope & Coverage | Status |
 | :--- | :---: | :--- | :---: |
 | `tests/test_adjustments.py` | 4 | Dynamic in-memory split and bonus adjustments, cumulative multiplier vectors, price line continuity, multi-ticker panel adjustment, zero disk taint invariant. | **PASS** |
 | `tests/test_client.py` | 12 | Lightweight client `nseuniverse`, `nse.Ticker` API, `nse.Index` synthetic time series, metadata dictionary, actions/bonuses/splits, caching, survivorship bias retention. | **PASS** |
-| `tests/test_daily_updater.py` | 20 | Exchange calendar loading, candidate session generation, Diwali Muhurat inclusion, holiday filtering, safe float parsing, atomic multi-tensor staging, mathematical pre-commit gate, mid-commit emergency rollback, cache invalidation, network connection dropout resilience. | **PASS** |
+| `tests/test_daily_updater.py` | 23 | Exchange calendar loading, candidate session generation, Diwali Muhurat inclusion, holiday filtering, safe float parsing, atomic multi-tensor staging, mathematical pre-commit gate, mid-commit emergency rollback, cache invalidation, network connection dropout resilience, dynamic special session registration, unannounced session recovery, zero active scrips handling. | **PASS** |
 | `tests/test_dividends.py` | 10 | Dividend ledger parsing, regular vs special classification, multi-component additivity, trailing dividend yield computation, Total Return Index (TRI) compounding, zero prehistory leak. | **PASS** |
 | `tests/test_historical_accuracy.py` | 19 | Satyam collapse/exit, Axis Bank hiatus/re-inclusion, Yes Bank exit, Suzlon exit, Eternal IPO zero lookahead, Jio Financial IPO zero lookahead, DHFL delisting handling, Cipla split, 360ONE combined action, Eicher Motors split, multi-regime snapshots (GFC 2008, Election 2014, COVID 2020, Election 2024), weekend/holiday resolution, liquidity/price corridors, timestamp/timezone normalization, horizon holiday resolution, name normalization, fields projection, require_traded filtering. | **PASS** |
 | `tests/test_pit_universe.py` | 11 | PIT index mask dimensions, 8 strict subset hierarchy containment axioms across 5,665 sessions, listing gatekeeper, sectoral constituent authenticity, dynamic tradable mask generation, zero entrant latency, official sheet events accuracy. | **PASS** |
-| **Total** | **76** | **Full System Institutional Regression Suite** | **100% PASS** |
+| **Total** | **79** | **Full System Institutional Regression Suite** | **100% PASS** |
 
 ---
 

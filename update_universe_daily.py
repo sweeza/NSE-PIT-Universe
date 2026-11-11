@@ -563,35 +563,36 @@ def update_universe_daily(
     else:
         print("\n[Step 3/6] No new sessions staged. Matrices remain unchanged.")
 
-    # Sync Index Tensors
-    print("\n[Step 6/6] Checking and syncing Index Tensors...")
-    cache_dir = config.DATA_DIR / "index_cache"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    idx_updated = False
+    # Sync Index Tensors only for sessions that were actually staged and committed
+    if len(staged_dates) > 0:
+        print("\n[Step 6/6] Checking and syncing Index Tensors...")
+        cache_dir = config.DATA_DIR / "index_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        idx_updated = False
 
-    for target_dt in missing_dates:
-        if not is_trading_day(target_dt, check_tensor_history=False):
-            continue
-        d_str = target_dt.strftime("%d%m%Y")
-        f_name = f"index_{target_dt.strftime('%Y-%m-%d')}.csv"
-        out_f = cache_dir / f_name
-        if not out_f.exists():
-            url = f"https://archives.nseindia.com/content/indices/ind_close_all_{d_str}.csv"
-            try:
-                r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-                if r.status_code == 200 and len(r.content) > 500:
-                    out_f.write_bytes(r.content)
-                    print(f"  Downloaded index bhavcopy: {f_name}")
-                    idx_updated = True
-            except Exception as e:
-                print(f"  Warning downloading {f_name}: {e}")
+        for target_dt in [d.date() for d in staged_dates]:
+            d_str = target_dt.strftime("%d%m%Y")
+            f_name = f"index_{target_dt.strftime('%Y-%m-%d')}.csv"
+            out_f = cache_dir / f_name
+            if not out_f.exists():
+                url = f"https://archives.nseindia.com/content/indices/ind_close_all_{d_str}.csv"
+                try:
+                    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+                    if r.status_code == 200 and len(r.content) > 500:
+                        out_f.write_bytes(r.content)
+                        print(f"  Downloaded index bhavcopy: {f_name}")
+                        idx_updated = True
+                except Exception as e:
+                    print(f"  Warning downloading {f_name}: {e}")
 
-    if idx_updated:
-        print("  Rebuilding vectorized index tensors...")
-        build_index_tensors.build_index_tensors()
+        if idx_updated:
+            print("  Rebuilding vectorized index tensors...")
+            build_index_tensors.build_index_tensors()
+    else:
+        print("\n[Step 6/6] No new sessions staged. Index tensors remain aligned.")
 
     # Global Institutional Integrity Audit
-    if force_validation:
+    if force_validation and len(staged_dates) > 0:
         print("\nExecuting Global Institutional Integrity Validation...")
         validate_universe.run_institutional_validation()
 
