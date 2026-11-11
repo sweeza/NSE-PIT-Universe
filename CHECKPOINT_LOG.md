@@ -574,3 +574,22 @@
     - Updated `data/validation_report.json` timestamp reflecting verified clean status.
   - **Push Readiness**:
     - Repository clean and ready for push to `origin/main`.
+
+## [2026-11-11 20:41:00 IST] - Spot-Check Remediation, Cache Purge & Final Document Synchronization
+- **Status Summary**:
+  - **Spot-Check Issue Remediation**:
+    1. **Synchronized Session Count & Completed Status (`IMPROVEMENT_PLAN.md`)**:
+       - Aligned `IMPROVEMENT_PLAN.md` lines 6 and 41 to reflect current canonical count of `5,665 sessions` (matching line 100).
+       - Updated header and Executive Summary to completed & verified tense, explicitly recording that all 6 phases are certified and verified against 12 institutional invariants.
+    2. **Purged Orphaned Cache Bloat & Hardened `.gitignore`**:
+       - Removed orphaned `data/metadata/__pycache__/` directory containing `scratch_inspect.cpython-312.pyc`.
+       - Purged on-disk `.pytest_cache/` and root `__pycache__/` directories.
+       - Explicitly added `.pytest_cache/` to root `.gitignore` under `# Byte-compiled / optimized / cache files` (line 6), verified via `git check-ignore`.
+    3. **Runtime Special Trading Session Management Helpers**:
+       - Added and exported `register_special_trading_session` and `unregister_special_trading_session` across `exchange_calendar.py`, `nseuniverse`, and `update_universe_daily.py` for dynamic unannounced session registration.
+  - **Full Re-Verification Suite**:
+    - `python validate_universe.py`: 12/12 institutional invariant checks PASSED across 5,665 sessions $\times$ 4,446 instruments with 0 violations.
+    - `python -m pytest`: 76/76 unit and regression tests PASSED across all 6 test modules in 150.45s (100% pass rate).
+    - `data/validation_report.json` timestamp refreshed to 2026-11-11T20:35:28.001672 with verdict PASSED.
+  - **Git Push Readiness**:
+    - Repository tree clean, all spot-check defects resolved, ready to push to `origin/main`.

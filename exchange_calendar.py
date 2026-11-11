@@ -256,6 +256,28 @@ def is_special_trading_session(dt: Union[date, datetime, str, pd.Timestamp]) -> 
     return d in SPECIAL_TRADING_SESSIONS
 
 
+def register_special_trading_session(dt: Union[date, datetime, str, pd.Timestamp]) -> date:
+    """
+    Dynamically registers an unannounced or newly scheduled special trading session 
+    (e.g., ad-hoc disaster recovery testing session, special Saturday session) at runtime.
+    Updates SPECIAL_TRADING_SESSIONS, SPECIAL_WEEKEND_SESSIONS, and invalidates calendar caches.
+    """
+    d = _to_date(dt)
+    SPECIAL_TRADING_SESSIONS.add(d)
+    if d.weekday() >= 5:
+        SPECIAL_WEEKEND_SESSIONS.add(d)
+    invalidate_calendar_cache()
+    return d
+
+
+def unregister_special_trading_session(dt: Union[date, datetime, str, pd.Timestamp]) -> None:
+    """Removes a dynamically registered special trading session at runtime."""
+    d = _to_date(dt)
+    SPECIAL_TRADING_SESSIONS.discard(d)
+    SPECIAL_WEEKEND_SESSIONS.discard(d)
+    invalidate_calendar_cache()
+
+
 def is_trading_day(dt: Union[date, datetime, str, pd.Timestamp], check_tensor_history: bool = True) -> bool:
     """
     Determines if a given date is a valid NSE trading day.

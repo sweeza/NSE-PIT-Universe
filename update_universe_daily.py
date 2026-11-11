@@ -44,6 +44,8 @@ from exchange_calendar import (
     is_trading_day,
     is_trading_holiday,
     is_special_trading_session,
+    register_special_trading_session,
+    unregister_special_trading_session,
 )
 from fetch_index_reconstitution import sync_official_indices
 from download_bhavcopy_stream import fetch_nse_bhavcopy_stream
@@ -284,6 +286,8 @@ def update_universe_daily(
     target_date: Optional[Union[date, str]] = None,
     dry_run: bool = False,
     force_validation: bool = True,
+    force_target_date: bool = False,
+    special_sessions: Optional[List[Union[date, str]]] = None,
 ) -> bool:
     """
     Main self-sustaining automated daily update routine.
@@ -296,6 +300,10 @@ def update_universe_daily(
         If True, stages and validates rows in-memory without committing to disk.
     force_validation : bool, default True
         If True, runs global institutional validation suite upon completion.
+    force_target_date : bool, default False
+        If True, forces evaluation and staging attempt of target_date even if omitted by standard calendar.
+    special_sessions : list of str or date, optional
+        Ad-hoc list of special trading sessions to register dynamically for this run.
     """
     print("=" * 85)
     print("RUNNING INSTITUTIONAL MULTI-TENSOR DAILY UPDATER WITH ATOMIC PRE-COMMIT GATE")
@@ -307,6 +315,11 @@ def update_universe_daily(
         sync_official_indices()
     except Exception as e:
         print(f"  Warning during index sync: {e}")
+
+    # Register any ad-hoc special trading sessions dynamically
+    if special_sessions:
+        for s in special_sessions:
+            register_special_trading_session(s)
 
     # Step 2: Load Security Master & Current Canonical Tensors
     print("\n[Step 2/6] Inspecting Security Master & Canonical Tensors...")
@@ -331,6 +344,10 @@ def update_universe_daily(
 
     # Generate candidate missing dates via Official Exchange Calendar
     missing_dates = get_candidate_sessions(last_dt, end_dt)
+    if force_target_date and end_dt > last_dt and end_dt not in missing_dates:
+        missing_dates.append(end_dt)
+        missing_dates.sort()
+
     if not missing_dates:
         print("  [OK] Canonical tensors are already fully up to date with exchange calendar.")
     else:
@@ -345,8 +362,8 @@ def update_universe_daily(
         d_str = target_dt.strftime("%Y-%m-%d")
         print(f"\n--- Staging Session: {d_str} ---")
 
-        # Verify against exchange calendar
-        if not is_trading_day(target_dt, check_tensor_history=False):
+        # Verify against exchange calendar (allow explicit force_target_date bypass for target_dt == end_dt)
+        if not is_trading_day(target_dt, check_tensor_history=False) and not (force_target_date and target_dt == end_dt):
             print(f"  {d_str} is a non-trading exchange holiday or weekend. Skipping.")
             continue
 
