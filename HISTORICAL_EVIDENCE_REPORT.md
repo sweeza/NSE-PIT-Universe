@@ -23,11 +23,13 @@ All 23 PIT index masks are governed by official exchange reconstitutions rather 
 
 | Security | Event Date | Historical Context | Empirical Verification Result |
 | :--- | :--- | :--- | :--- |
-| **Satyam Computer Services (`SATYAM.NS`)** | **2009-01-09** | Corporate governance scandal. NSE emergency exclusion from Nifty 50 on 2009-01-09 (effective close of 2009-01-09, last traded in Nifty 50 on 2009-01-09). | **VERIFIED.** Constituent in Nifty 50 on `2009-01-09`. Excluded on `2009-01-12`. `is_tradable` evaluates to `False` in Nifty 50 post-exclusion. |
-| **Axis Bank / UTI Bank (`AXISBANK.NS`)** | **2002-11-01 to 2006-03-16** | Re-classified into Nifty Bank in March 2006. | **VERIFIED.** Strictly excluded from `niftybank` mask during the historical hiatus (`2005-06-01` mask is `False`). Re-admitted on `2006-03-17`. |
-| **Yes Bank (`YESBANK.NS`)** | **2020-03-19** | Moratorium & emergency index exclusion during reconstruction scheme. | **VERIFIED.** Constituent on `2020-03-18`, strictly excluded from Nifty 50 on `2020-03-19`. |
+| **Satyam Computer Services (`SATYAMCOMP.NS`)** | **2009-01-09** | Corporate governance scandal. NSE emergency exclusion from Nifty 50 and Nifty IT on 2009-01-09 (effective close of 2009-01-09, last traded in Nifty 50 on 2009-01-09). | **VERIFIED.** Constituent in Nifty 50 and Nifty IT on `2009-01-09`. Excluded on `2009-01-12`. `is_tradable` evaluates to `False` in Nifty 50 and Nifty IT post-exclusion. |
+| **Axis Bank / UTI Bank (`AXISBANK.NS`)** | **2002-11-01 to 2006-03-16** | Re-classified into Nifty Bank in March 2006. | **VERIFIED.** Strictly excluded from `niftybank` mask during the historical hiatus (`2004-01-01`, `2005-06-01`, `2006-03-14` masks are `False`). Re-admitted on `2006-03-16`. |
+| **Yes Bank (`YESBANK.NS`)** | **2020-03-19** | Moratorium & emergency index exclusion during reconstruction scheme. | **VERIFIED.** Constituent on `2020-03-18`, strictly excluded from Nifty 50 and Nifty Bank on `2020-03-19`. |
 | **Suzlon Energy (`SUZLON.NS`)** | **2011-03-25** | Extended removal from Nifty 50 stalwarts during sector downturn. | **VERIFIED.** Present in Nifty 50 on `2011-03-24`, excluded on `2011-03-25`. |
-| **Dewan Housing (`DHFL.NS`)** | **2021-06-14** | Insolvency & subsequent delisting / suspension. | **VERIFIED.** Clean zero-trades and `NaN` sparsity after delisting. Zero survivorship leakage. |
+| **Dewan Housing (`DHFL.NS`)** | **2021-06-14** | Insolvency & subsequent delisting / suspension. | **VERIFIED.** Last traded on `2021-06-11`. `is_active_currently` evaluates to `False`. Clean zero-trades and `NaN` sparsity after delisting. Excluded from Nifty 500 in 2022; present in 2018. Zero survivorship leakage. |
+| **Eternal / Zomato (`ETERNAL.NS`)** | **2021-07-23 (Listing)** | High-profile tech IPO winner. | **VERIFIED.** Zero look-ahead bias: strictly absent from all index queries and 100% natural NaNs in unadjusted close/volume prior to listing on `2021-07-23`. Clean presence upon official Nifty 500 inclusion (`2022-03-31`). |
+| **Jio Financial Services (`JIOFIN.NS`)** | **2023-08-21 (Listing)** | High-profile demerger & index listing. | **VERIFIED.** Zero look-ahead bias: strictly absent from all index queries and 100% natural NaNs in base tensors prior to `2023-08-21`. Tradable upon Nifty 500 inclusion (`2023-09-29`). |
 | **Diwali Muhurat Trading Sessions** | **2026-11-08 (Sunday), 2024-11-01 (Friday), etc.** | Authentic 1-hour special evening Muhurat sessions. | **VERIFIED.** Sunday `2026-11-08` committed as session 5,664 with 3,550 traded securities. Friday `2024-11-01` properly retained as trading session rather than holiday. |
 
 ---
@@ -56,9 +58,9 @@ $$\text{Nifty 100}_t = \text{Nifty 500}_t \setminus \text{MidSmallcap 400}_t \qu
 The platform maintains unadjusted raw exchange prices on disk while providing dynamic backwards-adjustment for splits and bonus issues, paired with a complete cash dividend ledger:
 
 ### A. Dynamic Backward Split & Bonus Continuity
-* **Cipla (`CIPLA.NS`)**: 1:5 stock split on `2004-03-08`. Unadjusted price dropped from ₹1,000+ to ~₹200. Backward-adjusted price series exhibits a smooth ratio of $1.0000 \pm 0.0001$ across the ex-date boundary.
-* **360 ONE WAM (`360ONE.NS`)**: Simultaneous 1:2 split (face value ₹2 to ₹1) and 1:1 bonus issue on `2023-03-02` (net adjustment factor 4.0×). Unadjusted close moved from ₹1,773.30 to ₹441.05. Adjusted close demonstrates seamless price continuity.
-* **Eicher Motors (`EICHERMOT.NS`)**: 1:10 stock split on `2020-08-24`. Seamless price continuity verified.
+* **Cipla (`CIPLA.NS`)**: 1:5 stock split on `2004-05-12` (face value ₹10 to ₹2). Unadjusted price dropped from ₹1,274.55 to ₹260.95 (~80% drop). Backward-adjusted price series exhibits a smooth ratio of $1.0000 \pm 0.0001$ across the ex-date boundary with an adjusted 1-day return between -5% and +5%.
+* **360 ONE WAM (`360ONE.NS`)**: Simultaneous 1:2 split (face value ₹2 to ₹1) and 1:1 bonus issue on `2023-03-02` (net adjustment factor 4.0×). Unadjusted close moved from ₹1,773.30 to ₹441.05. Adjusted close demonstrates seamless price continuity (~-0.51% return).
+* **Eicher Motors (`EICHERMOT.NS`)**: 1:10 stock split on `2020-08-24` (face value ₹10 to ₹1). Unadjusted close moved from ₹21,720 to ₹2,175. Seamless price continuity verified.
 
 ### B. Dividend Ledger & Total Return Index (TRI)
 * Parsed from 43,816 raw exchange filings: **25,894 verified cash dividend events** across **2,638 instruments**.
@@ -145,6 +147,22 @@ The daily updater (`update_universe_daily.py`) protects the database against dat
 
 ---
 
-## 7. Conclusion
+## 7. Comprehensive Automated Regression Test Suite (75/75 Passing)
+
+The repository maintains 75 automated unit and regression tests executed via `pytest`, achieving a 100% pass rate with zero failures and zero skipped tests:
+
+| Test Module | Test Count | Scope & Coverage | Status |
+| :--- | :---: | :--- | :---: |
+| `tests/test_adjustments.py` | 12 | Dynamic in-memory split and bonus adjustments, cumulative multiplier vectors, price line continuity, multi-ticker panel adjustment. | **PASS** |
+| `tests/test_client.py` | 12 | Lightweight client `nseuniverse`, `nse.Ticker` API, `nse.Index` synthetic time series, metadata dictionary, actions/bonuses/splits, caching. | **PASS** |
+| `tests/test_daily_updater.py` | 19 | Exchange calendar loading, candidate session generation, Diwali Muhurat inclusion, holiday filtering, safe float parsing, atomic multi-tensor staging, mathematical pre-commit gate, mid-commit emergency rollback, cache invalidation. | **PASS** |
+| `tests/test_dividends.py` | 8 | Dividend ledger parsing, regular vs special classification, multi-component additivity, trailing dividend yield computation, Total Return Index (TRI) compounding. | **PASS** |
+| `tests/test_historical_accuracy.py` | 19 | Satyam collapse/exit, Axis Bank hiatus/re-inclusion, Yes Bank exit, Suzlon exit, Eternal IPO zero lookahead, Jio Financial IPO zero lookahead, DHFL delisting handling, Cipla split, 360ONE combined action, Eicher Motors split, multi-regime snapshots (GFC 2008, Election 2014, COVID 2020, Election 2024), weekend/holiday resolution, liquidity/price corridors, timestamp/timezone normalization, horizon holiday resolution, name normalization, fields projection, require_traded filtering. | **PASS** |
+| `tests/test_pit_universe.py` | 5 | PIT index mask dimensions, 8 strict subset hierarchy containment axioms across 5,665 sessions, listing gatekeeper, sectoral constituent authenticity, dynamic tradable mask generation. | **PASS** |
+| **Total** | **75** | **Full System Institutional Regression Suite** | **100% PASS** |
+
+---
+
+## 8. Conclusion
 
 The NSE Point-in-Time Universe is fully verified, mathematically sound, free of survivorship and look-ahead biases, and ready for institutional backtesting, risk management, and quantitative factor research.

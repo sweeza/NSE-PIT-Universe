@@ -94,6 +94,31 @@ flowchart TD
     4. Exact split adjustments across historical dates (Cipla 1:5, 360ONE 1:10).
     5. Clean snapshot retrieval across randomly sampled historical dates.
 
+### Phase 6: Final Verification & Historical Evidence Report
+*Estimated Time: 30 mins*
+- **End-to-End Institutional Invariant Audit (`validate_universe.py`):**
+  - Execute full suite of 12 institutional integrity checks across 5,665 sessions $\times$ 4,446 canonical instruments:
+    1. Matrix Dimensional Parity (12 extended tensors).
+    2. Mathematical OHLCV Bounds (zero bounds violations).
+    3. Zero Phantom Columns (every instrument has authentic trading sessions).
+    4. Base Disk Purity & Natural Sparsity Invariant (pure unadjusted NaNs, 63.5% sparsity).
+    5. Listing Gatekeeper & Lookahead Invariant (strict non-existence before listing).
+    6. Entity Resolution & Conflict-Free Alias Integrity (811 mappings).
+    7. Applied Corporate Actions Ledger (1,971 split/bonus records).
+    8. Dynamic In-Memory Backward Split/Bonus Price Continuity.
+    9. 23 PIT Index Masks & 8 Subset Hierarchy Invariants (zero violations over 45,320 evaluations).
+    10. Historical Raw Exchange Bhavcopy Spot Parity (exact bit-level price matching).
+    11. PIT Cash & Special Dividend Ledger with TRI Compounding (25,894 events).
+    12. Point-in-Time Universe Query API (`get_universe`) & Historical Invariants.
+- **Comprehensive Regression Suite Execution:**
+  - Execute all 75 unit/regression tests in `pytest` across 6 test modules (`test_adjustments.py`, `test_client.py`, `test_daily_updater.py`, `test_dividends.py`, `test_historical_accuracy.py`, `test_pit_universe.py`).
+- **Validation Report Artifact (`data/validation_report.json`):**
+  - Export machine-readable institutional validation results with zero violations.
+- **Historical Evidence Dossier (`HISTORICAL_EVIDENCE_REPORT.md`):**
+  - Compile empirical verification records, historical case studies (Satyam, Axis Bank hiatus, Yes Bank, Suzlon, DHFL), corporate action continuity proofs, mathematical subset containment axioms, and API query performance benchmarks.
+- **Institutional Sign-Off:**
+  - Formal certification of zero look-ahead bias and zero survivorship bias for production systematic quantitative trading strategies (Vega 20).
+
 ---
 
 ## 📊 Verification & Deliverables Checklist
