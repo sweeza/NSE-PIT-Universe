@@ -3,19 +3,36 @@ Configuration module for Canonical All-Instrument NSE Universe ('00 Nifty Univer
 Centralizes paths, directories, asset classification rules, official indices, and schemas.
 """
 
+import os
 from pathlib import Path
 
 # Base Directories
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+
+# Data directory with environment variable override and local repository fallback
+_env_data_dir = os.environ.get("NSE_DATA_DIR")
+DATA_DIR = Path(_env_data_dir).resolve() if _env_data_dir else BASE_DIR / "data"
+
 METADATA_DIR = DATA_DIR / "metadata"
 PIT_DIR = METADATA_DIR / "pit_memberships"
 TENSOR_DIR = DATA_DIR / "tensors"
 RAW_INDICES_DIR = DATA_DIR / "raw_indices"
 
-# Shared Bhavcopy Archives (linking the 8,039 cached Bhavcopies archive from Moshi 15)
-MOSHI_DIR = Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\03 Moshi 15\02 Universe")
-MOSHI_APP_DIR = Path(r"G:\My Drive\01 Projects\10 Antigravity Playground\03 Moshi 15\01 Main App - Git Sync\N500 Universe")
+# Shared Bhavcopy Archives (linking the cached Bhavcopies archive from Moshi 15)
+# Checked via environment variable, then relative sibling repository, then local fallback
+_env_moshi_dir = os.environ.get("NSE_MOSHI_DIR")
+if _env_moshi_dir:
+    MOSHI_DIR = Path(_env_moshi_dir).resolve()
+else:
+    _sibling_moshi = BASE_DIR.parent / "03 Moshi 15" / "02 Universe"
+    MOSHI_DIR = _sibling_moshi if _sibling_moshi.exists() else DATA_DIR
+
+_env_moshi_app = os.environ.get("NSE_MOSHI_APP_DIR")
+if _env_moshi_app:
+    MOSHI_APP_DIR = Path(_env_moshi_app).resolve()
+else:
+    _sibling_moshi_app = BASE_DIR.parent / "03 Moshi 15" / "01 Main App - Git Sync" / "N500 Universe"
+    MOSHI_APP_DIR = _sibling_moshi_app if _sibling_moshi_app.exists() else DATA_DIR
 
 BHAVCOPY_DIRS = [
     MOSHI_DIR / "Output" / "bhavcopy_cache",
@@ -54,7 +71,27 @@ SOURCE_METADATA_DIR = (
 
 # Canonical Output Files
 SECURITY_MASTER_FILE = METADATA_DIR / "security_master.parquet"
-CORPORATE_ACTIONS_FILE = METADATA_DIR / "corporate_actions.parquet"
+
+# Corporate actions file resolution:
+# Maps canonical CORPORATE_ACTIONS_FILE to applied_corporate_actions.parquet (with backwards fallback)
+APPLIED_CORPORATE_ACTIONS_FILE = METADATA_DIR / "applied_corporate_actions.parquet"
+CORPORATE_ACTIONS_FILE = (
+    APPLIED_CORPORATE_ACTIONS_FILE
+    if APPLIED_CORPORATE_ACTIONS_FILE.exists()
+    else METADATA_DIR / "corporate_actions.parquet"
+)
+
+# Comprehensive Point-in-Time Dividend Ledger (Phase 3)
+DIVIDENDS_FILE = METADATA_DIR / "dividends.parquet"
+RAW_CORPORATE_ACTIONS_FILE = (
+    METADATA_DIR / "raw_corporate_actions_1995_2026.json"
+    if (METADATA_DIR / "raw_corporate_actions_1995_2026.json").exists()
+    else MOSHI_DIR / "Output" / "raw_corporate_actions_1995_2026.json"
+)
+
+# Official Exchange Holiday Calendar (Phase 4)
+HOLIDAYS_FILE = METADATA_DIR / "holidays.parquet"
+
 SYMBOL_CHANGE_FILE = METADATA_DIR / "symbolchange.csv"
 INDEX_REBALANCING_FILE = METADATA_DIR / "index_rebalancing_events.parquet"
 VALIDATION_REPORT_FILE = DATA_DIR / "validation_report.json"

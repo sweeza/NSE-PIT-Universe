@@ -96,6 +96,50 @@ class TestNseUniverseClient(unittest.TestCase):
         self.assertIn("close", panel)
         self.assertIn("HDFCBANK.NS", panel["close"].columns)
 
+    def test_sec_id_lookup_and_metadata(self):
+        """Test persistent sec_id lookup, first/last traded dates, and listing date backfill."""
+        tcs = nse.Ticker("TCS")
+        self.assertTrue(tcs.sec_id.startswith("NSE"))
+        self.assertEqual(len(tcs.sec_id), 7)
+        self.assertIsNotNone(tcs.first_traded_date)
+        self.assertIsNotNone(tcs.last_traded_date)
+        self.assertEqual(tcs.first_traded_date, "2004-08-25")
+        
+        # Test reverse lookup by sec_id
+        t_by_sec_id = nse.Ticker(tcs.sec_id)
+        self.assertEqual(t_by_sec_id.ticker, "TCS.NS")
+        self.assertEqual(t_by_sec_id.symbol, "TCS")
+
+    def test_sme_and_etf_active_flags(self):
+        """Test active flags on recently traded SME scrips and ETFs."""
+        bees = nse.Ticker("NIFTYBEES")
+        self.assertEqual(bees.info["asset_class"], "ETF")
+        self.assertTrue(bees.is_active)
+
+        aakaar = nse.Ticker("AAKAAR")
+        self.assertEqual(aakaar.info["asset_class"], "SME")
+        self.assertTrue(aakaar.is_active)
+
+    def test_security_master_phase1_invariants(self):
+        """Test that security master has 0 missing listing dates and exactly 4,446 unique sec_ids."""
+        import nseuniverse_io as nio
+        sm = nio.get_security_master(reload=True)
+        self.assertEqual(len(sm), 4446)
+        self.assertEqual(sm["listing_date"].isna().sum(), 0)
+        self.assertEqual(sm["first_traded_date"].isna().sum(), 0)
+        self.assertEqual(sm["last_traded_date"].isna().sum(), 0)
+        self.assertEqual(sm["sec_id"].nunique(), 4446)
+        self.assertEqual(sm["sec_id"].iloc[0], "NSE0001")
+        self.assertEqual(sm["sec_id"].iloc[-1], "NSE4446")
+
+    def test_config_paths_and_portability(self):
+        """Verify config paths resolve cleanly without broken corporate actions or missing data dirs."""
+        import config
+        self.assertTrue(config.DATA_DIR.exists())
+        self.assertTrue(config.SECURITY_MASTER_FILE.exists())
+        self.assertTrue(config.CORPORATE_ACTIONS_FILE.exists())
+        self.assertEqual(config.CORPORATE_ACTIONS_FILE.name, "applied_corporate_actions.parquet")
+
 
 if __name__ == "__main__":
     unittest.main()

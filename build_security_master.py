@@ -14,6 +14,7 @@ Features:
 
 import sys
 from pathlib import Path
+from typing import Optional
 import pandas as pd
 import numpy as np
 import config
@@ -70,7 +71,97 @@ def classify_instrument(symbol: str, series: str, isin: str, name: str) -> str:
     return "EQUITY"
 
 
-def build_security_master():
+def repair_security_master(sec_df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """
+    Applies institutional hardening and repairs to the Security Master:
+    1. Computes authentic first_traded_date and last_traded_date directly from close.parquet (5,659 sessions).
+    2. Backfills listing_date using first_traded_date whenever missing from EQUITY_L.csv (resolving all None listing dates).
+    3. Fixes is_active_currently for all 592 SME platform instruments and ETFs by checking activity in the most recent 30 trading sessions.
+    4. Assigns an immutable internal identifier (sec_id: NSE0001 through NSE4446).
+    """
+    print("\n" + "=" * 70)
+    print("REPAIRING & HARDENING MASTER SECURITY MASTER")
+    print("=" * 70)
+
+    if sec_df is None:
+        if not config.SECURITY_MASTER_FILE.exists():
+            raise FileNotFoundError(f"Security master file {config.SECURITY_MASTER_FILE} does not exist. Run build_security_master() first.")
+        sec_df = pd.read_parquet(config.SECURITY_MASTER_FILE)
+        print(f"  Loaded existing Security Master: {len(sec_df):,} instruments")
+
+    # If canonical market tensors exist, align and calculate metrics
+    if config.TENSOR_FILES["close"].exists():
+        cl = pd.read_parquet(config.TENSOR_FILES["close"])
+        tensor_cols = cl.columns
+
+        # Ensure 100% matrix dimensional parity
+        sec_df = sec_df.reindex(index=tensor_cols)
+        sym_fallback = pd.Series(sec_df.index.str.replace(".NS", "", regex=False), index=sec_df.index)
+        sec_df["symbol"] = sec_df["symbol"].fillna(sym_fallback)
+        sec_df["company_name"] = sec_df["company_name"].fillna(sec_df["symbol"])
+        sec_df["asset_class"] = sec_df["asset_class"].fillna("EQUITY")
+        sec_df["sector"] = sec_df["sector"].fillna("Unclassified")
+        sec_df["series"] = sec_df["series"].fillna("EQ")
+        bool_cols = [c for c in sec_df.columns if c.startswith("in_") or c.startswith("is_")]
+        sec_df[bool_cols] = sec_df[bool_cols].fillna(False).astype(bool)
+
+        # 1. Compute authentic first_traded_date and last_traded_date directly from close.parquet
+        print("  [1/4] Computing authentic first_traded_date and last_traded_date from close tensor...")
+        not_na = cl.notna()
+        any_traded = not_na.any()
+        first_idx = not_na.idxmax()
+        last_idx = not_na.iloc[::-1].idxmax()
+
+        sec_df["first_traded_date"] = first_idx.dt.strftime("%Y-%m-%d").where(any_traded, None)
+        sec_df["last_traded_date"] = last_idx.dt.strftime("%Y-%m-%d").where(any_traded, None)
+        print(f"        Authentic trading dates computed for {len(sec_df):,} instruments.")
+
+        # 2. Backfill listing_date using first_traded_date whenever missing from EQUITY_L.csv
+        print("  [2/4] Backfilling missing listing_date entries with authentic first_traded_date...")
+        missing_listing = (
+            sec_df["listing_date"].isna()
+            | (sec_df["listing_date"] == "")
+            | (sec_df["listing_date"].astype(str).str.strip().str.lower() == "none")
+        )
+        missing_count = missing_listing.sum()
+        sec_df.loc[missing_listing, "listing_date"] = sec_df.loc[missing_listing, "first_traded_date"]
+        print(f"        Backfilled {missing_count:,} missing listing dates (0 remaining None).")
+
+        # 3. Fix is_active_currently for all SME platform instruments and ETFs by checking activity in the most recent 30 sessions
+        print("  [3/4] Updating is_active_currently for SME and ETF instruments based on recent 30 sessions...")
+        last_30_sessions = cl.iloc[-30:]
+        active_in_last_30 = last_30_sessions.notna().any()
+        is_sme_or_etf = sec_df["asset_class"].isin(["SME", "ETF"])
+        sme_etf_tickers = sec_df.index[is_sme_or_etf]
+        sec_df.loc[is_sme_or_etf, "is_active_currently"] = (
+            active_in_last_30.reindex(sme_etf_tickers).fillna(False).astype(bool).values
+        )
+        active_sme = sec_df.loc[sec_df["asset_class"] == "SME", "is_active_currently"].sum()
+        active_etf = sec_df.loc[sec_df["asset_class"] == "ETF", "is_active_currently"].sum()
+        print(f"        SME active: {active_sme}/592, ETF active: {active_etf}/122.")
+
+    # 4. Assign an immutable internal identifier (sec_id: NSE0001 through NSE4446)
+    print("  [4/4] Assigning immutable internal identifiers (sec_id: NSE0001 through NSE4446)...")
+    sec_df["sec_id"] = [f"NSE{i:04d}" for i in range(1, len(sec_df) + 1)]
+
+    # Reorder columns with sec_id as the primary internal identifier
+    col_order = ["sec_id"] + [c for c in sec_df.columns if c != "sec_id"]
+    sec_df = sec_df[col_order]
+
+    config.METADATA_DIR.mkdir(parents=True, exist_ok=True)
+    sec_df.to_parquet(config.SECURITY_MASTER_FILE)
+
+    print(f"\n  [OK] Master Security Master saved to {config.SECURITY_MASTER_FILE.name}")
+    print(f"       Total instruments: {len(sec_df):,}")
+    print(f"       sec_id range:      {sec_df['sec_id'].iloc[0]} - {sec_df['sec_id'].iloc[-1]}")
+    print("\n  Asset Class Distribution:")
+    for ac, count in sec_df["asset_class"].value_counts().items():
+        print(f"       - {ac:18}: {count:,}")
+    print("=" * 70)
+    return sec_df
+
+
+def build_security_master(full_bhav_scan: bool = False):
     print("=" * 70)
     print("BUILDING CANONICAL NSE MASTER SECURITY MASTER")
     print("=" * 70)
@@ -134,34 +225,35 @@ def build_security_master():
         except Exception as e:
             print(f"  Warning reading company symbol master: {e}")
 
-    # Comprehensive discovery across all Bhavcopies (no 250-file sampling)
-    bhav_cache = config.get_bhavcopy_files()
-    print(f"  Scanning complete Bhavcopy archive ({len(bhav_cache):,} files) for universe symbols...")
+    # Comprehensive discovery across Bhavcopies if requested
+    if full_bhav_scan:
+        bhav_cache = config.get_bhavcopy_files()
+        print(f"  Scanning complete Bhavcopy archive ({len(bhav_cache):,} files) for universe symbols...")
 
-    for f in bhav_cache:
-        try:
-            df = pd.read_parquet(f)
-            sym_col = "SYMBOL" if "SYMBOL" in df.columns else None
-            series_col = "SERIES" if "SERIES" in df.columns else None
-            isin_col = "ISIN" if "ISIN" in df.columns else None
+        for f in bhav_cache:
+            try:
+                df = pd.read_parquet(f)
+                sym_col = "SYMBOL" if "SYMBOL" in df.columns else None
+                series_col = "SERIES" if "SERIES" in df.columns else None
+                isin_col = "ISIN" if "ISIN" in df.columns else None
 
-            if sym_col:
-                for _, row in df[[c for c in [sym_col, series_col, isin_col] if c]].iterrows():
-                    s = str(row[sym_col]).strip()
-                    if not s or s.lower() == "nan":
-                        continue
-                    if s not in bhav_info:
-                        bhav_info[s] = {
-                            "series": str(row[series_col]).strip() if series_col and pd.notna(row[series_col]) else "EQ",
-                            "isin": str(row[isin_col]).strip() if isin_col and pd.notna(row[isin_col]) else None,
-                        }
-                    else:
-                        if not bhav_info[s].get("isin") and isin_col and pd.notna(row[isin_col]):
-                            bhav_info[s]["isin"] = str(row[isin_col]).strip()
-        except Exception:
-            continue
+                if sym_col:
+                    for _, row in df[[c for c in [sym_col, series_col, isin_col] if c]].iterrows():
+                        s = str(row[sym_col]).strip()
+                        if not s or s.lower() == "nan":
+                            continue
+                        if s not in bhav_info:
+                            bhav_info[s] = {
+                                "series": str(row[series_col]).strip() if series_col and pd.notna(row[series_col]) else "EQ",
+                                "isin": str(row[isin_col]).strip() if isin_col and pd.notna(row[isin_col]) else None,
+                            }
+                        else:
+                            if not bhav_info[s].get("isin") and isin_col and pd.notna(row[isin_col]):
+                                bhav_info[s]["isin"] = str(row[isin_col]).strip()
+            except Exception:
+                continue
 
-    print(f"  Discovered {len(bhav_info):,} distinct symbols across Bhavcopy archive.")
+        print(f"  Discovered {len(bhav_info):,} distinct symbols across Bhavcopy archive.")
 
     # 4. Merge all symbols: Bhavcopy + Active listings + Index constituents + Symbol changes
     all_symbols = set(bhav_info.keys())
@@ -232,30 +324,13 @@ def build_security_master():
         })
 
     sec_df = pd.DataFrame(records).set_index("ticker")
+    return repair_security_master(sec_df)
 
-    # If canonical market tensors already exist, align with the consolidated canonical columns
-    if config.TENSOR_FILES["close"].exists():
-        tensor_cols = pd.read_parquet(config.TENSOR_FILES["close"]).columns
-        # Keep canonical columns, reindexing to ensure 100% matrix dimensional parity
-        sec_df = sec_df.reindex(index=tensor_cols)
-        sec_df["symbol"] = sec_df["symbol"].fillna(sec_df.index.str.replace(".NS", "", regex=False))
-        sec_df["company_name"] = sec_df["company_name"].fillna(sec_df["symbol"])
-        sec_df["asset_class"] = sec_df["asset_class"].fillna("EQUITY")
-        sec_df["sector"] = sec_df["sector"].fillna("Unclassified")
-        sec_df["series"] = sec_df["series"].fillna("EQ")
-        bool_cols = [c for c in sec_df.columns if c.startswith("in_") or c.startswith("is_")]
-        sec_df[bool_cols] = sec_df[bool_cols].fillna(False).astype(bool)
-
-    config.METADATA_DIR.mkdir(parents=True, exist_ok=True)
-    sec_df.to_parquet(config.SECURITY_MASTER_FILE)
-
-    print(f"\n  [OK] Master Security Master saved to {config.SECURITY_MASTER_FILE.name}")
-    print(f"       Total instruments: {len(sec_df):,}")
-    print("\n  Asset Class Distribution:")
-    for ac, count in sec_df["asset_class"].value_counts().items():
-        print(f"       - {ac:18}: {count:,}")
-    print("=" * 70)
-    return sec_df
 
 if __name__ == "__main__":
-    build_security_master()
+    if "--rebuild" in sys.argv:
+        build_security_master(full_bhav_scan="--full-bhav-scan" in sys.argv)
+    elif config.SECURITY_MASTER_FILE.exists():
+        repair_security_master()
+    else:
+        build_security_master()

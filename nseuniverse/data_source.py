@@ -106,6 +106,14 @@ def get_corporate_actions_path() -> Path:
     return resolve_file("metadata/applied_corporate_actions.parquet")
 
 
+def get_dividends_path() -> Path:
+    return resolve_file("metadata/dividends.parquet")
+
+
+def get_holidays_path() -> Path:
+    return resolve_file("metadata/holidays.parquet")
+
+
 def get_tensor_path(name: str) -> Path:
     name_clean = name.lower().strip()
     return resolve_file(f"tensors/{name_clean}.parquet")
@@ -114,3 +122,4 @@ def get_tensor_path(name: str) -> Path:
 def get_index_path(index_name: str) -> Path:
     name_clean = index_name.lower().strip()
     return resolve_file(f"metadata/pit_memberships/{name_clean}.parquet")
+

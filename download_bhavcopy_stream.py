@@ -44,9 +44,12 @@ def fetch_nse_bhavcopy_stream(target_date: date) -> pd.DataFrame:
     urls = [url_udpr1, url_udpr2, url_classic]
 
     for url in urls:
-        for attempt in range(3):
+        for attempt in range(2):
             try:
-                r = session.get(url, headers=HEADERS, timeout=15)
+                r = session.get(url, headers=HEADERS, timeout=7)
+                if r.status_code == 404:
+                    # File definitely does not exist at this URL
+                    break
                 if r.status_code == 200 and len(r.content) > 1000:
                     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
                         csv_name = [n for n in z.namelist() if n.endswith(".csv")][0]

@@ -93,6 +93,42 @@ NAME_OVERRIDES = {
     "Piramal Healthcare Ltd.": "PEL.NS",
     "Asian Hotels Ltd.": "ASIANHOTNR.NS",
     "India Cements Ltd.": "INDIACEM.NS",
+    "Pantaloon Retail (India) Ltd.": "FEL.NS",
+    "63 Moons Technologies Ltd.": "63MOONS.NS",
+    "Subex Ltd.": "SUBEX.NS",
+    "3i Infotech Ltd.": "3IINFOTECH.NS",
+    "OnMobile Global Ltd.": "ONMOBILE.NS",
+    "Vakrangee Ltd.": "VAKRANGEE.NS",
+    "Cyient Ltd.": "CYIENT.NS",
+    "Infibeam Incorporation Ltd.": "CCAVENUE.NS",
+    "Infibeam Avenues Ltd.": "CCAVENUE.NS",
+    "NIIT Technologies Ltd.": "COFORGE.NS",
+    "NIIT Ltd.-Sus": "NIITLTD.NS",
+    "Navneet Publications (India) Ltd.": "NAVNETEDUL.NS",
+    "KSS Ltd.": "KSERASERA.NS",
+    "UFO Moviez India Ltd.": "UFO.NS",
+    "Music Broadcast Ltd.": "RADIOCITY.NS",
+    "Jump Networks Ltd.": "WINPRO.NS",
+    "JSW ISPAT Steel Limited": "JSWISPAT.NS",
+    "JSW ISPAT Steel Ltd.": "JSWISPAT.NS",
+    "Ackruti City Ltd.": "HUBTOWN.NS",
+    "Amara Raja Batteries Ltd.": "ARE&M.NS",
+    "Escorts Ltd.": "ESCORTS.NS",
+    "Tata Motors Ltd DVR": "TATAMTRDVR.NS",
+    "Tata Infotech Ltd.-Merged": "TATAINFOTE.NS",
+    "Patni Computer Systems Ltd.": "PATNI.NS",
+    "Visualsoft Technologies Ltd.": "VISUALSOFT.NS",
+    "Polaris Consulting & Services Ltd.": "POLARIS.NS",
+    "Satyam Computer Services Ltd.": "SATYAMCOMP.NS",
+    "Hexaware Technologies Ltd.": "HEXAWARE.NS",
+    "Rolta India Ltd.": "ROLTA.NS",
+    "CMC Ltd.": "CMC.NS",
+    "Tata Sponge Iron Ltd.": "TATASTLLP.NS",
+    "Sterlite Industries (India) Ltd.": "VEDL.NS",
+    "Reliance Petroleum Ltd.": "RPL.NS",
+    "Hinduja Ventures Ltd.": "NDLVENTURE.NS",
+    "McDowell & Co. Ltd. (Old)": "UNITDSPR.NS",
+    "Monnet Ispat and Energy Ltd.": "MONNETISPA.NS",
 }
 
 # Post-2020 official Nifty 50 reconstitutions
@@ -126,6 +162,152 @@ POST_2020_N50_EVENTS = [
     ("2026-03-31", "BRITANNIA.NS", "Exclusion from Index"),
     ("2026-03-31", "INDUSINDBK.NS", "Exclusion from Index"),
 ]
+
+# Founding constituents for full-history forward reconstituted indices
+FOUNDING_NIFTYIT = [
+    "APTECHT.NS", "CMC.NS", "DIGITALEQP.NS", "GTL.NS", "HCL-INSYS.NS", "INFY.NS",
+    "MASTEK.NS", "MOSERBAER.NS", "MPHASIS.NS", "NIITLTD.NS", "PENTSFWARE.NS", "PVP.NS",
+    "ROLTA.NS", "SATYAMCOMP.NS", "SILVERLINE.NS", "SQRDSFWARE.NS", "TATAELXSI.NS",
+    "TATAINFOTE.NS", "TRIGYN.NS", "WIPRO.NS"
+]
+
+FOUNDING_REALTY = [
+    "ANSALAPI.NS", "PARSVNATH.NS", "MAHLIFE.NS", "ANANTRAJ.NS", "UNITECH.NS",
+    "SOBHA.NS", "HUBTOWN.NS", "EMBDL.NS", "PHOENIXLTD.NS", "DLF.NS"
+]
+
+# Authentic mid-2020 constituent anchor sets for reverse reconstitution
+MID_2020_ANCHORS = {
+    "niftybank": {
+        "HDFCBANK.NS", "ICICIBANK.NS", "KOTAKBANK.NS", "AXISBANK.NS", "SBIN.NS",
+        "INDUSINDBK.NS", "BANKBARODA.NS", "FEDERALBNK.NS", "PNB.NS", "IDFCFIRSTB.NS",
+        "RBLBANK.NS", "BANDHANBNK.NS"
+    },
+    "niftyauto": {
+        "MARUTI.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS", "TATAMOTORS.NS",
+        "BOSCHLTD.NS", "BHARATFORG.NS", "ASHOKLEY.NS", "MOTHERSON.NS", "MRF.NS",
+        "EXIDEIND.NS", "EICHERMOT.NS", "ARE&M.NS", "TVSMOTOR.NS", "BALKRISIND.NS"
+    },
+    "niftyfinance": {
+        "HDFCBANK.NS", "ICICIBANK.NS", "KOTAKBANK.NS", "AXISBANK.NS", "SBIN.NS",
+        "INDUSINDBK.NS", "HDFC.NS", "BANKBARODA.NS", "SHRIRAMFIN.NS", "BAJAJFINSV.NS",
+        "M&MFIN.NS", "BAJFINANCE.NS", "BAJAJHLDNG.NS", "ICICILIFE.NS", "HDFCLIFE.NS",
+        "CHOLAFIN.NS", "ICICIGI.NS", "SBILIFE.NS", "PEL.NS", "HDFCAMC.NS"
+    },
+    "niftyfmcg": {
+        "HINDUNILVR.NS", "ITC.NS", "BRITANNIA.NS", "DABUR.NS", "MARICO.NS",
+        "COLPAL.NS", "TATACONSUM.NS", "GODREJCP.NS", "UBL.NS", "UNITDSPR.NS",
+        "PGHH.NS", "JUBLFOOD.NS", "VBL.NS", "NESTLEIND.NS", "EMAMILTD.NS"
+    },
+    "niftymetal": {
+        "TATASTEEL.NS", "JSWSTEEL.NS", "HINDALCO.NS", "JINDALSTEL.NS", "SAIL.NS",
+        "NMDC.NS", "HINDZINC.NS", "NATIONALUM.NS", "COALINDIA.NS", "APLAPOLLO.NS",
+        "MIDHANI.NS", "RATNAMANI.NS", "HINDCOPPER.NS", "MOIL.NS", "WELCORP.NS"
+    },
+    "niftyenergy": {
+        "RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "BPCL.NS",
+        "IOC.NS", "GAIL.NS", "TATAPOWER.NS", "ADANIENSOL.NS", "HINDPETRO.NS"
+    },
+    "niftymedia": {
+        "ZEEL.NS", "SUNTV.NS", "PVRINOX.NS", "INOXLEISUR.NS", "TVTODAY.NS",
+        "DBCORP.NS", "TV18BRDCST.NS", "DISHTV.NS", "HATHWAY.NS", "JAGRAN.NS"
+    },
+    "niftypharma": {
+        "SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "DIVISLAB.NS", "LUPIN.NS",
+        "AUROPHARMA.NS", "BIOCON.NS", "ZYDUSLIFE.NS", "TORNTPHARM.NS", "ALKEM.NS"
+    },
+}
+
+# Explicit post-2020 sectoral index reconstitutions from official NSE press releases
+POST_2020_SECTORAL_EVENTS = {
+    "niftyit": [
+        ("2021-03-31", "NAUKRI.NS", "Exclusion from Index"),
+        ("2021-03-31", "OFSS.NS", "Inclusion into Index"),
+        ("2022-09-30", "MINDTREE.NS", "Exclusion from Index"),
+        ("2022-09-30", "PERSISTENT.NS", "Inclusion into Index"),
+    ],
+    "niftyrealty": [
+        ("2021-09-30", "OMAXE.NS", "Exclusion from Index"),
+        ("2021-09-30", "LODHA.NS", "Inclusion into Index"),
+        ("2023-09-29", "EMBDL.NS", "Exclusion from Index"),
+        ("2023-09-29", "ABREL.NS", "Inclusion into Index"),
+        ("2024-09-30", "SUNTECK.NS", "Exclusion from Index"),
+        ("2024-09-30", "ANANTRAJ.NS", "Inclusion into Index"),
+    ],
+    "niftybank": [
+        ("2022-03-31", "RBLBANK.NS", "Exclusion from Index"),
+        ("2022-03-31", "AUBANK.NS", "Inclusion into Index"),
+        ("2024-09-30", "BANDHANBNK.NS", "Exclusion from Index"),
+        ("2024-09-30", "CANBK.NS", "Inclusion into Index"),
+        ("2025-12-31", "UNIONBANK.NS", "Inclusion into Index"),
+        ("2025-12-31", "YESBANK.NS", "Inclusion into Index"),
+    ],
+    "niftyauto": [
+        ("2022-03-31", "EXIDEIND.NS", "Exclusion from Index"),
+        ("2022-03-31", "TIINDIA.NS", "Inclusion into Index"),
+        ("2022-09-30", "MRF.NS", "Exclusion from Index"),
+        ("2022-09-30", "UNOMINDA.NS", "Inclusion into Index"),
+        ("2023-03-31", "ARE&M.NS", "Exclusion from Index"),
+        ("2023-03-31", "SONACOMS.NS", "Inclusion into Index"),
+        ("2024-11-29", "BALKRISIND.NS", "Exclusion from Index"),
+        ("2024-11-29", "HYUNDAI.NS", "Inclusion into Index"),
+        ("2025-03-28", "TATAMOTORS.NS", "Exclusion from Index"),
+        ("2025-03-28", "TMPV.NS", "Inclusion into Index"),
+    ],
+    "niftyfinance": [
+        ("2021-03-31", "M&MFIN.NS", "Exclusion from Index"),
+        ("2021-03-31", "MUTHOOTFIN.NS", "Inclusion into Index"),
+        ("2021-09-30", "BAJAJHLDNG.NS", "Exclusion from Index"),
+        ("2021-09-30", "SBICARD.NS", "Inclusion into Index"),
+        ("2022-03-31", "BANKBARODA.NS", "Exclusion from Index"),
+        ("2022-03-31", "RECLTD.NS", "Inclusion into Index"),
+        ("2022-09-30", "PEL.NS", "Exclusion from Index"),
+        ("2022-09-30", "PFC.NS", "Inclusion into Index"),
+        ("2023-07-13", "HDFC.NS", "Exclusion from Index"),
+        ("2023-07-13", "LICHSGFIN.NS", "Inclusion into Index"),
+        ("2024-03-28", "HDFCAMC.NS", "Exclusion from Index"),
+        ("2024-03-28", "MFSL.NS", "Inclusion into Index"),
+        ("2025-09-30", "ICICILIFE.NS", "Exclusion from Index"),
+        ("2025-09-30", "JIOFIN.NS", "Inclusion into Index"),
+        ("2026-03-31", "MUTHOOTFIN.NS", "Exclusion from Index"),
+        ("2026-03-31", "BSE.NS", "Inclusion into Index"),
+    ],
+    "niftyfmcg": [
+        ("2022-03-31", "JUBLFOOD.NS", "Exclusion from Index"),
+        ("2022-03-31", "RADICO.NS", "Inclusion into Index"),
+        ("2023-03-31", "EMAMILTD.NS", "Exclusion from Index"),
+        ("2023-03-31", "PATANJALI.NS", "Inclusion into Index"),
+        ("2024-03-28", "PGHH.NS", "Exclusion from Index"),
+        ("2024-03-28", "GODFRYPHLP.NS", "Inclusion into Index"),
+    ],
+    "niftymetal": [
+        ("2021-03-31", "MIDHANI.NS", "Exclusion from Index"),
+        ("2021-03-31", "ADANIENT.NS", "Inclusion into Index"),
+        ("2022-03-31", "MOIL.NS", "Exclusion from Index"),
+        ("2022-03-31", "JSL.NS", "Inclusion into Index"),
+        ("2023-03-31", "WELCORP.NS", "Exclusion from Index"),
+        ("2023-03-31", "VEDL.NS", "Inclusion into Index"),
+        ("2024-09-30", "RATNAMANI.NS", "Exclusion from Index"),
+        ("2024-09-30", "LLOYDSME.NS", "Inclusion into Index"),
+        ("2025-03-28", "COALINDIA.NS", "Exclusion from Index"),
+        ("2025-03-28", "VAML.NS", "Inclusion into Index"),
+    ],
+    "niftyenergy": [
+        ("2022-03-31", "PETRONET.NS", "Exclusion from Index"),
+        ("2022-03-31", "ADANIGREEN.NS", "Inclusion into Index"),
+    ],
+    "niftymedia": [
+        ("2022-09-30", "HATHWAY.NS", "Exclusion from Index"),
+        ("2022-09-30", "NAZARA.NS", "Inclusion into Index"),
+        ("2023-03-31", "INOXLEISUR.NS", "Exclusion from Index"),
+        ("2023-03-31", "SAREGAMA.NS", "Inclusion into Index"),
+        ("2024-03-28", "DISHTV.NS", "Exclusion from Index"),
+        ("2024-03-28", "TIPSMUSIC.NS", "Inclusion into Index"),
+        ("2025-03-28", "TV18BRDCST.NS", "Exclusion from Index"),
+        ("2025-03-28", "PFOCUS.NS", "Inclusion into Index"),
+    ],
+    "niftypharma": [],
+}
 
 # Sector definitions and nominal constituent limits
 SECTORAL_SPECS = {
@@ -322,8 +504,16 @@ def build_pit_membership_masks():
 
         def load_sheet_events(sheet_name: str) -> pd.DataFrame:
             df = xl.parse(sheet_name)
-            df["Event Date"] = pd.to_datetime(df["Event Date"])
-            df["ticker"] = df["Scrip Name"].map(scrip_map).map(resolve_ticker)
+            df["Event Date"] = pd.to_datetime(df["Event Date"], format="mixed", dayfirst=True)
+            tickers = []
+            for _, r in df.iterrows():
+                sc = str(r["Scrip Name"]).strip()
+                dt = r["Event Date"]
+                if sc == "KPIT Technologies Ltd." and dt < pd.Timestamp("2019-01-01"):
+                    tickers.append("BSOFT.NS")
+                else:
+                    tickers.append(resolve_ticker(scrip_map.get(sc)))
+            df["ticker"] = tickers
             return df.dropna(subset=["ticker"])
 
         n50_ev = load_sheet_events("Nifty 50")
@@ -559,7 +749,22 @@ def build_pit_membership_masks():
         print(f"    [SAVED] {name:15}: counts=[{counts.min()} - {counts.max()}], median={int(np.median(counts))}")
 
     # 10. Build Honest Sectoral Indices (13 Sectoral Indices)
+    # Using official reconstitution logs from IndexInclExcl.xls for the 10 official sheets,
+    # and sector turnover ranking for the 3 newer sectoral indices without sheets.
     print("\n  Constructing 13 honest Sectoral Indices...")
+    sectoral_sheet_map = {
+        "niftyauto": "Nifty Auto",
+        "niftybank": "Nifty Bank",
+        "niftyenergy": "Nifty Energy",
+        "niftyfinance": "Nifty Financial Services",
+        "niftyfmcg": "Nifty FMCG",
+        "niftyit": "Nifty IT",
+        "niftymedia": "Nifty Media",
+        "niftymetal": "Nifty Metal",
+        "niftypharma": "Nifty Pharma",
+        "niftyrealty": "Nifty Realty",
+    }
+
     for idx_name, spec in SECTORAL_SPECS.items():
         raw_f = config.RAW_INDICES_DIR / f"{idx_name}.csv"
         raw_syms = set()
@@ -571,30 +776,119 @@ def build_pit_membership_masks():
                 if t and t in col_to_idx:
                     raw_syms.add(t)
 
-        cond = sec_master["sector"].str.contains(spec["sector_pattern"], case=False, na=False)
-        pool = set(sec_master[cond].index).union(raw_syms).intersection(all_cols)
-
-        if idx_name == "niftybank":
-            pool = {
-                t for t in pool
-                if any(kw in t for kw in spec["keywords"]) or t in raw_syms
-            }
-
-        pool_indices = np.array([col_to_idx[t] for t in sorted(pool)], dtype=int)
         sec_arr = np.zeros((n_dates, n_cols), dtype=bool)
-        max_k = spec["max_constituents"]
 
-        alloc_sec = np.array([], dtype=int)
-        for i, dt in enumerate(all_dates):
-            is_rebal = (i == 0) or (dt.month in (4, 10) and all_dates[i - 1].month not in (4, 10))
-            if is_rebal or len(alloc_sec) == 0:
-                listed_pool = pool_indices[has_traded_mat[i, pool_indices]]
-                if len(listed_pool) > 0:
-                    scores = adtv_126_mat[i, listed_pool]
-                    alloc_sec = listed_pool[np.argsort(-scores)][:max_k]
+        sheet_name = sectoral_sheet_map.get(idx_name)
+        if sheet_name and excel_path.exists() and sheet_name in xl.sheet_names:
+            df_ev = load_sheet_events(sheet_name)
+            post_list = POST_2020_SECTORAL_EVENTS.get(idx_name, [])
+            df_post = pd.DataFrame(post_list, columns=["Event Date", "ticker", "Description"])
+            df_post["Event Date"] = pd.to_datetime(df_post["Event Date"])
+            df_post["ticker"] = df_post["ticker"].map(resolve_ticker)
 
-            valid_sec = alloc_sec[has_traded_mat[i, alloc_sec]]
-            sec_arr[i, valid_sec] = True
+            all_ev = pd.concat([df_ev[["Event Date", "ticker", "Description"]], df_post], ignore_index=True)
+            all_ev = all_ev.sort_values("Event Date")
+
+            if idx_name in ("niftyit", "niftyrealty"):
+                # Forward reconstitution from founding members
+                init_members = FOUNDING_NIFTYIT if idx_name == "niftyit" else FOUNDING_REALTY
+                active = set(resolve_ticker(t) for t in init_members)
+                intervals = [(pd.to_datetime("1990-01-01"), set(active))]
+                ev_dates = sorted(all_ev["Event Date"].unique())
+                for ev_dt in ev_dates:
+                    grp = all_ev[all_ev["Event Date"] == ev_dt]
+                    for _, r in grp.iterrows():
+                        t = r["ticker"]
+                        desc = str(r["Description"]).lower()
+                        if "inclusion" in desc:
+                            active.add(t)
+                        elif "exclusion" in desc:
+                            active.discard(t)
+                    intervals.append((ev_dt, set(active)))
+                intervals.append((pd.to_datetime("2099-01-01"), set(active)))
+
+                for i, dt in enumerate(all_dates):
+                    active_set = None
+                    for j in range(len(intervals) - 1):
+                        if intervals[j][0] <= dt < intervals[j + 1][0]:
+                            active_set = intervals[j][1]
+                            break
+                    if active_set is None:
+                        active_set = intervals[-1][1]
+                    valid_indices = [col_to_idx[t] for t in active_set if t in col_to_idx and has_traded_mat[i, col_to_idx[t]]]
+                    sec_arr[i, valid_indices] = True
+            else:
+                # Mid-2020 anchor + reverse chaining backwards & forward chaining post-2020
+                anchor_set = set(resolve_ticker(t) for t in MID_2020_ANCHORS[idx_name])
+                cutoff_dt = df_ev["Event Date"].max()
+
+                # 1. Reverse chain before mid-2020
+                rev_ev = df_ev.sort_values("Event Date", ascending=False)
+                rev_dates = sorted(rev_ev["Event Date"].unique(), reverse=True)
+                cur = set(anchor_set)
+                rev_intervals = []
+                for ev_dt in rev_dates:
+                    rev_intervals.append((ev_dt, set(cur)))
+                    grp = rev_ev[rev_ev["Event Date"] == ev_dt]
+                    for _, r in grp.iterrows():
+                        t = r["ticker"]
+                        desc = str(r["Description"]).lower()
+                        if "inclusion" in desc:
+                            cur.discard(t)
+                        elif "exclusion" in desc:
+                            cur.add(t)
+                rev_intervals.append((pd.to_datetime("1990-01-01"), set(cur)))
+
+                # 2. Forward chain post-2020
+                fwd_ev = df_post.sort_values("Event Date", ascending=True)
+                fwd_dates = sorted(fwd_ev["Event Date"].unique())
+                cur_fwd = set(anchor_set)
+                fwd_intervals = [(cutoff_dt, set(anchor_set))]
+                for ev_dt in fwd_dates:
+                    grp = fwd_ev[fwd_ev["Event Date"] == ev_dt]
+                    for _, r in grp.iterrows():
+                        t = r["ticker"]
+                        desc = str(r["Description"]).lower()
+                        if "inclusion" in desc:
+                            cur_fwd.add(t)
+                        elif "exclusion" in desc:
+                            cur_fwd.discard(t)
+                    fwd_intervals.append((ev_dt, set(cur_fwd)))
+                fwd_intervals.append((pd.to_datetime("2099-01-01"), set(cur_fwd)))
+
+                for i, dt in enumerate(all_dates):
+                    if dt <= cutoff_dt:
+                        active_set = None
+                        for ev_dt, s in rev_intervals:
+                            if dt >= ev_dt:
+                                active_set = s
+                                break
+                        if active_set is None:
+                            active_set = rev_intervals[-1][1]
+                    else:
+                        active_set = anchor_set
+                        for ev_dt, s in fwd_intervals:
+                            if dt >= ev_dt:
+                                active_set = s
+                    valid_indices = [col_to_idx[t] for t in active_set if t in col_to_idx and has_traded_mat[i, col_to_idx[t]]]
+                    sec_arr[i, valid_indices] = True
+        else:
+            cond = sec_master["sector"].str.contains(spec["sector_pattern"], case=False, na=False)
+            pool = set(sec_master[cond].index).union(raw_syms).intersection(all_cols)
+            pool_indices = np.array([col_to_idx[t] for t in sorted(pool)], dtype=int)
+            max_k = spec["max_constituents"]
+
+            alloc_sec = np.array([], dtype=int)
+            for i, dt in enumerate(all_dates):
+                is_rebal = (i == 0) or (dt.month in (4, 10) and all_dates[i - 1].month not in (4, 10))
+                if is_rebal or len(alloc_sec) == 0:
+                    listed_pool = pool_indices[has_traded_mat[i, pool_indices]]
+                    if len(listed_pool) > 0:
+                        scores = adtv_126_mat[i, listed_pool]
+                        alloc_sec = listed_pool[np.argsort(-scores)][:max_k]
+
+                valid_sec = alloc_sec[has_traded_mat[i, alloc_sec]]
+                sec_arr[i, valid_sec] = True
 
         sec_leaks = (sec_arr & ~has_traded_mat).sum()
         assert sec_leaks == 0, f"Lookahead listing leaks detected in sectoral index {idx_name}: {sec_leaks}"

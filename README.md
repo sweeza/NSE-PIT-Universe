@@ -1,6 +1,6 @@
 # 🏛️ Canonical All-Instrument NSE Universe (2004 – Present)
 
-An institutional-grade, mathematically verified canonical market data store covering **4,446 consolidated NSE instruments** across **5,659 trading sessions (2004 to present)**, strictly derived from official National Stock Exchange of India (NSE) Bhavcopies.
+An institutional-grade, mathematically verified canonical market data store covering **4,446 consolidated NSE instruments** across **5,665 trading sessions (2004 to present)**, strictly derived from official National Stock Exchange of India (NSE) Bhavcopies.
 
 ---
 
@@ -22,14 +22,14 @@ An institutional-grade, mathematically verified canonical market data store cove
 
 3. **Full-Spectrum Extended Tensor Schema (12 Synchronous Matrices):**
    - `open.parquet`, `high.parquet`, `low.parquet`, `close.parquet`, `volume.parquet`, `turnover.parquet`, `trades.parquet`, `vwap.parquet`, `last.parquet`, `prevclose.parquet`, `series.parquet`, `isin.parquet`.
-   - Dimension: **5,659 dates $\times$ 4,446 tickers**.
+   - Dimension: **5,665 dates $\times$ 4,446 tickers**.
 
 4. **Zero-Taint Invariant (Pure Base Data):**
    - Untraded or suspended sessions on disk are strictly `NaN`.
    - Optional in-memory forward filling (`forward_fill=True`) for backtesting execution engines without mutating disk parquets.
 
 5. **Self-Sustaining Daily Automation & Pre-Commit Validation Gate:**
-   - `update_universe_daily.py` checks for new listings, symbol changes, and corporate actions.
+   - `update_universe_daily.py` integrates official NSE holiday calendars (including Muhurat weekend sessions) and checks for new listings, symbol changes, and corporate actions.
    - Newly staged sessions pass through an atomic mathematical validation gate before committing to disk; any anomaly triggers an immediate rollback to prevent data tainting.
 
 ---
@@ -86,7 +86,25 @@ vix  = nse.Index("INDIA VIX")
 print(vix.history().tail(3))
 ```
 
-### 3. Point-in-Time Index Universe Loader (`nse.load`)
+### 3. Point-in-Time Universe Query API (`nse.get_universe`)
+Retrieve exact historical index constituents and trading cross-sections for any date with zero look-ahead bias:
+```python
+# Query Nifty 500 constituents with liquidity and price corridors as of a specific date
+df = nse.get_universe(
+    as_of_date="2024-01-05",
+    universe="nifty500",
+    min_adtv=50_000_000,    # 50M INR trailing 20-day ADTV corridor
+    min_price=50.0,         # Minimum close price corridor
+    include_metrics=True    # Includes OHLCV, VWAP, ADTV, and 1D Return
+)
+print(df.head())
+
+# Quickly get constituent ticker list
+tickers = nse.get_universe("2024-01-05", universe="nifty50", as_list=True)
+print(tickers)
+```
+
+### 4. Point-in-Time Index Universe Loader (`nse.load`)
 ```python
 # Load full cross-sectional matrix (Date x Ticker) for an index
 n50_close = nse.load("close", universe="nifty50", adjusted=True)
@@ -131,17 +149,18 @@ panel = nio.load_universe(
     forward_fill=True    # Continuous non-stale price lines
 )
 
-# 6. Access Master Security Master & Corporate Actions
+# 6. Access Master Security Master, Corporate Actions & Dividends
 sec_master = nio.get_security_master()
 ca_ledger  = nio.get_corporate_actions()
+div_ledger = nio.get_dividends()
 ```
 
 ---
 
 ## 🔬 Validation & Audit
 
-Run the 10-invariant validation suite anytime:
+Run the 12-invariant institutional validation suite anytime:
 ```bash
 python validate_universe.py
 ```
-Outputs validation metrics to `data/validation_report.json`.
+Outputs validation metrics to `data/validation_report.json`. Detailed empirical case studies are documented in [`HISTORICAL_EVIDENCE_REPORT.md`](HISTORICAL_EVIDENCE_REPORT.md).

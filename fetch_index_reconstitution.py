@@ -14,7 +14,7 @@ HEADERS = {
     "Accept": "*/*"
 }
 
-def sync_official_indices():
+def sync_official_indices(force: bool = False):
     """Downloads all official broad-market and sectoral index constituent files."""
     config.RAW_INDICES_DIR.mkdir(parents=True, exist_ok=True)
     results = {}
@@ -25,10 +25,17 @@ def sync_official_indices():
     
     for idx_name, url in config.OFFICIAL_INDEX_URLS.items():
         out_csv = config.RAW_INDICES_DIR / f"{idx_name}.csv"
+        # Check if cache is fresh (< 24 hours old)
+        if not force and out_csv.exists() and (time.time() - out_csv.stat().st_mtime < 86400):
+            df = pd.read_csv(out_csv)
+            results[idx_name] = len(df)
+            print(f"  [CACHE] {idx_name:24}: {len(df)} constituents loaded from cache.")
+            continue
+
         success = False
-        for attempt in range(3):
+        for attempt in range(2):
             try:
-                r = requests.get(url, headers=HEADERS, timeout=12)
+                r = requests.get(url, headers=HEADERS, timeout=6)
                 if r.status_code == 200 and "Company Name" in r.text:
                     out_csv.write_text(r.text, encoding="utf-8")
                     df = pd.read_csv(out_csv)
@@ -36,8 +43,8 @@ def sync_official_indices():
                     print(f"  [OK] {idx_name:24}: {len(df)} constituents saved.")
                     success = True
                     break
-            except Exception as e:
-                time.sleep(1.0)
+            except Exception:
+                time.sleep(0.5)
         
         if not success:
             if out_csv.exists():
