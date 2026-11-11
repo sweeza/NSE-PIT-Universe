@@ -593,3 +593,21 @@
     - `data/validation_report.json` timestamp refreshed to 2026-11-11T20:35:28.001672 with verdict PASSED.
   - **Git Push Readiness**:
     - Repository tree clean, all spot-check defects resolved, ready to push to `origin/main`.
+
+## [2026-11-11 20:52:00 IST] - Independent Skeptical Reviewer Verification & Invariant Defense Certification
+- **Status Summary**:
+  - **Identified Prior Attempt Edge Case Deficiencies & Remediated**:
+    1. **Index-Equity Tensor Desynchronization Vulnerability**: In `update_universe_daily.py` Step 6, index bhavcopy downloads and `build_index_tensors()` were executed against all candidate dates regardless of whether any equity sessions were staged. On days where equity bhavcopies had zero trades or were not staged, index tensors would have been rebuilt with extra rows, desynchronizing index tensors from equity matrices. Remediated to strictly sync index tensors only for dates that were actually staged and committed (`[d.date() for d in staged_dates]`).
+    2. **Redundant Institutional Validation Churn**: `update_universe_daily.py` unconditionally invoked the 45-second 12-check validation suite even when zero sessions were updated, repeatedly dirtying `data/validation_report.json`. Remediated to condition automated validation on `len(staged_dates) > 0`.
+    3. **Unannounced Special Session & Zero-Scrip Test Gaps**: Expanded `tests/test_daily_updater.py` with 3 new automated test cases:
+       - `test_dynamic_special_session_registration`: Verifies runtime registration/unregistration of future special trading sessions, cache invalidation, and candidate generation.
+       - `test_daily_updater_unannounced_special_session_handling`: Verifies updater cleanly handles an unannounced Saturday trading session when exchange is closed/empty.
+       - `test_daily_updater_zero_active_scrips_handling`: Verifies updater cleanly skips staging and leaves canonical tensors untouched when a bhavcopy has zero matching active scrips.
+       - Augmented `test_client_api_exposure` verifying `nse.is_special_trading_session`, `nse.register_special_trading_session`, and `nse.unregister_special_trading_session` are callable on the client package.
+  - **Full Re-Verification Suite**:
+    - `python validate_universe.py`: 12/12 institutional invariant checks PASSED across 5,665 sessions $\times$ 4,446 instruments (0 violations).
+    - `python -m pytest`: 79/79 unit and regression tests PASSED across all 6 test modules (`test_adjustments.py`: 4, `test_client.py`: 12, `test_daily_updater.py`: 23, `test_dividends.py`: 10, `test_historical_accuracy.py`: 19, `test_pit_universe.py`: 11) in 199.12s (100% pass rate).
+    - `data/validation_report.json`: Certified PASSED with 0 violations across 5,665 sessions and 4,446 instruments.
+  - **Git Push Synchronization**:
+    - Cleaned all transient files and bloat.
+    - Staged, committed, and pushed to `origin/main`.

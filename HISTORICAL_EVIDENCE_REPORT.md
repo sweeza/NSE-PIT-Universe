@@ -4,7 +4,7 @@
 **Total Canonical Sessions:** `5,665`  
 **Total Consolidated Instruments:** `4,446`  
 **Integrity Checks:** 12/12 Passed (100% Pass Rate, 0 Violations)  
-**Automated Tests:** 76/76 Passed in `pytest` across 6 test modules  
+**Automated Tests:** 79/79 Passed in `pytest` across 6 test modules  
 **Report Artifact:** `data/validation_report.json`
 
 ---
