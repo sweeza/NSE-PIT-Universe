@@ -1,0 +1,15 @@
+date,sec_id,action,symbol,source
+2021-03-31,S00210,OUT,GAIL,press release
+2021-03-31,S00657,IN,TATACONSUM,press release
+2022-09-30,S00588,OUT,SHREECEM,press release
+2022-09-30,S00008,IN,ADANIENT,press release
+2023-07-13,S00258,OUT,HDFC,press release
+2023-07-13,S02330,IN,LTIM,press release
+2024-03-28,S00766,OUT,UPL,press release
+2024-03-28,S00621,IN,SHRIRAMFIN,press release
+2025-09-30,S00263,OUT,HEROMOTOCO,press release
+2025-09-30,S00315,OUT,INDUSINDBK,press release
+2025-09-30,S02217,IN,INDIGO,press release
+2025-09-30,S03151,IN,MAXHEALTH,press release
+2026-09-30,S00733,OUT,WIPRO,press release
+2026-09-30,S02411,IN,BSE,press release

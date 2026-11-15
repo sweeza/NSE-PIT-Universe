@@ -23,3 +23,10 @@ data/bhavcopy_cache/
 # or use Git LFS / cloud releases for tensors instead of raw Git tracking)
 # data/tensors/
 # data/metadata/pit_memberships/
+data/raw/bhavcopy/
+data/raw/indexdaily/
+data/raw/indexhist/
+data/raw/pressreleases/
+data/build/
+__pycache__/
+.pytest_cache/
