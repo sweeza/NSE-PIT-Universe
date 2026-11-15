@@ -43,9 +43,10 @@ def segments(t: pd.DataFrame) -> pd.DataFrame:
     for sym, h in g.groupby("symbol", sort=True):
         h = h.sort_values("date")
         dates = h["date"].tolist()
-        issuers = h["issuer"].tolist()
-        isins = h["isin"].tolist()
-        eqs = h["is_eq"].tolist()
+        # newer pandas turns a missing string into NaN (truthy); normalise so "missing" is always None
+        issuers = [x if isinstance(x, str) else None for x in h["issuer"].tolist()]
+        isins = [x if isinstance(x, str) else None for x in h["isin"].tolist()]
+        eqs = [bool(x) for x in h["is_eq"].tolist()]
         start = 0
         last_iss = issuers[0]
         for i in range(1, len(h) + 1):

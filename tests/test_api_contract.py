@@ -2,7 +2,7 @@
 import pandas as pd
 import pytest
 
-from nseuniverse import adjust, api, paths
+from nseuniverse import adjust, api, indices, paths
 
 
 @pytest.fixture()
@@ -20,6 +20,7 @@ def tiny_build(tmp_path, monkeypatch):
     pd.DataFrame({"sec_id": ["S00001"], "eff_date": [d[3]], "kind": "BONUS", "price_mult": 0.5, "vol_mult": 2.0, "detail": "1:1", "rec_id": 0}
                  ).to_parquet(b / "actions" / "adjustments.parquet")
     monkeypatch.setattr(paths, "BUILD", b)
+    monkeypatch.setattr(indices, "name_map", lambda: {})      # tests must not need downloaded raw files
     api.clear_cache()
     yield d
     api.clear_cache()

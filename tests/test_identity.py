@@ -83,3 +83,12 @@ def test_partly_paid_isin_does_not_split_a_security():
     c = table({"TSTL": ("2019-01-01", "2019-06-28", "INE081A01012")})
     sec, *_ = identity.build(pd.concat([a, b, c], ignore_index=True), sc())
     assert len(sec) == 1
+
+
+def test_missing_isin_as_nan_behaves_like_none():
+    # newer pandas represents a missing string as NaN, which is truthy
+    a = table({"AAA": ("2010-01-01", "2010-03-31", float("nan"))})
+    b = table({"AAA": ("2010-04-01", "2010-06-30", "INE333C01033")})
+    c = table({"AAA": ("2010-07-01", "2010-09-30", float("nan"))})
+    sec, *_ = identity.build(pd.concat([a, b, c], ignore_index=True), sc())
+    assert len(sec) == 1

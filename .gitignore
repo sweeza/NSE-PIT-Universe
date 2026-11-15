@@ -25,7 +25,9 @@ data/bhavcopy_cache/
 # data/metadata/pit_memberships/
 data/raw/bhavcopy/
 data/raw/indexdaily/
-data/raw/indexhist/
+data/raw/indexhist/price/
+data/raw/indexhist/tri/
+data/raw/indexhist/pepb/
 data/raw/pressreleases/
 data/build/
 __pycache__/
