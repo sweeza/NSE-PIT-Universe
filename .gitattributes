@@ -1,1 +1,5 @@
 *.parquet filter=lfs diff=lfs merge=lfs -text
+
+# Raw files must stay byte-identical to what NSE served (the manifest hashes them): no line-ending conversion.
+data/raw/** -text
+data/curated/** -text
