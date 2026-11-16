@@ -1,0 +1,2 @@
+index_key,from_date,to_date,extra_securities,symbols,parent_symbol,reason,source
+NIFTY50,2016-04-01,2017-09-28,1,TATAMTRDVR,TATAMOTORS,"Tata Motors DVR in Nifty 50 (51 securities, 50 companies; NSE rule A.1.e). Inclusion 2016-04-01 per NSE workbook; exclusion effective 2017-09-29 per release","data/raw/pressreleases/pdf/ind_prs22022016.pdf; data/raw/pressreleases/pdf/ind_prs28082017.pdf; data/raw/held/IndexInclExcl.xls"

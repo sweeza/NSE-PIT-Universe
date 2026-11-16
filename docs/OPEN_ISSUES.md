@@ -8,7 +8,7 @@ Add a row when something is found; change its status, do not delete it.
 
 | ID | Status | Item | Next step |
 |----|--------|------|-----------|
-| A1 | DECISION | Nifty Next 50 work is committed locally (acb8c2f) but **not pushed**. | Owner says when to push. |
+| A1 | DONE | Nifty Next 50 work committed and pushed (HEAD 021ad7c = origin/main, checked 2026-11-16). | None. |
 | A2 | OPEN | Review the **inferred name links** (2004-2011), each marked "INFERRED" in `data/curated/name_aliases.csv`: Aventis, Mundra Port, United Phosphorus, Motor Industries (x2), ICI India, E.Merck, Piramal Healthcare (via `symbolchange.csv`); Escorts, India Cement, Polaris (NSE equity list / renamed ticker); spelling variants "Jindal Vijaynagar", "Himachal Futuristic Communication". `verify` passes, but a wrong link would not show up there. | Owner spot-checks the ones relied on; any rejected alias is deleted and the build re-run. |
 | A3 | OPEN | The curated identity join `GESHIPPING -> GESHIP` (`data/curated/identity_links.csv`) renumbers `sec_id` for later securities (8,148 -> 8,147 securities). | Check any code, notes or saved queries that hard-code a `sec_id`. |
 | A4 | OPEN | `data/raw/manifest.csv` `fetched_utc` for `ind_niftynext50list.csv`, `ind_prs17022023_1.pdf`, `ind_prs25062025_2.pdf` (and the earlier `ind_prs24022022_1.pdf`) are estimates from the time the owner saved the file, not recorded download times. Hashes and sizes are real. | Optionally replace with real times, or note it in SOURCES.md. |
@@ -22,7 +22,7 @@ Add a row when something is found; change its status, do not delete it.
 |----|--------|------|-------|
 | B1 | DONE | Nifty 50: VERIFIED 2004-05-24 -> 2016-03-31 and 2017-09-29 -> today. | |
 | B2 | BLOCKED | Nifty 50 2004-01-01 -> 2004-05-23: L&T (member until 2004-05-24) has no NSE bhavcopy before 2004-06-23. | Needs a bhavcopy source for L&T; none held. |
-| B3 | DECISION | Nifty 50 2016-04-01 -> 2017-09-28: 51 securities (Tata Motors DVR), 50 companies. The exactly-50 rule was deliberately not relaxed. The same "documented extras" rule used for Next 50 dummy days (`index_size_exceptions.csv`) could cover it; the 22 Feb 2016 NSE release documents the DVR. | Owner decides whether to treat the DVR as a documented extra. Nothing changed. |
+| B3 | DONE | Nifty 50 2016-04-01 -> 2017-09-28 (Tata Motors DVR, 51 securities / 50 companies) is now VERIFIED via `data/curated/index_dual_class.csv` (`membership.dual_class_securities`): +1 real, traded security allowed only while the DVR and its parent are both members. Inclusion date rests on the NSE workbook (no held release names it). Full build/verify run 2026-11-16, no FAIL. | Not committed yet. |
 | B4 | DONE | Nifty Next 50: VERIFIED 2004-01-01 -> 2026-11-13 (one window). 92 days (Siemens Energy 2025-04-07..2025-06-26; Vedanta spin-offs 2026-04-30..2026-06-23) are verified as 50 real members plus documented zero-price dummies; those extras and dates rest only on the cited press releases. | |
 | B5 | OPEN | Nifty 100, Nifty 500, Nifty Midsmallcap 400: not started (owner instruction). Each needs a current constituent list in `data/raw/constituents/<date>/`, a fixed size in `ANCHORED`, and the same name/event work. | Start only when the owner says so. |
 | B6 | OPEN | The other 55 in-scope indices (NSE Broad Market and Sectoral categories): UNVERIFIED. 329 distinct unresolved workbook names remain in `data/build/membership/unresolved.csv`. | Resolve only with cited evidence. |

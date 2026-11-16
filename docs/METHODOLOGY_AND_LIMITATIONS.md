@@ -81,11 +81,13 @@ strategy) are marked `outside_scope`.
 - Rights adjustments use the theoretical price and differ from the market move by >25% on 3 days.
 - Index sources disagree on 1,061 index-days (338 by ≥0.1%), flagged per row; 925 index-days are missing
   inside index lives (non-publication days).
-- Membership (Nifty 50): VERIFIED 2004-05-24 → 2016-03-31 and 2017-09-29 → today. Not verified:
+- Membership (Nifty 50): VERIFIED 2004-05-24 → today. Not verified:
   - 2004-01-01 → 2004-05-23: L&T (a member until 2004-05-24) has no NSE bhavcopy before 2004-06-23, so the trading check fails.
-  - 2016-04-01 → 2017-09-28: the replay has 51 securities. NSE's own 22 Feb 2016 release says that once a DVR is included "the
-    Nifty 50 index will have 51 securities but continue to have 50 companies" (Tata Motors DVR was included 2016-04-01, excluded
-    2017-09-29). The exactly-50 rule is deliberately not relaxed, so this span stays unverified.
+  - 2016-04-01 → 2017-09-28 is VERIFIED as 51 securities of 50 companies: the Tata Motors DVR (TATAMTRDVR) was in the index
+    (NSE 22 Feb 2016 release, A.1.e: "the Nifty 50 index will have 51 securities but continue to have 50 companies"). Inclusion
+    2016-04-01 comes from the NSE workbook `IndexInclExcl.xls` (no held release names it); exclusion effective 2017-09-29 is in
+    `ind_prs28082017.pdf`. `data/curated/index_dual_class.csv` allows +1 security on a day only while both the DVR and its parent
+    (TATAMOTORS) are members, and the DVR still has to pass the +-3 session trading check (it traded on all 371 sessions).
   - Before 2004-01-01 there is no bhavcopy.
   History of the 2017→today window: it was once VERIFIED on count alone while Indian Oil (in per the Feb 2017 release, out
   2022-03-31) and Apollo Hospitals (in 2022-03-31) were wrong. The missing release is `ind_prs24022022_1.pdf`, which the press

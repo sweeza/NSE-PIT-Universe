@@ -99,3 +99,19 @@ def test_documented_dummy_constituents_are_counted_per_day_and_stack():
     assert m.extra_members(days, exc, "X").tolist() == [0, 0, 0, 1, 3, 1, 0, 0]
     assert not m.extra_members(days, exc, "Y").any()
     assert not m.extra_members(days, None, "X").any()
+
+
+def test_dual_class_security_counts_only_while_dvr_and_parent_are_members():
+    days = pd.bdate_range("2016-03-30", "2016-04-06")
+    seg = pd.DataFrame([("DVR", "d", "2016-01-01", "2017-12-31"), ("PAR", "p", "2016-01-01", "2017-12-31")],
+                       columns=["symbol", "sec_id", "start", "end"]).assign(start=lambda d: pd.to_datetime(d.start), end=lambda d: pd.to_datetime(d.end))
+    dc = pd.DataFrame([("X", "2016-04-01", "2016-04-05", 1, "DVR", "PAR", "r", "s")],
+                      columns=["index_key", "from_date", "to_date", "extra_securities", "symbols", "parent_symbol", "reason", "source"])
+    both = iv([("X", "d", "2016-04-01", None), ("X", "p", None, None)])
+    assert m.dual_class_securities(days, dc, "X", both, seg).tolist() == [0, 0, 1, 1, 1, 0]
+    assert not m.dual_class_securities(days, dc, "Y", both, seg).any()
+    no_parent = iv([("X", "d", "2016-04-01", None)])             # the company itself is not a member: no allowance
+    assert not m.dual_class_securities(days, dc, "X", no_parent, seg).any()
+    only_parent = iv([("X", "p", None, None)])                    # DVR not (yet) a member: no allowance
+    assert not m.dual_class_securities(days, dc, "X", only_parent, seg).any()
+    assert not m.dual_class_securities(days, None, "X", both, seg).any()

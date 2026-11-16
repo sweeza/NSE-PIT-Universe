@@ -356,6 +356,35 @@ def extra_members(days: pd.DatetimeIndex, exc: pd.DataFrame, index_key: str) -> 
     return out
 
 
+def _member_mask(iv: pd.DataFrame, days: pd.DatetimeIndex, sec_id) -> np.ndarray:
+    m = np.zeros(len(days), dtype=bool)
+    for r in iv[iv.sec_id == sec_id].itertuples():
+        lo = 0 if pd.isna(r.from_date) else int(days.searchsorted(r.from_date, side="left"))
+        hi = len(days) if pd.isna(r.to_date) else int(days.searchsorted(r.to_date, side="left"))
+        m[lo:hi] = True
+    return m
+
+
+def dual_class_securities(days: pd.DatetimeIndex, dc: pd.DataFrame, index_key: str, iv: pd.DataFrame, seg: pd.DataFrame) -> np.ndarray:
+    """Extra REAL, traded securities allowed on top of the official size (curated; each row cites its release).
+
+    NSE (22 Feb 2016 release, A.1.e): a DVR of an existing constituent makes the index hold size+1 securities but
+    still `size` companies. A row counts on a day only if BOTH the named DVR security and its parent company's
+    security are members on that day (so the number of companies is still the official size); otherwise it adds 0 and
+    the day fails the size check. The extras are real securities: they stay subject to the trading check."""
+    out = np.zeros(len(days), dtype=int)
+    if dc is None or not len(dc):
+        return out
+    for r in dc[dc.index_key == index_key].itertuples():
+        a, b = pd.Timestamp(r.from_date), pd.Timestamp(r.to_date)
+        sid_x, sid_p = _sid(seg, r.symbols, a), _sid(seg, r.parent_symbol, a)
+        if sid_x is None or sid_p is None:
+            continue
+        inside = (days >= a) & (days <= b)
+        out += (inside & _member_mask(iv, days, sid_x) & _member_mask(iv, days, sid_p)).astype(int) * int(r.extra_securities)
+    return out
+
+
 def _ranges(days: pd.DatetimeIndex, ok: np.ndarray):
     out, start = [], None
     for i, flag in enumerate(ok):
@@ -391,7 +420,10 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         iv = anchor_intervals(asids - {None}, anchor_date, events)
         iv.insert(0, "index_key", k)
         sz = size_on(iv, days).values
-        ok = sz == n          # the real (tradable) members always number exactly n
+        dc_p = paths.CURATED / "index_dual_class.csv"
+        dcls = pd.read_csv(dc_p) if dc_p.exists() else None
+        dual = dual_class_securities(days, dcls, k, iv, seg)
+        ok = sz == n + dual   # tradable members number exactly n (+ documented dual-class securities of companies already in)
         # an event that cannot be undone means a change is missing: nothing from its date on can be verified
         bad = contradictions(asids - {None}, anchor_date, events)
         if len(bad):
@@ -413,7 +445,9 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         good = _ranges(days, ok)
         for a, b in good:
             nx = int((extra[(days >= a) & (days <= b)] > 0).sum())
+            nd = int((dual[(days >= a) & (days <= b)] > 0).sum())
             cov.append((k, a, b, "VERIFIED", f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"
+                        + (f"; {nd} of these days held {n + 1} securities of {n} companies (a DVR, index_dual_class.csv)" if nd else "")
                         + (f"; {nx} of these days also had documented zero-price dummy-symbol constituents on top (index_size_exceptions.csv)" if nx else "")))
         bad_days = int((~ok).sum())
         if bad_days:          # a PARTIAL row only when some day actually fails; a fully verified index has none
