@@ -337,8 +337,8 @@ ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.cs
             "NIFTY100": (100, "data/raw/constituents/2026-11-15/ind_nifty100list.csv")}
 # index_key -> first date that must be verified. New indices use 2007-01-01 (adjusted prices are not verified before it, and the
 # backward replay then never has to resolve earlier events). Days before the floor are out of scope: they are neither verified nor
-# counted as failures. The three indices already verified from the start of the data have no floor.
-FLOORS: dict[str, str] = {}
+# counted as failures. Decision 2026-11-16: every index is verified from 2007-01-01 only.
+FLOORS: dict[str, str] = {"NIFTY50": "2007-01-01", "NIFTYNEXT50": "2007-01-01", "NIFTY100": "2007-01-01"}
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 
