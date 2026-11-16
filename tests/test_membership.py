@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -115,3 +116,12 @@ def test_dual_class_security_counts_only_while_dvr_and_parent_are_members():
     only_parent = iv([("X", "p", None, None)])                    # DVR not (yet) a member: no allowance
     assert not m.dual_class_securities(days, dc, "X", only_parent, seg).any()
     assert not m.dual_class_securities(days, None, "X", both, seg).any()
+
+
+def test_floor_masks_days_before_it_and_leaves_no_floor_untouched():
+    days = pd.bdate_range("2006-12-27", "2007-01-04")
+    ok = np.ones(len(days), dtype=bool)
+    out, scope = m.apply_floor(ok, days, "2007-01-01")
+    assert out.tolist() == scope.tolist() == [False, False, False, True, True, True, True]    # 2006-12-27..29 are out of scope
+    out, scope = m.apply_floor(ok, days, None)
+    assert out.all() and scope.all()

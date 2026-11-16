@@ -94,6 +94,9 @@ strategy) are marked `outside_scope`.
   download skipped with ~300 other suffixed files (`ind_prsDDMMYYYY_1.pdf`) listed on niftyindices.com. It was added and the build
   now ends verification at any event it cannot undo (`membership.contradictions`). Other suffixed releases may hold more
   Nifty 50 changes; none are known to be missing, since the check reports no contradiction.
+- Membership floor: `membership.FLOORS` lets an index be verified from a later date than the start of the data (planned: 2007-01-01 for
+  Nifty 500 and Midsmallcap 400). Days before the floor are out of scope (neither verified nor counted as failures), and events before it
+  cannot raise a contradiction for later days. Nifty 50, Next 50 and Nifty 100 have no floor.
 - Membership (Nifty 100): anchored on `data/raw/constituents/2026-11-15/ind_nifty100list.csv` (100 symbols). VERIFIED 2004-01-01 (first bhavcopy day) → today
   (one window; full build/verify 2026-11-16, no FAIL). Events: NSE workbook sheet "Nifty 100" to 2020, then the Nifty 100 section of 16 review
   releases 2020-09-25 → 2026-09-30 and the DVR exclusion of 2024-08-30 (`ind_prs23082024_1.pdf`), all in `index_events_press.csv`.

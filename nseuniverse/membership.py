@@ -335,6 +335,10 @@ def size_on(iv: pd.DataFrame, days) -> pd.Series:
 ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.csv"),
             "NIFTYNEXT50": (50, "data/raw/constituents/2026-11-15/ind_niftynext50list.csv"),
             "NIFTY100": (100, "data/raw/constituents/2026-11-15/ind_nifty100list.csv")}
+# index_key -> first date that must be verified. New indices use 2007-01-01 (adjusted prices are not verified before it, and the
+# backward replay then never has to resolve earlier events). Days before the floor are out of scope: they are neither verified nor
+# counted as failures. The three indices already verified from the start of the data have no floor.
+FLOORS: dict[str, str] = {}
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 
@@ -386,6 +390,14 @@ def dual_class_securities(days: pd.DatetimeIndex, dc: pd.DataFrame, index_key: s
     return out
 
 
+def apply_floor(ok: np.ndarray, days: pd.DatetimeIndex, floor) -> tuple[np.ndarray, np.ndarray]:
+    """Return (ok with days before the floor set False, in_scope mask). No floor: everything is in scope."""
+    if floor is None:
+        return ok, np.ones(len(days), dtype=bool)
+    in_scope = np.asarray(days >= pd.Timestamp(floor))
+    return ok & in_scope, in_scope
+
+
 def _ranges(days: pd.DatetimeIndex, ok: np.ndarray):
     out, start = [], None
     for i, flag in enumerate(ok):
@@ -426,7 +438,10 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         dual = dual_class_securities(days, dcls, k, iv, seg)
         ok = sz == n + dual   # tradable members number exactly n (+ documented dual-class securities of companies already in)
         # an event that cannot be undone means a change is missing: nothing from its date on can be verified
+        floor = FLOORS.get(k)
         bad = contradictions(asids - {None}, anchor_date, events)
+        if floor is not None:      # an event before the floor cannot affect any day on or after it
+            bad = bad[bad.date >= pd.Timestamp(floor)]
         if len(bad):
             ok[days >= bad.date.min()] = False
         # documented dummy-symbol constituents: the real members still have to number exactly n; the extras are added only to the
@@ -443,6 +458,7 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
                 near = (j < len(tr) and tr[j] - i <= TRADE_WINDOW) or (j > 0 and i - tr[j - 1] <= TRADE_WINDOW)
                 if not near:
                     ok[i] = False
+        ok, in_scope = apply_floor(ok, days, floor)
         good = _ranges(days, ok)
         for a, b in good:
             nx = int((extra[(days >= a) & (days <= b)] > 0).sum())
@@ -450,9 +466,9 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
             cov.append((k, a, b, "VERIFIED", f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"
                         + (f"; {nd} of these days held {n + 1} securities of {n} companies (a DVR, index_dual_class.csv)" if nd else "")
                         + (f"; {nx} of these days also had documented zero-price dummy-symbol constituents on top (index_size_exceptions.csv)" if nx else "")))
-        bad_days = int((~ok).sum())
+        bad_days = int((~ok & in_scope).sum())
         if bad_days:          # a PARTIAL row only when some day actually fails; a fully verified index has none
-            cov.append((k, days[0], days[-1], "PARTIAL", f"{bad_days} of {len(days)} trading days fail the size/trading check; "
+            cov.append((k, days[in_scope][0], days[-1], "PARTIAL", f"{bad_days} of {int(in_scope.sum())} trading days fail the size/trading check; "
                                                      f"gaps come from names or tickers not yet linked (see unresolved.csv)"
                                                      + (f"; {len(bad)} event(s) contradict the anchor (earliest {bad.date.min().date()}): a change is missing from the sources, so nothing from that date is verified" if len(bad) else "")))
         ivs.append(iv)
