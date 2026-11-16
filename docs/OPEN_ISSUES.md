@@ -8,7 +8,7 @@ Add a row when something is found; change its status, do not delete it.
 
 | ID | Status | Item | Next step |
 |----|--------|------|-----------|
-| A1 | DECISION | Nothing from the Nifty Next 50 work is committed or pushed. Changed: `index_events_press.csv`, `name_aliases.csv`, `manifest.csv`, `membership.py`, `identity.py`, both test files, README, METHODOLOGY. New: `index_size_exceptions.csv`, `identity_links.csv`, `constituents/2026-11-15/ind_niftynext50list.csv`, this file. | Owner says when to commit / push. |
+| A1 | DECISION | Nifty Next 50 work is committed locally (acb8c2f) but **not pushed**. | Owner says when to push. |
 | A2 | OPEN | Review the **inferred name links** (2004-2011), each marked "INFERRED" in `data/curated/name_aliases.csv`: Aventis, Mundra Port, United Phosphorus, Motor Industries (x2), ICI India, E.Merck, Piramal Healthcare (via `symbolchange.csv`); Escorts, India Cement, Polaris (NSE equity list / renamed ticker); spelling variants "Jindal Vijaynagar", "Himachal Futuristic Communication". `verify` passes, but a wrong link would not show up there. | Owner spot-checks the ones relied on; any rejected alias is deleted and the build re-run. |
 | A3 | OPEN | The curated identity join `GESHIPPING -> GESHIP` (`data/curated/identity_links.csv`) renumbers `sec_id` for later securities (8,148 -> 8,147 securities). | Check any code, notes or saved queries that hard-code a `sec_id`. |
 | A4 | OPEN | `data/raw/manifest.csv` `fetched_utc` for `ind_niftynext50list.csv`, `ind_prs17022023_1.pdf`, `ind_prs25062025_2.pdf` (and the earlier `ind_prs24022022_1.pdf`) are estimates from the time the owner saved the file, not recorded download times. Hashes and sizes are real. | Optionally replace with real times, or note it in SOURCES.md. |
