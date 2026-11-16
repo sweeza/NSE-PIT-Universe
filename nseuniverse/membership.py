@@ -63,17 +63,21 @@ class NameBook:
         self.by_name: dict[str, set[str]] = {}
         self.src: dict[tuple[str, str], str] = {}
         self.window: dict[tuple[str, str], tuple] = {}   # (name, symbol) -> (valid_from, valid_to) for dated aliases
+        self.exclusive: dict[str, list] = {}             # name -> [(symbol, valid_from, valid_to)]: inside its window the alias replaces every other candidate
 
-    def add(self, name, symbol, source, valid_from=None, valid_to=None):
+    def add(self, name, symbol, source, valid_from=None, valid_to=None, exclusive=False):
         if not isinstance(name, str) or not isinstance(symbol, str) or not name.strip():
             return
         k = norm_name(name)
         if k:
             self.by_name.setdefault(k, set()).add(symbol.strip())
             self.src.setdefault((k, symbol.strip()), source)
-            if isinstance(valid_from, str) or isinstance(valid_to, str):
-                self.window[(k, symbol.strip())] = (pd.Timestamp(valid_from) if isinstance(valid_from, str) else None,
-                                                    pd.Timestamp(valid_to) if isinstance(valid_to, str) else None)
+            lo = pd.Timestamp(valid_from) if isinstance(valid_from, str) else None
+            hi = pd.Timestamp(valid_to) if isinstance(valid_to, str) else None
+            if exclusive:
+                self.exclusive.setdefault(k, []).append((symbol.strip(), lo, hi))
+            elif lo is not None or hi is not None:
+                self.window[(k, symbol.strip())] = (lo, hi)
 
     @classmethod
     def build(cls, bhav: pd.DataFrame | None = None) -> "NameBook":
@@ -107,15 +111,19 @@ class NameBook:
         al = paths.CURATED / "name_aliases.csv"             # hand entries, each citing a source
         if al.exists():
             a = pd.read_csv(al, dtype=str)
-            for c in ("valid_from", "valid_to"):
+            for c in ("valid_from", "valid_to", "exclusive"):
                 if c not in a:
                     a[c] = None
             for r in a.itertuples():
-                nb.add(r.company, r.symbol, f"alias:{r.source}", r.valid_from, r.valid_to)
+                nb.add(r.company, r.symbol, f"alias:{r.source}", r.valid_from, r.valid_to, exclusive=(str(r.exclusive).strip().lower() == "yes"))
         return nb
 
     def candidates(self, company: str, on=None) -> set[str]:
         k = norm_name(company)
+        if on is not None:
+            ex = {sym for sym, lo, hi in self.exclusive.get(k, []) if (lo is None or on >= lo) and (hi is None or on <= hi)}
+            if ex:
+                return ex
         out = set()
         for sym in self.by_name.get(k, set()):
             w = self.window.get((k, sym))
@@ -324,13 +332,28 @@ def size_on(iv: pd.DataFrame, days) -> pd.Series:
 
 # index_key -> (official size, anchor file of current constituents). Only indices with a fixed
 # size can be checked day by day; others stay UNVERIFIED until a stronger check exists.
-ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.csv")}
+ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.csv"),
+            "NIFTYNEXT50": (50, "data/raw/constituents/2026-11-15/ind_niftynext50list.csv")}
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 
 def _sid(seg: pd.DataFrame, symbol: str, at, slack=10):
     g = seg[(seg.symbol == symbol) & (seg.start <= at + pd.Timedelta(days=slack)) & (seg.end >= at - pd.Timedelta(days=slack))]
     return g.sec_id.iloc[0] if len(g) else None
+
+
+def extra_members(days: pd.DatetimeIndex, exc: pd.DataFrame, index_key: str) -> np.ndarray:
+    """Number of documented zero-price dummy-symbol constituents held on each day (curated; each row cites its release).
+
+    A demerger entity enters an index under a dummy symbol without anyone leaving, so the index officially has
+    size + extras constituents until it is excluded. A day is VERIFIED only if the real members number exactly the
+    official size AND the total equals size + extras; the dummies themselves cannot trade and are not counted as members."""
+    out = np.zeros(len(days), dtype=int)
+    if exc is None or not len(exc):
+        return out
+    for r in exc[exc.index_key == index_key].itertuples():
+        out += ((days >= pd.Timestamp(r.from_date)) & (days <= pd.Timestamp(r.to_date))).astype(int) * int(r.extra_members)
+    return out
 
 
 def _ranges(days: pd.DatetimeIndex, ok: np.ndarray):
@@ -352,6 +375,8 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
     pos = {d: i for i, d in enumerate(days)}
     traded = {sid: np.array(sorted(pos[d] for d in g["date"].unique())) for sid, g in t.groupby("sec_id")}
     cur = pd.read_csv(paths.CURATED / "index_events_press.csv", parse_dates=["date"]) if (paths.CURATED / "index_events_press.csv").exists() else pd.DataFrame()
+    exc_p = paths.CURATED / "index_size_exceptions.csv"
+    exc = pd.read_csv(exc_p) if exc_p.exists() else pd.DataFrame(columns=["index_key", "from_date", "to_date", "reason", "source"])
     ivs, cov = [], []
     for k, (n, anchor_file) in ANCHORED.items():
         w = ev_resolved[(ev_resolved.index_key == k) & (ev_resolved.resolution == "OK")][["date", "sec_id", "action"]]
@@ -366,11 +391,15 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         iv = anchor_intervals(asids - {None}, anchor_date, events)
         iv.insert(0, "index_key", k)
         sz = size_on(iv, days).values
-        ok = sz == n
+        ok = sz == n          # the real (tradable) members always number exactly n
         # an event that cannot be undone means a change is missing: nothing from its date on can be verified
         bad = contradictions(asids - {None}, anchor_date, events)
         if len(bad):
             ok[days >= bad.date.min()] = False
+        # documented dummy-symbol constituents: the real members still have to number exactly n; the extras are added only to the
+        # published total, which is checked against n + extras below
+        extra = extra_members(days, exc, k)
+        exc_days = extra > 0
         # every member must have traded within +-TRADE_WINDOW sessions of the day
         for r in iv.itertuples():
             lo = 0 if pd.isna(r.from_date) else int(days.searchsorted(r.from_date, side="left"))
@@ -383,11 +412,14 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
                     ok[i] = False
         good = _ranges(days, ok)
         for a, b in good:
-            cov.append((k, a, b, "VERIFIED", f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"))
+            nx = int((extra[(days >= a) & (days <= b)] > 0).sum())
+            cov.append((k, a, b, "VERIFIED", f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"
+                        + (f"; {nx} of these days also had documented zero-price dummy-symbol constituents on top (index_size_exceptions.csv)" if nx else "")))
         bad_days = int((~ok).sum())
-        cov.append((k, days[0], days[-1], "PARTIAL", f"{bad_days} of {len(days)} trading days fail the size/trading check; "
-                                                 f"gaps come from names or tickers not yet linked (see unresolved.csv)"
-                                                 + (f"; {len(bad)} event(s) contradict the anchor (earliest {bad.date.min().date()}): a change is missing from the sources, so nothing from that date is verified" if len(bad) else "")))
+        if bad_days:          # a PARTIAL row only when some day actually fails; a fully verified index has none
+            cov.append((k, days[0], days[-1], "PARTIAL", f"{bad_days} of {len(days)} trading days fail the size/trading check; "
+                                                     f"gaps come from names or tickers not yet linked (see unresolved.csv)"
+                                                     + (f"; {len(bad)} event(s) contradict the anchor (earliest {bad.date.min().date()}): a change is missing from the sources, so nothing from that date is verified" if len(bad) else "")))
         ivs.append(iv)
     return (pd.concat(ivs, ignore_index=True) if ivs else pd.DataFrame(columns=["index_key", "sec_id", "from_date", "to_date"]),
             pd.DataFrame(cov, columns=["index_key", "from_date", "to_date", "status", "reason"]))

@@ -15,6 +15,8 @@ sorts after earlier ones, so existing ids do not move when new days are appended
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -97,7 +99,14 @@ class _UF:
             self.p[max(ra, rb)] = min(ra, rb)
 
 
-def link(seg: pd.DataFrame, t: pd.DataFrame, symbolchange: pd.DataFrame | None = None):
+def _load_curated_links(path=None) -> pd.DataFrame:
+    p = path or (paths.CURATED / "identity_links.csv")
+    if not Path(p).exists():
+        return pd.DataFrame(columns=["old_symbol", "new_symbol", "source"])
+    return pd.read_csv(p, dtype=str)
+
+
+def link(seg: pd.DataFrame, t: pd.DataFrame, symbolchange: pd.DataFrame | None = None, curated: pd.DataFrame | None = None):
     """Return (seg with sec_key, links table)."""
     sc = symbolchange if symbolchange is not None else _load_symbolchange()
     by_sym = {s: g for s, g in seg.groupby("symbol")}
@@ -164,15 +173,29 @@ def link(seg: pd.DataFrame, t: pd.DataFrame, symbolchange: pd.DataFrame | None =
             if ra.symbol != rb.symbol and 0 <= (rb.start - ra.end).days <= 30:
                 try_join(a, b, "isin", isin)
 
+    # 3. curated joins: a rename that no symbol-change record or shared ISIN shows, each row citing the NSE file that does.
+    #    Same rules as above: one adjacent non-overlapping pair of segments (gap <= 30 days), never a join that overlaps.
+    cur = curated if curated is not None else _load_curated_links()
+    for r in cur.itertuples():
+        olds, news = by_sym.get(r.old_symbol), by_sym.get(r.new_symbol)
+        if olds is None or news is None:
+            continue
+        pairs = [(int(a.seg_id), int(b.seg_id)) for a in olds.itertuples() for b in news.itertuples() if 0 <= (b.start - a.end).days <= 30]
+        if len(pairs) == 1:
+            try_join(pairs[0][0], pairs[0][1], "curated", f"{r.old_symbol}->{r.new_symbol}: {r.source}")
+        else:
+            log.append({"seg_a": -1, "seg_b": -1, "source": "curated", "status": "AMBIGUOUS",
+                        "note": f"{r.old_symbol}->{r.new_symbol} candidate pairs={len(pairs)}"})
+
     seg = seg.copy()
     seg["root"] = [uf.find(i) for i in seg["seg_id"]]
     return seg, pd.DataFrame(log, columns=["seg_a", "seg_b", "source", "status", "note"])
 
 
-def build(t: pd.DataFrame, symbolchange: pd.DataFrame | None = None):
+def build(t: pd.DataFrame, symbolchange: pd.DataFrame | None = None, curated: pd.DataFrame | None = None):
     """Return (securities, symbol_history, links, seg_map)."""
     seg = segments(t)
-    seg, links = link(seg, t, symbolchange)
+    seg, links = link(seg, t, symbolchange, curated)
     first = seg.groupby("root").agg(first_date=("start", "min"), last_date=("end", "max"),
                                     n_days=("n_days", "sum")).reset_index()
     fs = seg.sort_values("start").groupby("root").first()["symbol"].rename("first_symbol")

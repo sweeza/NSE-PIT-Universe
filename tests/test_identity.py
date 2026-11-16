@@ -92,3 +92,20 @@ def test_missing_isin_as_nan_behaves_like_none():
     c = table({"AAA": ("2010-07-01", "2010-09-30", float("nan"))})
     sec, *_ = identity.build(pd.concat([a, b, c], ignore_index=True), sc())
     assert len(sec) == 1
+
+
+def test_curated_join_links_a_rename_with_no_symbolchange_or_shared_isin():
+    t = table({"OLD": ("2006-01-02", "2006-11-07", None), "NEW": ("2006-11-27", "2007-03-30", "INE017A01032")})
+    sec, sh, links, seg = identity.build(t, sc())
+    assert len(sec) == 2                                   # nothing links them without the curated row
+    cur = pd.DataFrame([("OLD", "NEW", "evidence")], columns=["old_symbol", "new_symbol", "source"])
+    sec, sh, links, seg = identity.build(t, sc(), cur)
+    assert len(sec) == 1 and list(sh.symbol) == ["OLD", "NEW"]
+    assert (links.source == "curated").sum() == 1
+
+
+def test_curated_join_is_rejected_when_the_two_symbols_overlap():
+    t = table({"OLD": ("2006-01-02", "2006-12-29", None), "NEW": ("2006-11-27", "2007-03-30", None)})
+    cur = pd.DataFrame([("OLD", "NEW", "evidence")], columns=["old_symbol", "new_symbol", "source"])
+    sec, *_ = identity.build(t, sc(), cur)
+    assert len(sec) == 2

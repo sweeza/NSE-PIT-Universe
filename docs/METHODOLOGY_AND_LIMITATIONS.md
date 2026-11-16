@@ -92,6 +92,40 @@ strategy) are marked `outside_scope`.
   download skipped with ~300 other suffixed files (`ind_prsDDMMYYYY_1.pdf`) listed on niftyindices.com. It was added and the build
   now ends verification at any event it cannot undo (`membership.contradictions`). Other suffixed releases may hold more
   Nifty 50 changes; none are known to be missing, since the check reports no contradiction.
+- Membership (Nifty Next 50): anchored on `data/raw/constituents/2026-11-15/ind_niftynext50list.csv` (50 symbols).
+  VERIFIED 2004-01-01 (first bhavcopy day) → today. On days with documented dummy-symbol constituents the rule is:
+  the real members number exactly 50 and trade within ±3 sessions, and the published total is 50 + the extras.
+  - Dummy-entity days (92): Siemens Energy (DUMMYSIEMS) 2025-04-07 → 2025-06-26; Vedanta Aluminium Metal, Power, Oil and Gas,
+    Iron and Steel (DUMMYVEDL1-4) 2026-04-30 → 2026-06-23 (4, then 2, then 1 extras as each is excluded). The extras per day are
+    in `data/curated/index_size_exceptions.csv`, each row citing its release (`membership.extra_members`). The dummies cannot
+    trade, so they are not checked as members; the dates rest on the releases alone, not on a daily NSE constituent list.
+    This relaxes "exactly 50 constituents" to "exactly 50 real members plus documented placeholders" for these days only.
+  - Before 2004-01-01 there is no bhavcopy.
+  History of the 2017→today window: it was once VERIFIED on count alone while Indian Oil (in per the Feb 2017 release, out
+  2022-03-31) and Apollo Hospitals (in 2022-03-31) were wrong. The missing release is `ind_prs24022022_1.pdf`, which the press
+  download skipped with ~300 other suffixed files (`ind_prsDDMMYYYY_1.pdf`) listed on niftyindices.com. It was added and the build
+  now ends verification at any event it cannot undo (`membership.contradictions`). Other suffixed releases may hold more
+  Nifty 50 changes; none are known to be missing, since the check reports no contradiction.
+- Membership (Nifty Next 50): anchored on `data/raw/constituents/2026-11-15/ind_niftynext50list.csv` (50 symbols).
+  VERIFIED 2004-01-01 (first bhavcopy day) → 2025-04-04, 2025-06-27 → 2026-04-29 and 2026-06-24 → today. Not verified:
+  - 2025-04-07 → 2025-06-26 and 2026-04-30 → 2026-06-23: demerger entities (Siemens Energy as DUMMYSIEMS; the four Vedanta
+    spin-offs as DUMMYVEDL1-4) were held at zero price, so the index had more than 50 constituents. These days are listed with
+    their releases in `data/curated/index_size_exceptions.csv` and are never VERIFIED (`membership.exception_mask`).
+  - Before 2004-01-01 there is no bhavcopy, so nothing earlier can be verified. (Himachal Futuristic, out 2004-03-01, traded as
+    HIMACHLFUT until 2011-02-07 and only then as HFCL; the workbook's singular "Communication" is aliased to HIMACHLFUT.)
+  Name links for 2004-2011 come in three grades, each marked in `name_aliases.csv`: exact name+symbol rows (press releases,
+  NSE corporate-actions files); links INFERRED from NSE ticker history (`symbolchange.csv`: Aventis, Mundra Port, United
+  Phosphorus, Motor Industries, ICI India, E.Merck, Piramal Healthcare) or from the NSE equity list / a renamed ticker
+  (Escorts, India Cement, Polaris, the "Vijaynagar" spelling of Jindal Vijayanagar Steel). The inferred grade was accepted by the
+  project owner on 2026-11-16. GESHIPPING -> GESHIP (NSE re-issued the share under a new ISIN, ticker change with a 20-day gap)
+  is joined by a curated identity link (`data/curated/identity_links.csv`, citing the corporate-actions rows), a new third join
+  rule in `identity.link`; it changes `sec_id` numbering of later securities.
+  Changes from 2020-09 are entered from 16 press releases (`index_events_press.csv`). Three were not in the original download:
+  `ind_prs17022023_1.pdf` and `ind_prs25062025_2.pdf` (suffixed files, saved by hand) and `ind_prs23082021.pdf`, which was held
+  but is an image-only PDF with no extractable text (read from page renders). Aliases come from name/symbol pairs on the same
+  table row of a held release or an exact name match in NSE's corporate-actions files, each citing its source. An alias may be
+  `exclusive` inside a date window (used only for United Breweries Ltd. -> UBL, not United Breweries (Holdings) -> UBHOLDINGS).
+  One workbook typo ("Punjab & National Bank", Next 50 exit 2004-05-28) is aliased to PNB for that month only.
 - 2004 prices for some large companies are absent from NSE's own files (e.g. L&T before 2004-06-23).
 
 ## 8. Held inputs (origin not re-verified)

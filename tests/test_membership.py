@@ -72,3 +72,30 @@ def test_contradictions_flag_events_that_cannot_be_undone():
     # an exclusion of a current member with no re-inclusion is also a contradiction
     bad2 = ev([("2018-01-01", "A", "OUT")])
     assert m.contradictions({"A"}, "2026-01-01", bad2).action.tolist() == ["OUT"]
+
+
+def test_every_anchor_file_exists_and_matches_its_declared_size():
+    from nseuniverse import paths
+    assert {"NIFTY50", "NIFTYNEXT50"} <= set(m.ANCHORED)
+    for k, (n, f) in m.ANCHORED.items():
+        lst = pd.read_csv(paths.ROOT / f)
+        assert len(lst) == n and lst.Symbol.is_unique, k
+
+
+def test_exclusive_alias_overrides_other_candidates_only_inside_its_window():
+    nb = m.NameBook()
+    nb.add("United Breweries Ltd.", "UBL", "a")
+    nb.add("United Breweries Ltd.", "UBHOLDINGS", "b")
+    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2015-01-01")) == {"UBL", "UBHOLDINGS"}
+    nb.add("United Breweries Ltd.", "UBL", "c", "2013-04-01", "2019-12-31", exclusive=True)
+    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2015-01-01")) == {"UBL"}
+    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2010-01-01")) == {"UBL", "UBHOLDINGS"}   # outside the window nothing changes
+
+
+def test_documented_dummy_constituents_are_counted_per_day_and_stack():
+    days = pd.bdate_range("2026-04-27", "2026-05-06")
+    exc = pd.DataFrame([("X", "2026-04-30", "2026-05-04", 1, "dummy", "s"), ("X", "2026-05-01", "2026-05-01", 2, "dummy", "s")],
+                       columns=["index_key", "from_date", "to_date", "extra_members", "reason", "source"])
+    assert m.extra_members(days, exc, "X").tolist() == [0, 0, 0, 1, 3, 1, 0, 0]
+    assert not m.extra_members(days, exc, "Y").any()
+    assert not m.extra_members(days, None, "X").any()
