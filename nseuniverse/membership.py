@@ -333,7 +333,8 @@ def size_on(iv: pd.DataFrame, days) -> pd.Series:
 # index_key -> (official size, anchor file of current constituents). Only indices with a fixed
 # size can be checked day by day; others stay UNVERIFIED until a stronger check exists.
 ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.csv"),
-            "NIFTYNEXT50": (50, "data/raw/constituents/2026-11-15/ind_niftynext50list.csv")}
+            "NIFTYNEXT50": (50, "data/raw/constituents/2026-11-15/ind_niftynext50list.csv"),
+            "NIFTY100": (100, "data/raw/constituents/2026-11-15/ind_nifty100list.csv")}
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 

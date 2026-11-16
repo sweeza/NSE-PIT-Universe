@@ -76,7 +76,7 @@ def test_contradictions_flag_events_that_cannot_be_undone():
 
 def test_every_anchor_file_exists_and_matches_its_declared_size():
     from nseuniverse import paths
-    assert {"NIFTY50", "NIFTYNEXT50"} <= set(m.ANCHORED)
+    assert {"NIFTY50", "NIFTYNEXT50", "NIFTY100"} <= set(m.ANCHORED)
     for k, (n, f) in m.ANCHORED.items():
         lst = pd.read_csv(paths.ROOT / f)
         assert len(lst) == n and lst.Symbol.is_unique, k
