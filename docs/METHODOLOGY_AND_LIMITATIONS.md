@@ -94,21 +94,22 @@ strategy) are marked `outside_scope`.
   download skipped with ~300 other suffixed files (`ind_prsDDMMYYYY_1.pdf`) listed on niftyindices.com. It was added and the build
   now ends verification at any event it cannot undo (`membership.contradictions`). Other suffixed releases may hold more
   Nifty 50 changes; none are known to be missing, since the check reports no contradiction.
-- Membership (Nifty 100): anchored on `data/raw/constituents/2026-11-15/ind_nifty100list.csv` (100 symbols). VERIFIED 2004-03-01 → today
+- Membership (Nifty 100): anchored on `data/raw/constituents/2026-11-15/ind_nifty100list.csv` (100 symbols). VERIFIED 2004-01-01 (first bhavcopy day) → today
   (one window; full build/verify 2026-11-16, no FAIL). Events: NSE workbook sheet "Nifty 100" to 2020, then the Nifty 100 section of 16 review
   releases 2020-09-25 → 2026-09-30 and the DVR exclusion of 2024-08-30 (`ind_prs23082024_1.pdf`), all in `index_events_press.csv`.
   The real members number exactly 100 and trade within ±3 sessions. Documented extras (cited in `index_dual_class.csv` and
   `index_size_exceptions.csv`): Tata Motors DVR 2016-04-01 → 2020-06-25 and 2023-09-29 → 2024-08-29 (101 securities, 100 companies);
   zero-price demerger entities for Jio Financial (2023-07-20 → 09-06), ITC Hotels (2025-01-06 → 02-07), Siemens Energy, Tata Motors
-  (TMCV), Kwality Wall's (2025-12-05 → 2026-02-23) and the Vedanta four (2026-04-30 → 06-23). Name/ticker links added from held files:
-  ABB Ltd. (INFERRED, EQUITY_L), Colgate (COLGATE until 2007-11-28), L&T -> LT, NIIT -> NIITLTD and Jindal Vijayanagar Steel
-  (JINDVIJSTL) -> JSW Steel (`identity_links.csv`; the JSW link is INFERRED, same issuer ISIN INE019A). Cross-check (not a source): Nifty 100
-  equals Nifty 50 + Next 50 on every day all three are verified, except the DVR days and 2004-05-24 → 05-27, when the NSE workbook has
-  Vijaya Bank in Nifty 100 from 2004-05-24 but in Next 50 only from 2004-05-28 (a conflict inside the workbook; not resolved). Not verified:
-  - 2004-01-01 → 2004-02-29: Merck Ltd. (a member until 2004-03-01) has no NSE bhavcopy rows before 2007-11-05, so the trading check
-    cannot pass (the replay has 99 members).
-  - Other suffixed mid-cycle releases (e.g. ind_prs20012026_2, ind_prs20052026_1, ind_prs17062026_2, ind_prs13072026_1) are not held;
-    a membership change in one of them would show only as a contradiction if it touched a current member.
+  (TMCV), Kwality Wall's (2025-12-05 → 2026-02-23) and the Vedanta four (2026-04-30 → 06-23). Name links from held files, all in
+  `name_aliases.csv` with their evidence: ABB Ltd. (INFERRED, EQUITY_L), Colgate (COLGATE until 2007-11-28), "Larsen & Toubro Ltd.-Sus" -> L&T,
+  "NIIT Ltd.-Sus" -> NIIT (workbook "-Sus" suffix stripped, INFERRED), "JSW Steel Ltd." -> JINDVIJSTL (INFERRED, same issuer ISIN INE019A) and
+  "Merck Ltd." -> EMERCK (INFERRED, symbolchange.csv; EMERCK trades in the raw 2004 bhavcopy). Identity joins for these tickers are NOT made
+  (the old/new tickers are more than 30 days apart, so `identity_links.csv` cannot join them); the aliases resolve each event by date.
+  Cross-check (not a source): Nifty 100 equals Nifty 50 + Next 50 on every day all three are verified, except the DVR days and
+  2004-05-24 → 05-27, when the NSE workbook has Vijaya Bank in Nifty 100 from 2004-05-24 but in Next 50 only from 2004-05-28 (a conflict
+  inside the workbook; not resolved). Not verified: nothing, except that other suffixed mid-cycle releases (e.g. ind_prs20012026_2,
+  ind_prs20052026_1, ind_prs17062026_2, ind_prs13072026_1) are not held; a membership change in one of them would show only as a
+  contradiction if it touched a current member.
 - Membership (Nifty Next 50): anchored on `data/raw/constituents/2026-11-15/ind_niftynext50list.csv` (50 symbols).
   VERIFIED 2004-01-01 (first bhavcopy day) → today. On days with documented dummy-symbol constituents the rule is:
   the real members number exactly 50 and trade within ±3 sessions, and the published total is 50 + the extras.
