@@ -12,7 +12,7 @@ instead of estimated.
 | **All bhavcopy data, 2004 → today** | **Complete.** 5,680 trading days, 9,953,639 rows, both NSE formats, every column NSE published for that era (older eras simply did not publish ISIN, trade counts, etc.; those stay null). | Every row is re-read by an independent parser and compared exactly: 0 differences. The 24 days NSE published in both formats are identical. |
 | **All NSE equity securities, adjusted** | **Raw: complete.** 8,148 securities (4,825 equity/SME-equity), stable `sec_id`, ticker/ISIN history. **Adjusted: verified from 2007-01-01.** | Each split/bonus is tested against the price move NSE printed; 1,277 pass, 114 are too small to test, 15 are rejected (the feed claims an action the prices do not show). |
 | **Official index values** | **238 indices** from two independent NSE publications (daily files from 2012, history API from each index's base date), including price, total return, PE/PB/yield. | The sources agree on 99.6% of overlapping days; the 1,061 disagreements are flagged `conflict=True` with the other source's value, never hidden. |
-| **Index membership from launch** | **Nifty 50 verified 2017-09-29 → today.** All other indices: **not verified** (see below). | Exactly 50 members on every trading day, every member traded, and the set equals NSE's official list today. |
+| **Index membership from launch** | **Nifty 50 verified 2017-09-29 → today.** The other 56 in-scope indices (NSE's Broad Market and Sectoral categories, `data/curated/index_universe.csv`): **not verified** (see below). | Exactly 50 members on every trading day, every member traded, and the set equals NSE's official list today. |
 
 ## Read this before relying on it
 

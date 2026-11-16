@@ -63,6 +63,11 @@ A window is VERIFIED only if every trading day has exactly the official count of
 member traded within ±3 sessions. Press-release changes after the workbook (2020-09 →) are entered from
 the PDFs into `data/curated/index_events_press.csv`, each citing its file.
 
+**Scope.** The indices in scope are NSE's "Broad Market" (23) and "Sectoral" (34) categories, listed with their
+source in `data/curated/index_universe.csv`. `api.coverage()` has a `category` column; 20 of the 57 appear in NSE's
+workbook (the rest have no change history before ~2020 in the sources held). Other workbook indices (thematic,
+strategy) are marked `outside_scope`.
+
 ## 7. Known limitations (all surfaced by `verify`)
 - Adjusted prices before 2007-01-01 are unverified (feed gap).
 - 15 share actions in the feed are contradicted by prices and are not applied (`build/actions_rejected_or_shifted.csv`).

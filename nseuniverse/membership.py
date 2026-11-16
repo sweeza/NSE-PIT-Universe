@@ -243,13 +243,19 @@ def build(build_dir: Path | None = None) -> dict:
     ev["suggestion"] = [(", ".join(nb.suggest(c)) if n != "OK" else "") for c, n in zip(ev.company, ev.resolution)]
     ev.to_parquet(out / "events_resolved.parquet", index=False, compression="zstd", compression_level=9)
     iv, cov = build_anchored(ev, seg_map, t[["date", "sec_id", "series"]], paths.ROOT)
-    others = sorted(set(ev.index_key) - set(ANCHORED))
+    uni = pd.read_csv(paths.CURATED / "index_universe.csv") if (paths.CURATED / "index_universe.csv").exists() else pd.DataFrame(columns=["category", "index_name", "index_key"])
+    scope = dict(zip(uni.index_key, uni.category))
+    others = sorted((set(ev.index_key) | set(scope)) - set(ANCHORED))
     rel = ev[ev.relevant]
     for k in others:
         g = rel[rel.index_key == k]
-        cov = pd.concat([cov, pd.DataFrame([(k, pd.NaT, pd.NaT, "UNVERIFIED",
-            f"no launch list in the source and no constituent anchor loaded; {int((g.resolution != 'OK').sum())} of {len(g)} relevant events have unresolved company names")],
-            columns=cov.columns)], ignore_index=True)
+        if len(g):
+            why = (f"no launch list in the source and no constituent anchor loaded; "
+                   f"{int((g.resolution != 'OK').sum())} of {len(g)} relevant events have unresolved company names")
+        else:
+            why = "no change history for this index in the held sources (NSE workbook ends 2020 and does not list it); press releases only from ~2020"
+        cov = pd.concat([cov, pd.DataFrame([(k, pd.NaT, pd.NaT, "UNVERIFIED", why)], columns=cov.columns)], ignore_index=True)
+    cov["category"] = cov["index_key"].map(scope).fillna("outside_scope")
     iv.to_parquet(out / "intervals.parquet", index=False, compression="zstd", compression_level=9)
     cov.to_parquet(out / "coverage.parquet", index=False, compression="zstd", compression_level=9)
     un = ev[(ev.resolution != "OK") & ev.relevant].drop_duplicates(["company", "resolution"])
@@ -268,7 +274,7 @@ def anchor_intervals(anchor: set[str], anchor_date, events: pd.DataFrame) -> pd.
     earliest event gets from_date = NaT (member since before the first recorded change).
     `events` needs columns date, sec_id, action (IN/OUT), effective = first day the change applies."""
     ev = events[events.date <= pd.Timestamp(anchor_date)].sort_values("date", ascending=False, kind="mergesort")
-    open_to = {s: pd.NaT for s in anchor}        # sec_id -> end of the interval being built (NaT = still a member)
+    open_to = {s: pd.NaT for s in sorted(anchor)}        # sec_id -> end of the interval being built (NaT = still a member)
     rows = []
     for d, g in ev.groupby("date", sort=False):
         for r in g[g.action == "IN"].itertuples():
@@ -277,7 +283,7 @@ def anchor_intervals(anchor: set[str], anchor_date, events: pd.DataFrame) -> pd.
         for r in g[g.action == "OUT"].itertuples():
             if r.sec_id not in open_to:
                 open_to[r.sec_id] = d
-    rows += [(s, pd.NaT, t) for s, t in open_to.items()]
+    rows += [(s, pd.NaT, open_to[s]) for s in sorted(open_to)]  # sorted: set/dict order must not leak into output
     return pd.DataFrame(rows, columns=["sec_id", "from_date", "to_date"])
 
 

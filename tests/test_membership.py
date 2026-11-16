@@ -52,3 +52,10 @@ def test_dated_alias_picks_the_company_that_existed_on_the_date():
     nb.add("Bajaj Auto Ltd", "BAJAJ-AUTO", "a", "2008-03-15", None)
     assert nb.candidates("Bajaj Auto Ltd", pd.Timestamp("2005-01-01")) == {"BAJAJAUTO"}
     assert nb.candidates("Bajaj Auto Ltd", pd.Timestamp("2010-01-01")) == {"BAJAJ-AUTO"}
+
+
+def test_index_universe_reference_is_complete_and_unique():
+    from nseuniverse import paths
+    u = pd.read_csv(paths.CURATED / "index_universe.csv")
+    assert u.index_key.is_unique and len(u) == 57
+    assert u.category.value_counts().to_dict() == {"sectoral": 34, "broad_market": 23}
