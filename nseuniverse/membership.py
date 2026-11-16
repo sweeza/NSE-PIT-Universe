@@ -287,6 +287,29 @@ def anchor_intervals(anchor: set[str], anchor_date, events: pd.DataFrame) -> pd.
     return pd.DataFrame(rows, columns=["sec_id", "from_date", "to_date"])
 
 
+def contradictions(anchor: set[str], anchor_date, events: pd.DataFrame) -> pd.DataFrame:
+    """Events that cannot be undone consistently when rolling back from `anchor`.
+
+    An IN for a security that is not a member at that point (it left later, but no exclusion is
+    recorded), or an OUT for one already a member, means a change is missing from the sources.
+    `anchor_intervals` has to skip such an event, so every date from it onward may hold wrong members
+    even when the count is right. Returns columns date, sec_id, action."""
+    ev = events[events.date <= pd.Timestamp(anchor_date)].sort_values("date", ascending=False, kind="mergesort")
+    open_ = set(anchor)
+    bad = []
+    for d, g in ev.groupby("date", sort=False):
+        for r in g[g.action == "IN"].itertuples():
+            if r.sec_id in open_:
+                open_.discard(r.sec_id)
+            else:
+                bad.append((d, r.sec_id, "IN"))
+        for r in g[g.action == "OUT"].itertuples():
+            if r.sec_id in open_:
+                bad.append((d, r.sec_id, "OUT"))
+            open_.add(r.sec_id)
+    return pd.DataFrame(bad, columns=["date", "sec_id", "action"])
+
+
 def size_on(iv: pd.DataFrame, days) -> pd.Series:
     """Number of members on each day for intervals [from_date, to_date); NaT from = since forever."""
     days = pd.DatetimeIndex(days)
@@ -344,6 +367,10 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         iv.insert(0, "index_key", k)
         sz = size_on(iv, days).values
         ok = sz == n
+        # an event that cannot be undone means a change is missing: nothing from its date on can be verified
+        bad = contradictions(asids - {None}, anchor_date, events)
+        if len(bad):
+            ok[days >= bad.date.min()] = False
         # every member must have traded within +-TRADE_WINDOW sessions of the day
         for r in iv.itertuples():
             lo = 0 if pd.isna(r.from_date) else int(days.searchsorted(r.from_date, side="left"))
@@ -359,7 +386,8 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
             cov.append((k, a, b, "VERIFIED", f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"))
         bad_days = int((~ok).sum())
         cov.append((k, days[0], days[-1], "PARTIAL", f"{bad_days} of {len(days)} trading days fail the size/trading check; "
-                                                 f"gaps come from names or tickers not yet linked (see unresolved.csv)"))
+                                                 f"gaps come from names or tickers not yet linked (see unresolved.csv)"
+                                                 + (f"; {len(bad)} event(s) contradict the anchor (earliest {bad.date.min().date()}): a change is missing from the sources, so nothing from that date is verified" if len(bad) else "")))
         ivs.append(iv)
     return (pd.concat(ivs, ignore_index=True) if ivs else pd.DataFrame(columns=["index_key", "sec_id", "from_date", "to_date"]),
             pd.DataFrame(cov, columns=["index_key", "from_date", "to_date", "status", "reason"]))

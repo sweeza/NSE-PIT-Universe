@@ -61,7 +61,9 @@ mapped to securities only by exact normalised match against NSE-published names 
 (`data/curated/name_aliases.csv`, with optional validity dates); near misses are suggestions, never applied.
 A window is VERIFIED only if every trading day has exactly the official count of members and every
 member traded within ±3 sessions. Press-release changes after the workbook (2020-09 →) are entered from
-the PDFs into `data/curated/index_events_press.csv`, each citing its file.
+the PDFs into `data/curated/index_events_press.csv`, each citing its file. Rolling back, an inclusion of a security that is
+not a member at that point (or an exclusion of one that is) is a **contradiction**: a change is missing from the sources,
+so no date from that event onward is VERIFIED.
 
 **Scope.** The indices in scope are NSE's "Broad Market" (23) and "Sectoral" (34) categories, listed with their
 source in `data/curated/index_universe.csv`. `api.coverage()` has a `category` column; 20 of the 57 appear in NSE's
@@ -69,19 +71,33 @@ workbook (the rest have no change history before ~2020 in the sources held). Oth
 strategy) are marked `outside_scope`.
 
 ## 7. Known limitations (all surfaced by `verify`)
-- Adjusted prices before 2007-01-01 are unverified (feed gap).
+- Adjusted prices before 2007-01-01 are unverified. The gap is in what NSE's Corporate Actions page lists for
+  2004-2006, not in the held copy: a fresh download of that page for 2004-01-01..2006-12-31 (2,062 records) is
+  identical, record for record, to the held feed's 2004-2006 records (`data/raw/corporate_actions/`, 2026-11-16).
+  No evidence exists to move `COVERAGE_START`.
 - 15 share actions in the feed are contradicted by prices and are not applied (`build/actions_rejected_or_shifted.csv`).
 - 108 demergers/schemes/rights-without-price leave documented breaks (`data/curated/waivers.csv`); 176 further
   overnight moves have no explanation in the feed (SME and ETF unit events, missing splits, crashes).
 - Rights adjustments use the theoretical price and differ from the market move by >25% on 3 days.
 - Index sources disagree on 1,061 index-days (338 by ≥0.1%), flagged per row; 925 index-days are missing
   inside index lives (non-publication days).
-- Membership: only Nifty 50 (2017-09-29 →) is verified. Before that the replay has wrong members
-  (e.g. Apollo Hospitals/Idea in, Kotak out in 2010) from name-resolution errors.
+- Membership (Nifty 50): VERIFIED 2004-05-24 → 2016-03-31 and 2017-09-29 → today. Not verified:
+  - 2004-01-01 → 2004-05-23: L&T (a member until 2004-05-24) has no NSE bhavcopy before 2004-06-23, so the trading check fails.
+  - 2016-04-01 → 2017-09-28: the replay has 51 securities. NSE's own 22 Feb 2016 release says that once a DVR is included "the
+    Nifty 50 index will have 51 securities but continue to have 50 companies" (Tata Motors DVR was included 2016-04-01, excluded
+    2017-09-29). The exactly-50 rule is deliberately not relaxed, so this span stays unverified.
+  - Before 2004-01-01 there is no bhavcopy.
+  History of the 2017→today window: it was once VERIFIED on count alone while Indian Oil (in per the Feb 2017 release, out
+  2022-03-31) and Apollo Hospitals (in 2022-03-31) were wrong. The missing release is `ind_prs24022022_1.pdf`, which the press
+  download skipped with ~300 other suffixed files (`ind_prsDDMMYYYY_1.pdf`) listed on niftyindices.com. It was added and the build
+  now ends verification at any event it cannot undo (`membership.contradictions`). Other suffixed releases may hold more
+  Nifty 50 changes; none are known to be missing, since the check reports no contradiction.
 - 2004 prices for some large companies are absent from NSE's own files (e.g. L&T before 2004-06-23).
 
 ## 8. Held inputs (origin not re-verified)
 `IndexInclExcl.xls` (NSE Indices workbook format, ends 2020-09-14), `raw_corporate_actions_1995_2026.json`,
 `symbolchange.csv`, `EQUITY_L.csv`. They were obtained before this rebuild; the corporate-action feed
-could not be re-fetched because nseindia.com refuses scripted requests. 521 manifest rows lost to a
+could not be re-fetched by script because nseindia.com refuses scripted requests. For 2004-2006 it was
+checked against a manual download from NSE's own Corporate Actions page: 2,062 of 2,062 records match
+(symbol, ex-date, purpose), so that slice of the feed is confirmed as NSE-published; other years are not re-checked. 521 manifest rows lost to a
 concurrent-write bug were reconstructed from the files on disk and are marked as such.

@@ -44,7 +44,7 @@ Probed 2026-11-15 with plain HTTP clients and a browser-like User-Agent, no logi
 - The NSE corporate-actions API (`nseindia.com/api/corporates-corporateActions`) sits behind `nseindia.com`, which returns **HTTP 403 to scripted requests**, and the holiday API redirects.
 - A probe through the in-app browser session was declined by the permission layer and was not retried or worked around.
 - A previously fetched copy exists (`data/raw/raw_corporate_actions_1995_2026.json`, 43,816 records, `caBroadcastDate` empty on every row). Its origin and completeness were not re-checked today.
-- **Needs a decision before Phase 3.** See section 6.
+- **Update 2026-11-16:** the page itself (nseindia.com → Companies Listing → Corporate Filings → Corporate Actions, Equity tab, custom dates) works in a normal browser. Its Download button opens a new tab, which the in-app browser blocks for automated clicks, so the file was downloaded by the user. `data/raw/corporate_actions/CF-CA-equities-01-01-2004-to-31-12-2006.csv` (230,817 bytes, 2,062 rows, no ISIN column) matches the held feed's 2004-2006 records exactly. It adds no records; it is kept as provenance for that slice. The page offers nothing earlier or fuller for 2004-2006.
 
 ## 4. Listing and symbol files — VERIFIED
 

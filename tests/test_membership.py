@@ -59,3 +59,16 @@ def test_index_universe_reference_is_complete_and_unique():
     u = pd.read_csv(paths.CURATED / "index_universe.csv")
     assert u.index_key.is_unique and len(u) == 57
     assert u.category.value_counts().to_dict() == {"sectoral": 34, "broad_market": 23}
+
+
+def test_contradictions_flag_events_that_cannot_be_undone():
+    # consistent history: no contradictions
+    ok = ev([("2020-01-01", "B", "IN"), ("2020-01-01", "C", "OUT")])
+    assert m.contradictions({"A", "B"}, "2026-01-01", ok).empty
+    # X was included in 2017 but is not in today's list and no exclusion is recorded
+    bad = ev([("2017-03-31", "X", "IN"), ("2017-03-31", "C", "OUT")])
+    out = m.contradictions({"A", "B"}, "2026-01-01", bad)
+    assert out.to_dict("records") == [{"date": pd.Timestamp("2017-03-31"), "sec_id": "X", "action": "IN"}]
+    # an exclusion of a current member with no re-inclusion is also a contradiction
+    bad2 = ev([("2018-01-01", "A", "OUT")])
+    assert m.contradictions({"A"}, "2026-01-01", bad2).action.tolist() == ["OUT"]
