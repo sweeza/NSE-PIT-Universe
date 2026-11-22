@@ -1,4 +1,4 @@
-# Audit report (interim): Stage 0 and Stage 7
+# Audit report (interim): Stages 0, 7 and part of 6
 
 Date: 2026-11-22. Code at commit 34deb34. Scripts: `audit/rehash.py`, `audit/mutate.py` (written by the auditor, no project parsers used for the re-hash).
 
@@ -40,5 +40,26 @@ Reading: membership errors do not make `verify` FAIL. They shrink the VERIFIED c
 | S2-2 | S2 | A wrong alias that coexists with the right one is not detected (EIHOTEL to WIPRO changed nothing). The resolver picks among candidates, so a wrong extra alias is only harmless while the right one exists. A sole wrong alias is untested. | Rerun with the correct alias removed. Audit aliases per Stage 6.7. |
 | S2-3 | S2 | The `index_size_exceptions.csv` rows for the Nifty 100 Siemens dummy have no effect on coverage: with the row dropped, Nifty 100 stays VERIFIED. The build counts only real members, so the exception rows are documentation, as OPEN_ISSUES B16 already says. README and METHODOLOGY say dummies are "verified via index_size_exceptions.csv". | Reword the docs, or make the build enforce the dummy count. |
 | S3-1 | S3 | The release gate has no coverage regression check. | Store a baseline of verified days per index and fail when it drops. |
+
+## Stage 6 (membership), partly done
+
+Scripts: `audit/stage6_*.py`. Data: the rebuilt `data/build` (identical to the committed checksums).
+
+| Test | Result |
+|---|---|
+| 6.1 Recount of members per day from `intervals.parquet`, all 27 verified indices, every verified day | Sizes equal the official size on every day except documented extra-security periods: Nifty 50 +1 (2016-04-01..2017-09-28, Tata Motors DVR); Nifty 100 and 200 +1 (2016-04-01..2020-06-25 and 2023-09-29..2024-08-29); Nifty 500 +1 (2016-04-01..2024-08-29); Smallcap 250 and Midsmallcap 400 +1 (2020-06-26..2023-09-28). Each matches a row in `index_dual_class.csv`. No day is off-size without a curated reason. |
+| 6.1 Every member has a bhavcopy row on that day | Passes except on two weekend special sessions (2010-05-16, 2012-11-11), where the bhavcopy holds only a few symbols, so about 50 members per index show as not traded. Not a data error, but the claim "every member traded" needs that caveat. |
+| 6.2 Churn per year (entries) | Nifty 50: 1 to 6 a year; Next 50: 6 to 19; Nifty 100: 5 to 17; Nifty 500: 18 to 106. Peaks are 2016 (April restructuring) and 2011 to 2012. Nothing implausible. |
+| 6.3 Known-event probes (31) | 22 matched, 9 did not. I checked Zomato and Jio Financial (Nifty 50 from 2025-03-28), BEL and Trent (2024-09-30) and Adani Enterprises (2022-09-30) against the held releases: the data is right and my probe was wrong. The remaining misses are **inconclusive**, not errors: Satyam exit date (data: out by 2009-01-13), Adani Ports in Nifty 50 on 2016-06-01, IDFC First in Nifty Bank on 2019-01-01, and Jio Financial in Nifty 100 on 2023-07-21 (by design it is a dummy then). My probe list came from memory, not sources, so this test is weak. It needs a sourced list. |
+| 6.6 All 3,257 curated press events re-read with PyMuPDF (independent of the project's text files) | 3,257 of 3,257 symbols found in the cited release; direction (IN or OUT) agrees for 3,254. The 3 flagged are false alarms of my heuristic (Nifty Bank "inclusions" wording, and a "BSE Exclusion" row in a revocation table); each is correct on reading. Date is 0 to 150 days after the release date for every row. |
+
+Findings from Stage 6
+
+| ID | Sev | Finding |
+|---|---|---|
+| S3-2 | S3 | `data/build/press_text/ind_prs23082021.txt` is empty (29 bytes), although the PDF has a normal text layer that PyMuPDF reads (symbols and tables included). OPEN_ISSUES B8 calls this PDF image-only; that is out of date. Any check that reads `press_text` silently sees nothing for this release (94 rows rest on it). Their content matches the PDF. |
+| S3-3 | S3 | Two weekend special sessions have partial bhavcopies, so "every member traded within the day" cannot hold there. Document it. |
+
+Still to do in Stage 6: 6.4 blind sample against independent sources (needs the owner to supply factsheets or archives), 6.5 completeness (releases we do not hold, B7 and B12; and any held release with no curated rows), 6.7 alias audit, 6.8 exemption removal.
 
 Not yet tested in Stage 7: bhavcopy cell corruption, corporate-action ratio flip, raw-file deletion, the Nifty 500 symbol swap. Stages 1 to 6, 8 and 9 are not started.
