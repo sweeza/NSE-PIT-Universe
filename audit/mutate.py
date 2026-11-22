@@ -1,9 +1,11 @@
-"""Stage 7: inject one curated-data error, rebuild membership, run the gate checks. Usage: mutate.py NAME"""
+"""Stage 7: inject one curated-data error, rebuild membership, run the gate checks.
+Usage: mutate.py NAME SCRATCH_DIR     (the real repo is the baseline; all work happens under SCRATCH_DIR/mut/NAME)"""
 import os, sys, shutil, subprocess, time
 from pathlib import Path
 import pandas as pd
-S = Path(__file__).resolve().parents[1]
-FRESH = S / "fresh"
+REPO = Path(__file__).resolve().parents[1]
+S = Path(sys.argv[2])
+FRESH = REPO
 name = sys.argv[1]
 M = S / "mut" / name
 if M.exists(): subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(M)], check=False)
@@ -33,7 +35,7 @@ elif name == "m3_swap_symbol":     # swap an inclusion to a different real compa
     ev.loc[r.name, "symbol"] = "ASIANPAINT" if r.symbol != "ASIANPAINT" else "TITAN"
     info = f"{r.date} {r.symbol} -> {ev.loc[r.name,'symbol']}"; save_ev(ev)
 elif name == "m3b_swap_symbol_n500":   # same, in Nifty 500
-    r = ev[(ev.index_key == "NIFTY500") & (ev.action == "IN") & (ev.date > "2015") & (ev.date < "2020")].iloc[10]
+    r = ev[(ev.index_key == "NIFTY500") & (ev.action == "IN") & (ev.date > "2021") & (ev.date < "2024")].iloc[10]
     ev.loc[r.name, "symbol"] = "ASIANPAINT" if r.symbol != "ASIANPAINT" else "TITAN"
     info = f"{r.date} {r.symbol} -> {ev.loc[r.name,'symbol']}"; save_ev(ev)
 elif name == "m4_bad_alias":       # point a historic alias at a different company
@@ -66,7 +68,7 @@ elif name.startswith("dropdc_"):
     x.drop(x.index[i]).to_csv(C / "index_dual_class.csv", index=False)
 else: raise SystemExit("unknown " + name)
 env = dict(os.environ, NSEUNIVERSE_ROOT=str(M))
-code = ("import time;t=time.time();from nseuniverse import membership,verify;"
+code = (f"import sys;sys.path.insert(0,r'{REPO}');" "import time;t=time.time();from nseuniverse import membership,verify;"
         "membership.build();"
         "[print(r.name,r.status,r.summary[:160]) for r in (verify.check_curated_provenance(),verify.check_membership())];"
         "import pandas as pd;from nseuniverse import paths;"
@@ -75,7 +77,7 @@ code = ("import time;t=time.time();from nseuniverse import membership,verify;"
         "bb,mm=f(b),f(m);dd=(mm.reindex(bb.index.union(mm.index)).fillna(0)-bb.reindex(bb.index.union(mm.index)).fillna(0));dd=dd[dd!=0];"
         "print('COVERAGE_CHANGE(verified calendar days vs baseline):',dd.to_dict() or 'none')")
 t0 = time.time()
-p = subprocess.run([str(S / "venv" / "Scripts" / "python.exe"), "-c", code], env=env, capture_output=True, text=True, cwd=str(M))
+p = subprocess.run([sys.executable, "-I", "-c", code], env=env, capture_output=True, text=True, cwd=str(M))
 out = (p.stdout + p.stderr).strip().splitlines()
 print(f"[{name}] {info} | rc={p.returncode} {time.time()-t0:.0f}s")
 for l in out[-6:]: print("   ", l[:260])
