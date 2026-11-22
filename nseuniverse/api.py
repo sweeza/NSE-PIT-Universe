@@ -3,6 +3,7 @@ requests outside verified coverage raise CoverageError instead of returning empt
 from __future__ import annotations
 
 import functools
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,18 @@ from . import adjust, bhavcopy, indices, membership, paths, pipeline
 
 class CoverageError(LookupError):
     """The requested date/index is outside what has been verified."""
+
+
+class DataQualityWarning(UserWarning):
+    """The returned frame contains days that NSE's data cannot support (adjustment breaks, conflicting index
+    values). The affected days are listed in frame.attrs['flagged']; mask_gaps / mask_conflicts blank them."""
+
+
+def _flag_summary(flagged: pd.DataFrame, what: str, masked: bool) -> str:
+    by = flagged.groupby("class").size().to_dict()
+    action = "returns on these days were set to NaN" if masked else "returns on these days are NOT masked"
+    return (f"{len(flagged)} {what} day(s) in the result ({by}); {action}. "
+            f"See frame.attrs['flagged'] for the exact days.")
 
 
 @functools.lru_cache(maxsize=None)
@@ -138,26 +151,49 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
                 raise
             gaps = pd.DataFrame({"sec_id": [], "date": []})
         gk = set(zip(gaps.sec_id, gaps.date))
+        gcls = {(s, d): c for s, d, c in zip(gaps.sec_id, gaps.date, gaps.get("class", [""] * len(gaps)))}
         p["adj_gap"] = [(s, d) in gk for s, d in zip(p.sec_id, p.date)]
+        p["adj_gap_class"] = [gcls.get((s, d), "") for s, d in zip(p.sec_id, p.date)]
         if mask_gaps:
             p.loc[p["adj_gap"], "adj_return"] = float("nan")
     elif mask_gaps:
         raise ValueError("mask_gaps needs an adjust_mode")
     p = p[(p.date >= start_t) & (p.date <= end_t)]
+    if adjust_mode is not None:
+        fl = p.loc[p.adj_gap, ["sec_id", "date", "adj_gap_class"]].rename(columns={"adj_gap_class": "class"})
+        fl = fl.merge(p[["sec_id", "symbol"]].drop_duplicates("sec_id"), on="sec_id", how="left") if "symbol" in p else fl
+        p.attrs["flagged"] = fl.reset_index(drop=True)
+        if len(fl):
+            warnings.warn(_flag_summary(fl, "flagged adjusted-price", mask_gaps), DataQualityWarning, stacklevel=2)
     p.attrs["adjust_mode"] = adjust_mode
     p.attrs["as_of"] = None if as_of is None else str(pd.Timestamp(as_of).date())
     return p.sort_values(["sec_id", "date"]).reset_index(drop=True)
 
 
-def index_values(index: str, start=None, end=None) -> pd.DataFrame:
+def index_values(index: str, start=None, end=None, mask_conflicts: bool = False) -> pd.DataFrame:
+    """Official index values. Adds ret (daily change of close). Days where NSE's two sources disagree carry
+    conflict=True. A return is unreliable if either its day or the previous day conflicts; with
+    mask_conflicts=True ret is NaN on those days. frame.attrs['flagged'] lists them either way."""
     v = indices.values(index)
     if v.empty:
         raise CoverageError(f"no values for index {index!r}")
+    v = v.sort_values("date").reset_index(drop=True)
+    conf = v["conflict"].fillna(False).astype(bool) if "conflict" in v else pd.Series(False, index=v.index)
+    v["ret"] = v["close"].pct_change()
+    bad = conf | conf.shift(1, fill_value=False)
+    v["ret_unreliable"] = bad
+    if mask_conflicts:
+        v.loc[bad, "ret"] = float("nan")
     if start is not None:
         v = v[v.date >= pd.Timestamp(start)]
     if end is not None:
         v = v[v.date <= pd.Timestamp(end)]
-    return v.reset_index(drop=True)
+    v = v.reset_index(drop=True)
+    fl = v.loc[v.ret_unreliable, ["date", "close", "alt_close"]].assign(**{"class": "SOURCE_CONFLICT"})         if "alt_close" in v else v.loc[v.ret_unreliable, ["date"]].assign(**{"class": "SOURCE_CONFLICT"})
+    v.attrs["flagged"] = fl.reset_index(drop=True)
+    if len(fl):
+        warnings.warn(_flag_summary(fl, f"{index} source-conflict", mask_conflicts), DataQualityWarning, stacklevel=2)
+    return v
 
 
 @functools.lru_cache(maxsize=None)

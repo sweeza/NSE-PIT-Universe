@@ -100,3 +100,32 @@ def test_index_members_includes_pit_symbol_and_prices_resolves_past_end(tiny_bui
     # Querying delisted symbol AAA_OLD over [d[0], d[-1]] resolves uniquely
     p_old = api.prices("AAA_OLD", d[0], d[-1], "splits")
     assert len(p_old) == 6
+
+
+def test_flagged_prices_warn_and_list_the_days_with_their_class(tiny_build):
+    d = tiny_build
+    pd.DataFrame({"sec_id": ["S00001"], "symbol": "AAA", "date": [d[4]], "series": "EQ", "r": 0.3, "class": "UNEXPLAINED"}
+                 ).to_csv(paths.BUILD / "adjustment_gaps.csv", index=False)
+    with pytest.warns(api.DataQualityWarning, match="NOT masked"):
+        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert p.adj_gap_class.tolist()[4] == "UNEXPLAINED"
+    assert p.attrs["flagged"]["class"].tolist() == ["UNEXPLAINED"]
+    with pytest.warns(api.DataQualityWarning, match="set to NaN"):
+        api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps=True)
+
+
+def test_index_returns_are_flagged_and_masked_around_source_conflicts(tiny_build, monkeypatch):
+    days = pd.bdate_range("2017-01-02", periods=6)
+    v = pd.DataFrame({"index_key": "X", "date": days, "close": [100, 101, 90, 91, 92, 120.0],
+                      "alt_close": [100, 101, 102, 103, 104, 120.0],
+                      "conflict": [False, False, True, True, True, False]})
+    monkeypatch.setattr(indices, "values", lambda k: v)
+    with pytest.warns(api.DataQualityWarning, match="4 X source-conflict"):
+        r = api.index_values("X")
+    assert r.ret_unreliable.tolist() == [False, False, True, True, True, True]
+    assert r.ret.notna().sum() == 5                         # unmasked by default
+    with pytest.warns(api.DataQualityWarning, match="set to NaN"):
+        m = api.index_values("X", mask_conflicts=True)
+    assert m.ret.isna().tolist() == [True, False, True, True, True, True]
+    clean = api.index_values("X", start=days[0], end=days[1])
+    assert clean.attrs["flagged"].empty

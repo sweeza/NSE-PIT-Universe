@@ -46,6 +46,8 @@ nse.prices("INFY", "2012-01-02", "2020-12-31", "splits",
 
 Symbols resolve as of the query end date and follow renames back (`INFY` ← `INFOSYSTCH`).
 
+**Flagged days.** `prices()` and `index_values()` emit a `DataQualityWarning` whenever the result contains days the data cannot support, and list them in `frame.attrs['flagged']` with a class: `ON_ACTION_DAY` (documented demerger or similar event whose adjustment is not quantifiable), `UNEXPLAINED` (an overnight move nothing in the feed explains; **this can be a real crash**, such as Yes Bank 2020, so masking it removes a real loss) or `SOURCE_CONFLICT` (NSE's two index sources disagree; `index_values` adds `ret` and `ret_unreliable`, and `mask_conflicts=True` blanks `ret` on those days). A NaN return is not zero: count the masked days (`len(frame.attrs['flagged'])`) and report them with the backtest rather than letting a portfolio treat them as 0.
+
 ## Workflow
 
 ```bash
