@@ -68,7 +68,7 @@ so no date from that event onward is VERIFIED.
 **Scope.** The indices in scope are NSE's "Broad Market" (23) and "Sectoral" (34) categories, listed with their
 source in `data/curated/index_universe.csv`. Following Phase 4, 27 indices have active `VERIFIED` coverage windows:
 20 directly anchored indices in `membership.ANCHORED` and 7 composite benchmark indices in `membership.COMPOSITE_ANCHORS`
-(e.g., `NIFTY500MULTICAP502525`, `NIFTYMIDSMALLCAP400`, `NIFTYTOTALMARKET`). Across all 27 verified indices, there are 45
+(e.g., `NIFTY500MULTICAP502525`, `NIFTYMIDSMALLCAP400`, `NIFTYTOTALMARKET`). Across all 27 verified indices, there are 40
 distinct verified windows and **0 contradictions** remaining in the entire dataset (the historical `NIFTYMIDCAP100 2009-03-27` Areva T&D demerger exclusion was verified and resolved via official NSE release `ind_prs12122011.pdf`).
 Subset invariance rules align strictly with official NSE index governance (including the `2018-04-02` restructuring of Midcap/Smallcap benchmarks under `ind_prs05012018.pdf` and `ind_prs22022016_1.pdf`), yielding 0 subset violations across all 4,929 trading days from `2007-01-02` through `2026-11-19`.
 The remaining 30 indices in `index_universe.csv` lack historical workbook sheets in `IndexInclExcl.xls` and legitimately

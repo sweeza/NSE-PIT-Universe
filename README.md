@@ -10,22 +10,36 @@ instead of estimated.
 | Requirement | State | Evidence |
 |---|---|---|
 | **All bhavcopy data, 2004 → today** | **Complete.** 5,684 trading days, 9,968,593 rows (2004-01-01 through 2026-11-19), both NSE formats, every column NSE published for that era (older eras simply did not publish ISIN, trade counts, etc.; those stay null). | Every row is re-read by an independent parser and compared exactly: 0 differences. The 24 days NSE published in both formats are identical. |
-| **All NSE equity securities, adjusted** | **Raw: complete.** 8,182 securities (4,826 equity/SME-equity), stable `sec_id`, ticker/ISIN history. **Adjusted: verified from 2007-01-01.** | Each split/bonus is tested against the price move NSE printed; 1,277 pass, 114 are too small to test, 15 are rejected (the feed claims an action the prices do not show). |
+| **All NSE equity securities, adjusted** | **Raw: complete.** 8,136 securities (4,780 equity/SME-equity), stable `sec_id`, ticker/ISIN history. **Adjusted: verified from 2007-01-01.** | Each split/bonus is tested against the price move NSE printed; 1,277 pass, 114 are too small to test, 15 are rejected (the feed claims an action the prices do not show). |
 | **Official index values** | **238 indices** from two independent NSE publications (daily files from 2012, history API from each index's base date), including price, total return, PE/PB/yield (869,785 index-days). | The sources agree on 99.6% of overlapping days; the 1,061 disagreements are flagged `conflict=True` with the other source's value, never hidden. |
-| **Index membership from 2007-01-01** | **27 indices verified (20 anchored + 7 composite), 45 active VERIFIED coverage windows.** `NIFTY50`, `NIFTYNEXT50`, `NIFTY100`, `NIFTYBANK`, and `NIFTYPHARMA` are each verified `2007-01-02` → `2026-11-19` (4,929 trading days); broad market and sectoral indices (`NIFTY200`, `NIFTY500`, `NIFTYMIDCAP150`, `NIFTYSMALLCAP250`, `NIFTYMIDCAP50`, `NIFTYSMALLCAP100`, `NIFTYSMALLCAP50`, `NIFTYFMCG`, `NIFTYIT`, `NIFTYAUTO`, `NIFTYFINANCIALSERVICES`, `NIFTYMEDIA`, `NIFTYMETAL`, `NIFTYREALTY`, `NIFTYPSUBANK`, and 7 composite benchmarks) are verified from their respective restructuring / launch dates with **0 contradictions** across the entire dataset. Dual-class shares (`TATAMTRDVR`) are verified through `index_dual_class.csv`; the audit confirmed every one of those rows is load-bearing. Zero-price demerger dummies (Siemens Energy, ITC Hotels, Jio Financial, etc.) are listed in `index_size_exceptions.csv` as documentation only: the build counts real members, and the audit showed dropping any of those rows changes nothing. The remaining 30 indices in `data/curated/index_universe.csv` lack historical workbook sheets and legitimately remain `UNVERIFIED` per strict PIT rules. | Exactly the official number of real members on every trading day, every member traded within ±3 sessions, and the set equals NSE's official list today with 0 subset violations across all 4,929 trading days. |
+| **Index membership from 2007-01-01** | **27 indices verified (20 anchored + 7 composite), 40 VERIFIED coverage windows.** `NIFTY50`, `NIFTYNEXT50`, `NIFTY100`, `NIFTYBANK`, `NIFTYPSUBANK` and `NIFTYPHARMA` are each verified `2007-01-02` → `2026-11-19` (4,929 trading days); broad market and sectoral indices (`NIFTY200`, `NIFTY500`, `NIFTYMIDCAP150`, `NIFTYSMALLCAP250`, `NIFTYMIDCAP50`, `NIFTYSMALLCAP100`, `NIFTYSMALLCAP50`, `NIFTYFMCG`, `NIFTYIT`, `NIFTYAUTO`, `NIFTYFINANCIALSERVICES`, `NIFTYMEDIA`, `NIFTYMETAL`, `NIFTYREALTY`, and 7 composite benchmarks) are verified from their respective restructuring / launch dates with **0 contradictions** across the entire dataset. Dual-class shares (`TATAMTRDVR`) are verified through `index_dual_class.csv`; the audit confirmed every one of those rows is load-bearing. Zero-price demerger dummies (Siemens Energy, ITC Hotels, Jio Financial, etc.) are listed in `index_size_exceptions.csv` as documentation only: the build counts real members, and the audit showed dropping any of those rows changes nothing. The remaining 30 indices in `data/curated/index_universe.csv` lack historical workbook sheets and legitimately remain `UNVERIFIED` per strict PIT rules. | Exactly the official number of real members on every trading day, every member traded within ±3 sessions, and the set equals NSE's official list today with 0 subset violations across all 4,929 trading days. |
 
 ## Read this before relying on it
 
 1. **Adjusted prices before 2007-01-01 are not verified.** The corporate-action feed on hand has
    almost no splits or bonuses before then (2004: none; 2005: two). `api.prices(adjust_mode=...)`
    refuses earlier dates unless you pass `allow_unverified=True`.
-2. **Membership is verified across 27 indices (45 verified windows).** NSE's inclusion/exclusion workbook lists changes after
+2. **Membership is verified across 27 indices (40 verified windows).** NSE's inclusion/exclusion workbook lists changes after
    launch but not the launch lists, and it names companies, not symbols. The historical changes have been curated and verified against official press releases. See `api.coverage()` for exactly which dates and indices are trustworthy.
-3. **231 securities carry documented breaks** after 2007-01-01 (demergers, schemes and SME/ETF unit events
+3. **232 securities carry documented breaks** after 2007-01-01 (demergers, schemes and SME/ETF unit events
    the feed does not quantify): `api.adjustment_gaps()`.
 4. **No announcement dates exist** in NSE's feed (`caBroadcastDate` is empty on all 43,816
    records). Adjustments use ex-dates, which is point-in-time safe: an action cannot affect prices
    before its ex-date. `as_of=` applies only actions with ex-date ≤ that date.
+
+## Audit status (2026-11-22) and thin spots
+
+An independent audit (`docs/AUDIT_REPORT.md`, scripts in `audit/`) has covered reproducibility, raw-source authenticity for three of the four unverified inputs, bhavcopy and calendar, identity, membership (including 207 of 216 archived NSE constituent lists), the verify gate (mutation tests), adjustment factors for a 60-security sample (92 of 92 events match an independent rebuild), the dividend entries used by `total_return` (six defects found and fixed), index values, and look-ahead. Not yet done: a third-party comparison of adjusted prices, a review of the rejected actions and unexplained moves, a re-download sample of raw files. What to keep in mind:
+
+- Membership 2007-05 to 2009-12 has a single archived capture (Nifty 50, 2007-04-30); it rests on the workbook, press releases and daily size checks. Back-test from 2010 if you need fully confirmed membership.
+- Nifty 200 and Nifty 500 membership has no archived list before 2014.
+- `IndexInclExcl.xls` has no live NSE source, so its origin is unverified. REIT inclusions of 2026-09-30 are absent from the NSE CSVs captured in October 2026; the build follows the press release.
+- `total_return` uses cash dividends parsed from free text. Unparseable ones are left out (never estimated), and a dividend that cannot be placed on its ex-date (no trading within 7 days) is not applied.
+- 361 index-days differ by more than 0.1% between the daily files and the history API (141 of them Nifty 100 Low Vol 30). Where they differ the history series tracks the parent index better; use `source="history"` or `mask_conflicts=True`.
+- `as_of=` limits which corporate actions are applied; it does not hide price rows dated after `as_of`. Restrict the date range yourself.
+- A date range with no trading day raises `CoverageError` (it used to return an empty frame).
+- `sec_id` labels are not stable across rebuilds: key anything durable by symbol plus ISIN.
+- No index weights, liquidity or circuit limits, bid-ask or costs are in the data.
 
 ## Use
 

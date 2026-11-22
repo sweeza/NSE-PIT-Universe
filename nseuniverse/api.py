@@ -165,6 +165,9 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         p.attrs["flagged"] = fl.reset_index(drop=True)
         if len(fl):
             warnings.warn(_flag_summary(fl, "flagged adjusted-price", mask_gaps), DataQualityWarning, stacklevel=2)
+    if p.empty:
+        raise CoverageError(f"no price rows for {symbols} between {start_t.date()} and {end_t.date()}: "
+                            f"no trading session in the range, or the security did not trade in series {series!r}")
     p.attrs["adjust_mode"] = adjust_mode
     p.attrs["as_of"] = None if as_of is None else str(pd.Timestamp(as_of).date())
     return p.sort_values(["sec_id", "date"]).reset_index(drop=True)

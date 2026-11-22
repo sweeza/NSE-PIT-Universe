@@ -147,3 +147,11 @@ def test_explicit_source_choice_replaces_the_close_and_blanks_mixed_columns(tiny
         api.index_values("X", source="history", mask_conflicts=True)
     with pytest.raises(ValueError):
         api.index_values("X", source="bogus")
+
+
+def test_range_with_no_trading_day_is_an_error_not_an_empty_frame(tiny_build):
+    # audit 8.2: prices('RELIANCE', Saturday, Sunday) used to return 0 rows silently
+    with pytest.raises(api.CoverageError):
+        api.prices("AAA", "2007-01-06", "2007-01-07", None)
+    with pytest.raises(api.CoverageError):
+        api.prices("AAA", "2007-01-06", "2007-01-07", "splits")

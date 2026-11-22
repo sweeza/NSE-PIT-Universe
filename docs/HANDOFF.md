@@ -1,26 +1,23 @@
-# Handoff for a new session (updated 2026-11-22, end of day)
+# Handoff for a new session (updated 2026-11-22, end of session 3)
 
 Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE point-in-time dataset for selecting backtest universes. Read first: `CHECKPOINT.md`, `docs/AUDIT_PLAN.md`, `docs/AUDIT_REPORT.md`, `docs/OPEN_ISSUES.md`.
 
 ## State
 - Data start is **2007-01-01** (owner decision); the API refuses unverified index/date. 27 indices have verified membership; start dates per index are in `data/build/membership/coverage.parquet` (Nifty 50/Next 50/100 from 2007-01-02, Nifty 200 from 2010-11-01, Nifty 500 from 2013-08-26, 2016-09-30 for LargeMidcap 250/Midcap 150/Smallcap 250, later for sector indices).
-- Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-22, after the S2-6 identity join and ratchet re-key); the later S2-9 composite fix was checked with membership, provenance and both baselines (PASS).
-- 90 tests pass. Local commits are ahead of origin (last push was `06a8264`; later commits include the S2-9 fix, Stage 6.4b/6.4c and 250 archive CSVs). **Push only on the owner's explicit yes.**
+- Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-22, after the dividend fixes of A15).
+- 97 tests pass. Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; later commits are local until the owner says push.
 - `data/raw/` now holds 13,548 manifest files, including `constituents_archive/` (250 archived NSE constituent lists from the Internet Archive).
 
 ## Working rules (owner)
 Nothing is estimated. Every curated row cites a file in `data/raw/`. Ask before pushing, deleting, or saving downloads into `data/raw/` (state names, source, size); audit downloads go to the scratchpad first. Do not bypass NSE or BSE bot protection (scripted calls to NSE's corporate-actions API and BSE bhavcopy were refused; stop there). Add a unit test for every new code path. `999 dump/`, `Project Requirement.docx` and untracked scratch stay as they are (owner decision).
 
-## Done today (see AUDIT_REPORT.md)
-Stage 0 reproducibility, Stage 1 for `symbolchange.csv`, `EQUITY_L.csv` and the corporate-actions feed (all match fresh NSE copies; only `IndexInclExcl.xls` has no live source), Stage 2 (bhavcopy cell-for-cell, calendar, outliers, Yahoo price checks: 40 stocks and a 150-stock wide sample), Stage 3 identity (S2-6 join built), Stage 6 membership incl. archive checks 6.4b/6.4c (207 of 216 archived NSE lists match, 9 explained differences, S2-9 DVR error found and fixed), Stage 7 mutation tests (a price edit with a consistent manifest is caught only by an independent source; ratchet check added), API flags (`DataQualityWarning`, `attrs['flagged']`, `mask_gaps`, `mask_conflicts`, `source=`), press releases fully fetched (B7, B12 closed), B9 closed, dead aliases deleted, inferred aliases reviewed for 2007+.
+## Done (see AUDIT_REPORT.md)
+Stages 0-3, 5, 6 (incl. archive checks 6.4b/6.4c), 7, 8, 9 and the Stage 1 re-download sample are done. Stage 4 is half done: factors for 60 securities match an independent rebuild (92 of 92 events); the dividend entries had six defects, all fixed and rebuilt (A15). Stage 5: 361 index-days differ >0.1% between sources, history series tracks the parent better; equal-weight correlation 0.967 (Nifty 50). Stage 8: no look-ahead on 10 dates, 0 refusal violations on 2,960 pairs, empty-range now raises. Stage 9: README/CHECKPOINT/METHODOLOGY numbers corrected, audit status and thin spots added to README.
 
-## Pending, in order
-1. **Stage 4 adjusted prices:** independent rebuild of adjustment factors for about 60 stocks (splits, bonuses, rights, mergers, demergers) from the raw corporate-action JSON, compare factor by factor and the adjusted close; also audit the **dividend entries** that `total_return` mode uses. Report any difference as a finding.
-2. **Stage 5 index values:** the 1,061 two-source conflicts and 929 missing days (24 indices have conflicts; only Nifty 100 Low Vol 30 matters for equity strategies, 141 days, solved with `source="history"` or `mask_conflicts=True`).
-3. **Stage 8 point-in-time and API:** as-of correctness, no future leakage, refusals outside coverage.
-4. **Stage 9 docs honesty pass:** every README/METHODOLOGY claim backed by a check; state the thin spots below.
-5. **Stage 1 sample:** re-download and hash-compare about 150 bhavcopy days, 20 index files, 59 constituent CSVs, 100 press PDFs (downloads to scratch, plain GETs, polite rate).
-6. Update stale rows in `docs/OPEN_ISSUES.md`, final full `verify`, then ask the owner about pushing.
+## Pending, in order (next session)
+1. **Stage 4 remainder** (A16): (a) third-party adjusted-price comparison for 30 stocks (Infosys bonus 2014/2018, HDFC Bank split 2019, Bajaj Auto demerger 2008, Reliance bonus 2017; Yahoo public chart endpoint as in `audit/stage24_prices.py`, tolerance 0.5 percent, explain each miss; downloads to scratch); (b) review at least 50 of the 15 rejected actions / 108 waivers / 177 unexplained moves (`build/actions_rejected_or_shifted.csv`, `data/curated/waivers.csv`, `build/unexplained_jumps.csv`): each needs a cause or a documented gap; (c) review the ~21 dividend records where the auditor's parser and the project differ (rerun `audit/stage4_dividends.py <scratch>`; the 248 factor-2 rows are InvIT headline totals and the project is right); decide GENESYS 2019 `Rs.0125` and SBT 2009 `130%`; (d) the 15 rejected share actions: confirm none is a true action (WIPRO-style bonus 3:2 inside the continuity band).
+2. Unreviewed thin spots: A5 unit test for `build_anchored`; Stage 5.3 base date/value vs NSE methodology (no document held, ask the owner).
+3. After any change: `python -m nseuniverse.cli build`, then `verify` (13 checks, about 10 minutes; prints nothing until done), regenerate baselines only for deliberate changes, ask before pushing.
 
 ## Known thin spots (state them, do not hide them)
 - Membership 2007-05..2009-12 has only one archived capture (Nifty 50, 2007-04-30); it rests on the workbook, press releases and the daily size/anchor checks. The owner asked whether to start the bank at 2010; recommendation given: keep 2007, treat 2007-2009 as lower evidence, back-test from 2010 for fully confirmed membership.

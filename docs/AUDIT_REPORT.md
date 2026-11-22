@@ -269,3 +269,31 @@ Script: `audit/stage5_index.py`, `audit/stage52_ew.py`.
 - Overlap of the daily files and the history API: 279,365 (index, day) rows over 170 indices; |difference| above 0.01%: 971, above 0.1%: 361 in 14 indices (178 above 1%). Nifty 100 Low Vol 30: 141 days, 2016-10-06 to 2017-05-03, mean -3.9%. Others: bond and G-Sec indices (about 200 days), Nifty 50 Dividend Points 32, High Beta 50 14, Arbitrage 12. No duplicate keys in either source. A conflict is not a one-day shift (2 days equal the previous day's value, 6 the next).
 - Which source is right, tested without NSE factsheets: on the conflict windows the history series follows its parent index better. Low Vol 30 vs Nifty 100 daily return correlation 0.95 (history) against 0.80 (daily file); High Beta 50 vs Nifty 50 0.72 against 0.32. This supports the existing advice (`source="history"` or `mask_conflicts=True`). It is evidence, not a proof; no factsheet is held.
 - Equal-weight check (NSE prev_close to close of the members held that day, no adjustment): Nifty 50, 1,641 sampled days, correlation 0.967 (below the plan's 0.97 line; by year 0.85 in 2019 to 0.99 in 2008); Nifty 100, 704 days, 0.962. Every sampled day had a price for every member. The shortfall is the cap weighting of the index against equal weights (largest gaps on days when HDFC Bank, Reliance or Infosys moved alone, e.g. 2022-07-28 index +1.7%, equal-weight -0.4%); a wrong member would show as a missing price, which did not happen. Not tested: base date and base value against NSE methodology (no document held).
+
+## Stage 8 (2026-11-22): point-in-time and API
+
+Scripts: `audit/stage81_lookahead.py`, `audit/stage82_contract.py` (seed 20261122).
+
+- **8.1 Look-ahead.** For 10 seeded dates D between 2009 and 2024, events, attachment, multipliers and the evidence gate were rebuilt from prices dated <= D and feed records with ex-date <= D only, and compared with the full build's adjustments with effective day <= D (3,969 to 23,468 rows per date): 0 missing, 0 extra, 0 different multipliers on all 10 dates. Limit: identity (`sec_id`, symbol segments) came from the full build, not truncated; the gate looks up to 5 sessions after an ex-date, which did not change any decision on these dates.
+- **8.2 Refusals.** 74 indices, 40 seeded dates each (2,960 pairs): 664 served, 2,296 refused, 0 violations (nothing served outside a VERIFIED window, nothing refused inside one, every refusal names the reason). Adjusted prices before 2007-01-01 are refused; an unknown symbol raises.
+- **S3-8a (fixed).** `prices('RELIANCE', Saturday, Sunday)` returned an empty frame silently. It now raises `CoverageError`; test added (`test_range_with_no_trading_day_is_an_error_not_an_empty_frame`).
+- **S3-8b (documented).** `as_of=` limits which corporate actions are applied but does not remove price rows after `as_of`; README now says so.
+- **8.3** The `build_anchored` unit test (A5) was not added: it needs injected paths (stays OPEN in A5).
+
+## Stage 9 (2026-11-22): documentation honesty
+
+Every count in README, CHECKPOINT and METHODOLOGY was compared with the build. Stale and corrected: securities 8,182 to 8,136 (equity 4,826 to 4,780, after the S2-6 joins); verified windows 45 to 40 (27 indices unchanged); securities with a documented break 231 to 232; indices verified over the whole span 5 to 6 (NIFTYPSUBANK added); CHECKPOINT tests 76 to 97, integrity checks 11 to 13, raw files 13,286 to 13,548, "NOT yet independently audited" changed to "audit in progress". Added to README: an audit-status section listing what was and was not checked, and every thin spot from HANDOFF (membership 2007-2009, Nifty 200/500 before 2014, `IndexInclExcl.xls`, dividends parsed from text, index conflicts, `as_of`, `sec_id` instability, missing weights and costs). Matches verified: 5,684 days, 9,968,593 rows, 238 indices, 43,816 feed records with no announcement dates, 1,061 index conflicts, 177/403 gap counts. Not checked by script: prose claims in SOURCES.md.
+
+## Stage 1.1 (2026-11-22): re-download sample
+
+Script: `audit/stage1_redownload.py` (seed 20261122; plain GETs, one at a time, 1.2 s apart, generic User-Agent; files to scratch, nothing written to `data/raw`). 329 files, 39.5 MB: 100 legacy bhavcopy days and 50 UDiFF days (first and last three of each era always included), 20 daily index files, all 59 constituent CSVs, 100 press PDFs, each compared with the SHA-256 in `manifest.csv`.
+
+| Group | Files | Identical SHA-256 |
+|---|---|---|
+| Bhavcopy legacy | 100 | 99 (see below) |
+| Bhavcopy UDiFF | 50 | 49 (one network error; retried, identical) |
+| Daily index files | 20 | 20 |
+| Constituent CSVs (current lists, fetched 2026-11-15) | 59 | 59 |
+| Press PDFs | 100 | 100 |
+
+The one real difference: `cm22DEC2023bhav.csv.zip` has the same size and the same CSV inside (byte-equal), but the zip member timestamp differs by 6 seconds (17:32:18 now, 17:32:24 held), so the zip hash differs. The data is unchanged; the held copy remains the evidence. Limits: a sample (329 of 13,548 files); constituent lists are live files and matched the held copies a week later by luck of no index change, which says nothing about earlier dates.
