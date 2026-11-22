@@ -33,3 +33,6 @@ data/build/*
 !data/build/checksums.txt
 __pycache__/
 .pytest_cache/
+
+# Packaging
+*.egg-info/

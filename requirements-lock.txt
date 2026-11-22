@@ -1,0 +1,14 @@
+# Locked versions used to verify determinism (Python 3.12.10, Windows). Install: pip install -r requirements-lock.txt && pip install -e . --no-deps
+colorama==0.4.6
+iniconfig==2.3.1
+numpy==2.2.6
+packaging==26.3
+pandas==2.3.3
+pluggy==1.7.0
+pyarrow==24.0.0
+Pygments==2.21.0
+pytest==9.2.0
+python-dateutil==4.0.0
+pytz==2026.6
+tzdata==2026.6
+xlrd==2.0.2
