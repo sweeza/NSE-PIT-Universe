@@ -240,3 +240,32 @@ Source: 93 further Internet Archive captures of NSE's older constituent files (`
 **Result: 66 comparable captures, 66 exact matches, 0 differences**, dated 2007-04-30 and 2010-01 to 2015-11 (Nifty 50: 10 captures, Next 50: 9, Nifty 100: 10, Nifty 200 and 500: 3 each, Bank 5, Pharma 6, FMCG 4, Realty 4, Metal 3, Midcap 50: 6, Midcap 100: 2, PSU Bank 1). 27 captures were refused by the API because the build does not claim them (before the 2007-01-01 floor, or before the index's verified window, e.g. Nifty IT before 2015-05, Media before 2020).
 
 **Combined with 6.4b: 207 of 216 comparable captures match exactly across 2007-2026; the 9 differences are the explained ones above.** This is an independent confirmation of the workbook-based history (`IndexInclExcl.xls`) for the indices and dates listed. **Thin spots:** only one capture between 2007-05 and 2009-12 (Nifty 50, 2007-04-30), so 2007-2009 membership rests mostly on the workbook plus the size checks; no captures for Nifty 500 before 2014 or Nifty 200 before 2014.
+
+## Stage 4 (2026-11-22, session 3): adjusted prices, factors and dividend entries
+
+Scripts: `audit/stage4_factors.py`, `audit/stage4_missed.py`, `audit/stage4_dividends.py` (own parser, no project parsing code; seed 20261122).
+
+**4.1 Factors, 60 securities (15 each with bonus, split, rights, scheme events in the feed).** 92 events compared by effective day and factor: 92 match. Adjusted-price factor series over the whole history: 60 of 60 identical (max deviation 0). First run showed 4 differences, all gaps in the auditor's parser (`Fv Split Rs.10/- To Re.1/`, bonus of NCRPS, bonus plus split); the project was right in each. Breaks in NSE's own prev_close/close (ratio outside 0.7-1.43) with no adjustment nearby: 18 in the sample; 2 on action days already flagged, the rest are real one-day moves, series switches (BE relist) or base-price resets (IGL 2012-04-10 is a real crash); none is a missed share action. Not covered: the third-party adjusted-price comparison (4.2 of the plan), review of the 15 rejected actions / 108 waivers / 177 unexplained moves (4.3), pre-2007 refusal (4.4).
+
+**Dividend entries (used by `total_return`)**, own parse of all 43,816 feed records vs the project's events:
+
+| ID | Sev | Finding | Fix |
+|---|---|---|---|
+| S1-4a | S1 | Rights premium or issue price was summed into the dividend in the same subject: TRENT 2007 Rs 500 (true 7.0), GULFOILCOR 2010 Rs 31.8 (1.8), KESORAMIND 2013 Rs 56 (1.0), HATSUN 2018 Rs 557 (3.0). Each multiplied all earlier `total_return` prices by 0.23-0.73. (HINDOILEXP 2006 same fault, before the coverage start.) | Rights clause removed before reading dividend rupees. |
+| S2-4b | S2 | Rights written `Rhs` / `Rgts` not recognised (HINDALCO 2008 rights 3:7 never applied). | Abbreviations added; 2 rights added to the build. |
+| S2-4c | S2 | Glued amounts (`Div-Re0.80`, `Rs7.5`, `Rs -3.60`) left UNPARSED: about 91 dividends from 2007 (77 in 2007-2009). | Parsed. `Rs .50` stays unparsed (ambiguous). |
+| S2-4d | S2 | Trust/REIT distributions with no headline total (`Interest Payment Rs 2.25 / Return Of Capital Re 0.80`) used only the first figure (about 17 rows). | Headline total if stated, else the sum of parts. |
+| S2-4e | S2 | `Of Rs. 10/- Each` face value added to the dividend (TULSYAN 2012). | Phrase removed. |
+| S2-4f | S2 | A dividend was placed on the first day the security traded in an equity series, even years later: about 80 rows more than 7 days after the ex-date (InvIT/REIT units: IRBINVIT 2017-2019 on 2026-09-30, EMBASSY, INDIGRID, NXST...). | Not applied if the first trading day is more than 7 days after the ex-date; status `NO_TRADING_NEAR`. |
+
+Remaining differences between the two parsers (about 269 amount differences) are 248 InvIT/REIT rows where the auditor's parser summed the components of a stated headline total (project correct) plus unreviewed rows. Ex-day check: of 2,168 dividends with yield above 3% and no share action that day, 92% moved within 5 points of the expected drop (median excess return +0.15%). Unresolved: GENESYS 2019 `Rs.0125` (kept out, dividend above price), SBT 2009 130% (dropped, above price), 13 yields above 25% reviewed by hand (AURUM Rs 974 explains the 985 to 12 price drop; the others are special dividends in the subject text).
+
+Effect of the rebuild: 26,914 to 26,993 adjustment rows (+77 dividends, +2 rights), 16 multipliers changed. 6 new unit tests; 96 tests pass.
+
+## Stage 5 (2026-11-22): index values
+
+Script: `audit/stage5_index.py`, `audit/stage52_ew.py`.
+
+- Overlap of the daily files and the history API: 279,365 (index, day) rows over 170 indices; |difference| above 0.01%: 971, above 0.1%: 361 in 14 indices (178 above 1%). Nifty 100 Low Vol 30: 141 days, 2016-10-06 to 2017-05-03, mean -3.9%. Others: bond and G-Sec indices (about 200 days), Nifty 50 Dividend Points 32, High Beta 50 14, Arbitrage 12. No duplicate keys in either source. A conflict is not a one-day shift (2 days equal the previous day's value, 6 the next).
+- Which source is right, tested without NSE factsheets: on the conflict windows the history series follows its parent index better. Low Vol 30 vs Nifty 100 daily return correlation 0.95 (history) against 0.80 (daily file); High Beta 50 vs Nifty 50 0.72 against 0.32. This supports the existing advice (`source="history"` or `mask_conflicts=True`). It is evidence, not a proof; no factsheet is held.
+- Equal-weight check (NSE prev_close to close of the members held that day, no adjustment): Nifty 50, 1,641 sampled days, correlation 0.967 (below the plan's 0.97 line; by year 0.85 in 2019 to 0.99 in 2008); Nifty 100, 704 days, 0.962. Every sampled day had a price for every member. The shortfall is the cap weighting of the index against equal weights (largest gaps on days when HDFC Bank, Reliance or Infosys moved alone, e.g. 2022-07-28 index +1.7%, equal-weight -0.4%); a wrong member would show as a missing price, which did not happen. Not tested: base date and base value against NSE methodology (no document held).

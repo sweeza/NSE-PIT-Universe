@@ -42,7 +42,7 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
     """Return the component events found in one subject string."""
     s = (subject or "").strip()
     low = s.lower().replace("\u2013", "-")
-    low = re.sub(r"\b(?:rights?|rghts?|rhgts?|rhts?|rht|rght|rigths?)(?=[\s:/@.\-0-9]|$)", "rights", low)
+    low = re.sub(r"\b(?:rights?|rghts?|rhgts?|rhts?|rhs|rgts?|rht|rght|rigths?)(?=[\s:/@.\-0-9]|$)", "rights", low)
     low = re.sub(r"\bfv\s*spl(?:t|it)?\b|\bsplt\b", "split", low)
     low = re.sub(r"\bfrm\b", "from", low)
     # "Spl-Rs10 To Rs2", "Spl-Rs 5/ To 2/": a face-value split, not a special dividend
@@ -115,13 +115,27 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
     # payment). Several labelled parts (final + special) are summed; "inclusive of" keeps the first.
     if _DIV.search(low) and not _SCHEME.search(low) and not ms:
         body = re.sub(r"\(\s*pur[^)]*\)", "", low)
-        rs = re.findall(r"\b(?:rs|re)\b\.?\s*" + _NUM, body)
+        # a rights issue in the same subject carries its own rupee figures (premium, issue price):
+        # they are not dividend amounts. Cut from the rights keyword to the next "/" (or the end).
+        body = re.sub(r"\brights(?![a-z])[^/]*", " ", body)
+        body = re.sub(r"\bprm\b[^/]*", " ", body)
+        # "Rs. 1.50/- Per Equity Share Of Rs. 10/- Each": the second figure is the face value
+        body = re.sub(r"\bof\s*(?:rs|re)\b\.?\s*\d+(?:\.\d+)?\s*/?-?\s*each", " ", body)
+        rs = re.findall(r"\b(?:rs|re)(?![a-z])\.?\s*-?\s*" + _NUM, body)
         if not rs:
             rs = re.findall(r"\bdi?v(?:idend)?\w*[\s.-]*" + _NUM + r"(?![\d.]*\s*%)(?![\d.]*\s*:)", body)
         pct = re.findall(_NUM + r"\s*%", body)
         if low.startswith("distribution") or " distribution" in low[:20]:
-            if rs:
-                comps.append({"kind": "DIVIDEND", "amount": float(rs[0]), "detail": "distribution total rs " + rs[0]})
+            # trust/REIT distribution. A headline total ("Distribution - Rs 2 Per Unit Consisting Of ...")
+            # is the whole payout; with only listed components (interest, return of capital, ...) the
+            # payout is their sum, since every part leaves the unit price.
+            mh = re.search(r"distri\w*\s*-?\s*(?:(?:rs|re)\b\.?\s*)?" + _NUM +
+                           r"\s*(?:/-)?\s*(?:per\s+unit\s*)?(?:consist|compris)", body)
+            if mh:
+                comps.append({"kind": "DIVIDEND", "amount": float(mh.group(1)), "detail": "distribution total rs " + mh.group(1)})
+            elif rs:
+                comps.append({"kind": "DIVIDEND", "amount": sum(float(x) for x in rs),
+                              "detail": "distribution parts rs " + "+".join(rs)})
             else:
                 comps.append({"kind": "UNPARSED", "detail": "distribution amount"})
         elif rs:

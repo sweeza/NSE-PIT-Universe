@@ -84,3 +84,51 @@ def test_scheme_is_not_quantified():
     for s in ("Demerger", "Scheme Of Arrangement", "Buy Back"):
         c = one(s)[0]
         assert c["kind"] == "SCHEME" and "share_factor" not in c
+
+
+# --- Stage 4 audit fixes (dividend entries used by total_return) ---
+
+def test_rights_premium_is_not_a_dividend_amount():
+    # audit S1-A: the rights premium / issue price was summed into the dividend (TRENT 500, HATSUN 557, ...)
+    d = [c for c in one("Dividend Rs.1.80 Per Share And Rights 1:3 @ Premium Rs.30/- Per Share", fv=5) if c["kind"] == "DIVIDEND"][0]
+    assert d["amount"] == pytest.approx(1.8)
+    k = [c["kind"] for c in one("Interim Dividend- Rs 3 Per Share / Rights 1:16 @ Premium Rs 554 Per Share", fv=1)]
+    assert "DIVIDEND" in k
+    d = [c for c in one("Interim Dividend- Rs 3 Per Share / Rights 1:16 @ Premium Rs 554 Per Share", fv=1) if c["kind"] == "DIVIDEND"][0]
+    assert d["amount"] == pytest.approx(3.0)
+    d = [c for c in one("Rights 7:5@Premium Rs.55 Per Share/Annual General Meeting / Dividend Re.1/- Per Equity Share", fv=1)
+         if c["kind"] == "DIVIDEND"][0]
+    assert d["amount"] == pytest.approx(1.0)
+    d = [c for c in one("Int.Div70%/Rght1:5@Rs.500purpose Revised", fv=10) if c["kind"] == "DIVIDEND"][0]
+    assert d["amount"] == pytest.approx(7.0)
+
+
+def test_rupee_amount_glued_to_the_unit():
+    assert one("Agm/Div-Re0.80 Per Share")[0]["amount"] == pytest.approx(0.8)
+    assert one("Agm/Div-Rs7.5/- Per Sh")[0]["amount"] == pytest.approx(7.5)
+    assert one("Dividend Rs -3.60 Per Share")[0]["amount"] == pytest.approx(3.6)
+    # an ambiguous leading dot stays unparsed rather than guessed
+    assert one("Agm/Div - Rs .50 Per Sh")[0]["kind"] == "UNPARSED"
+
+
+def test_face_value_phrase_is_not_a_dividend():
+    assert one("Annual General Meeting/ Div. Of Rs. 1.50/- Per Equity Share Of Rs. 10/- Each.")[0]["amount"] == pytest.approx(1.5)
+
+
+def test_distribution_headline_total_or_sum_of_parts():
+    # headline total stated: it is the payout
+    assert one("Distribution - Rs 2.20 Per Unit Consisting Of Interest - Rs 1.66 Per Unit/ Dividend - Re 0.30 Per Unit/Return Of Capital 0.19 Per Unit/ Other Income 0.05 Per Unit")[0]["amount"] == pytest.approx(2.2)
+    assert one("Distribution- Rs 2.51 Comprising Interest- Rs 2.01/Return Of Capital- Rs 0.47 Per Unit/Other Income On Surplus Funds- Rs 0.03 Per Unit")[0]["amount"] == pytest.approx(2.51)
+    assert one("Distribution - Re 0.57 Per Unit Consisting Of Re 0.04 Per Unit In The Form Of Interest & Re 0.53 Per Unit In The Form Of Return Of Capital")[0]["amount"] == pytest.approx(0.57)
+    # no headline: payout is the sum of the listed parts
+    assert one("First Distribution - Interest Payment Rs 2.25 Per Unit/ Return Of Capital Re 0.80 Per Unit (Purpose Revised)")[0]["amount"] == pytest.approx(3.05)
+    assert one("Distribution - Interest - Re 0.37/Dividend - Rs 4.44 Per Unit")[0]["amount"] == pytest.approx(4.81)
+    # plain single-figure distribution
+    assert one("Distribution - Rs 6.10 Per Unit")[0]["amount"] == pytest.approx(6.1)
+
+
+def test_rights_abbreviations():
+    c = one("Rhs 3:7@Prem Rs95/Div185%", fv=1)
+    r = [x for x in c if x["kind"] == "RIGHTS"][0]
+    assert r["issue_price"] == pytest.approx(96.0) and r["rights_new"] == 3 and r["rights_held"] == 7
+    assert [x for x in c if x["kind"] == "DIVIDEND"][0]["amount"] == pytest.approx(1.85)

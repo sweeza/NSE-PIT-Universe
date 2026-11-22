@@ -26,6 +26,7 @@ SHARE_KINDS = ("SPLIT", "BONUS", "CONSOLIDATION")
 # 2007-01-01 is the first full year; adjusted prices before it are not verified and the API
 # refuses them unless explicitly allowed.
 COVERAGE_START = pd.Timestamp("2007-01-01")
+DIVIDEND_MAX_LAG_DAYS = 7
 
 
 def attach_events(ev: pd.DataFrame, seg_map: pd.DataFrame, days_by_sec: dict[str, np.ndarray],
@@ -84,6 +85,12 @@ def attach_events(ev: pd.DataFrame, seg_map: pd.DataFrame, days_by_sec: dict[str
             ev.at[i, "status"] = "NO_TRADING_AFTER"
             continue
         ev.at[i, "eff_date"] = pd.Timestamp(days[k])
+        # A cash dividend is untestable against prices, so it must land on the real ex-day. If the
+        # security did not trade for more than a week after the ex-date (an InvIT that was in a
+        # non-equity series then, a long suspension) the first trading day is not the ex-day: the
+        # price drop cannot be where the multiplier would put it. Not applied, reported.
+        if r.kind == "DIVIDEND" and (ev.at[i, "eff_date"] - r.ex_date).days > DIVIDEND_MAX_LAG_DAYS:
+            ev.at[i, "status"] = "NO_TRADING_NEAR"
     return ev
 
 

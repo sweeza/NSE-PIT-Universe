@@ -91,3 +91,19 @@ def test_attach_moves_exdate_to_next_trading_day_and_reports_unplaceable():
     assert out.loc[0, "eff_date"] == pd.Timestamp("2020-01-13")
     assert out.loc[1, "status"] in ("NO_SECURITY", "NO_TRADING_AFTER")
     assert out.loc[2, "status"] == "NO_SECURITY"
+
+
+def test_dividend_far_from_its_ex_date_is_not_placed():
+    # audit: InvIT distributions of 2017-2024 were placed on the first day the unit traded in an equity series (2026)
+    seg = pd.DataFrame({"symbol": ["AAA"], "sec_id": ["S1"], "start": pd.to_datetime(["2015-01-01"]),
+                        "end": pd.to_datetime(["2030-01-01"])})
+    days = {"S1": pd.to_datetime(["2020-01-10", "2020-01-13", "2020-03-02"]).values}
+    ev = pd.DataFrame({"symbol": ["AAA"] * 4,
+                       "ex_date": pd.to_datetime(["2020-01-11", "2020-01-13", "2020-01-20", "2020-01-10"]),
+                       "kind": ["DIVIDEND"] * 3 + ["BONUS"]})
+    out = adjust.attach_events(ev, seg, days)
+    assert out.loc[0, "status"] == "OK" and out.loc[0, "eff_date"] == pd.Timestamp("2020-01-13")   # weekend
+    assert out.loc[1, "status"] == "OK"        # same day
+    assert out.loc[2, "status"] == "NO_TRADING_NEAR"   # next trade is 42 days later
+    ev2 = pd.DataFrame({"symbol": ["AAA"], "ex_date": pd.to_datetime(["2020-01-20"]), "kind": ["BONUS"]})
+    assert adjust.attach_events(ev2, seg, days).loc[0, "status"] == "OK"   # share events are gated elsewhere
