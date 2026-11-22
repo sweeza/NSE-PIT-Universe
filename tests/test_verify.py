@@ -120,3 +120,55 @@ def test_coverage_baseline_detects_loss_and_gain(synthetic_env):
     assert r.status == "FAIL" and r.details[0] == ("NIFTY50", 10, 9)
     cov("2020-01-12").to_parquet(paths.BUILD / "membership" / "coverage.parquet")   # two days gained
     assert verify.check_coverage_baseline().status == "WARN"
+
+
+def _ratchet_env(n_oor=1, unexplained=("AAA|2020-01-02",), rejected=(("S1", "2020-02-03"),)):
+    (paths.BUILD / "bhavcopy").mkdir(parents=True, exist_ok=True)
+    (paths.BUILD / "actions").mkdir(parents=True, exist_ok=True)
+    (paths.BUILD / "identity").mkdir(parents=True, exist_ok=True)
+    rows = [{"date": pd.Timestamp("2020-01-02"), "symbol": "X", "series": "EQ", "open": 10.0, "high": 11.0,
+             "low": 9.0, "close": 12.0 if i < n_oor else 10.0, "volume": 5.0} for i in range(3)]
+    for i, r in enumerate(rows):
+        r["symbol"] = f"X{i}"
+    pd.DataFrame(rows).to_parquet(paths.BUILD / "bhavcopy" / "bhavcopy_2020.parquet")
+    pd.DataFrame([{"sec_id": "S9", "symbol": k.split("|")[0], "date": k.split("|")[1], "series": "EQ", "r": 0.4,
+                   "class": "UNEXPLAINED"} for k in unexplained] +
+                 [{"sec_id": "S8", "symbol": "ZZZ", "date": "2020-03-03", "series": "EQ", "r": 0.4, "class": "PRE_COVERAGE"}]
+                 ).to_csv(paths.BUILD / "adjustment_gaps.csv", index=False)
+    pd.DataFrame([{"sec_id": s, "eff_date": d, "applied_date": None, "decision": "REJECTED", "share_factor": 2.0,
+                   "observed_ratio": 1.0} for s, d in rejected] +
+                 [{"sec_id": "S1", "eff_date": "2021-01-01", "applied_date": None, "decision": "KEPT", "share_factor": 2.0,
+                   "observed_ratio": 2.0}]).to_parquet(paths.BUILD / "actions" / "gate_log.parquet")
+    pd.DataFrame([{"sec_id": s, "last_symbol": "BBB"} for s in {"S1", "S2"}]).to_parquet(
+        paths.BUILD / "identity" / "securities.parquet")
+
+
+def test_ratchet_baseline_fails_on_any_rise_and_warns_on_fall(synthetic_env):
+    _ratchet_env()
+    assert verify.check_ratchet_baseline().status == "FAIL"        # no baseline yet
+    verify.write_ratchet_baseline()
+    assert verify.check_ratchet_baseline().status == "PASS"
+    _ratchet_env(n_oor=2)                                           # one more out-of-range close
+    assert verify.check_ratchet_baseline().status == "FAIL"
+    _ratchet_env(unexplained=("AAA|2020-01-02", "CCC|2020-01-03"))  # a new unexplained move
+    r = verify.check_ratchet_baseline()
+    assert r.status == "FAIL" and ("new_unexplained", "CCC|2020-01-03") in r.details
+    _ratchet_env(rejected=(("S1", "2020-02-03"), ("S2", "2020-04-01")))   # a newly rejected share action
+    r = verify.check_ratchet_baseline()
+    assert r.status == "FAIL" and ("new_rejected", "BBB|2020-04-01") in r.details
+    _ratchet_env(n_oor=0)                                           # improvement only
+    assert verify.check_ratchet_baseline().status == "WARN"
+
+
+def test_ratchet_swap_of_one_item_for_another_is_still_a_fail(synthetic_env):
+    _ratchet_env()
+    verify.write_ratchet_baseline()
+    _ratchet_env(unexplained=("DDD|2020-05-05",))                  # same count, different item
+    assert verify.check_ratchet_baseline().status == "FAIL"
+
+
+def test_ratchet_without_gap_file_is_a_fail_not_a_pass(synthetic_env):
+    _ratchet_env()
+    verify.write_ratchet_baseline()
+    (paths.BUILD / "adjustment_gaps.csv").unlink()
+    assert verify.check_ratchet_baseline().status == "FAIL"

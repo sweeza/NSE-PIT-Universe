@@ -189,13 +189,19 @@ def check_calendar() -> Result:
                   f"index-only days={len(idx_no_bhav)}; bhavcopy-only days={len(bhav_no_idx)}", d)
 
 
+def _close_outside_range(t: pd.DataFrame) -> int:
+    """Traded rows whose close lies outside [low, high] (as published by NSE; mostly series T0)."""
+    traded = t[t.volume > 0]
+    return int(((traded.close > traded.high * 1.0000001) | (traded.close < traded.low * 0.9999999)).sum())
+
+
 def check_table_sanity() -> Result:
     t = bhavcopy.load()
     dup = int(t.duplicated(["date", "symbol", "series"]).sum())
     neg = int(((t[["open", "high", "low", "close"]] < 0).any(axis=1)).sum())
     traded = t[t.volume > 0]
     hl = int((traded.high < traded.low).sum())
-    cl = int(((traded.close > traded.high * 1.0000001) | (traded.close < traded.low * 0.9999999)).sum())
+    cl = _close_outside_range(t)
     nosid = int(t["sec_id"].isna().sum()) if "sec_id" in t else -1
     status = "FAIL" if (dup or neg or nosid != 0) else "PASS"
     return Result("table_sanity", status,
@@ -619,9 +625,74 @@ def write_coverage_baseline() -> Path:
     return p
 
 
+_RATCHET_FILE = "ratchet_baseline.csv"
+
+
+def _ratchet_current(t: pd.DataFrame | None = None) -> dict:
+    """The three quantities that may not rise: close-outside-range rows, UNEXPLAINED adjusted moves
+    (build/adjustment_gaps.csv, written by check_adjusted_continuity) and rejected share actions
+    (build/actions/gate_log.parquet). Keys use the last symbol, which survives a change of sec_id labels."""
+    t = bhavcopy.load() if t is None else t
+    gaps = paths.BUILD / "adjustment_gaps.csv"
+    if not gaps.exists():
+        raise FileNotFoundError("build/adjustment_gaps.csv missing: run check adjusted_continuity first")
+    g = pd.read_csv(gaps)
+    un = g[g["class"] == "UNEXPLAINED"]
+    gl = pd.read_parquet(paths.BUILD / "actions" / "gate_log.parquet")
+    sec = pd.read_parquet(paths.BUILD / "identity" / "securities.parquet").set_index("sec_id")["last_symbol"]
+    rej = gl[gl.decision == "REJECTED"]
+    return {"out_of_range": _close_outside_range(t),
+            "unexplained": {f"{r.symbol}|{str(r.date)[:10]}" for r in un.itertuples()},
+            "rejected": {f"{sec.get(r.sec_id, r.sec_id)}|{str(r.eff_date)[:10]}" for r in rej.itertuples()}}
+
+
+def write_ratchet_baseline() -> Path:
+    """Accept the current counts as the new ceiling (a deliberate act; commit the file)."""
+    cur = _ratchet_current()
+    rows = [("out_of_range_closes", "", cur["out_of_range"])]
+    rows += [("unexplained_move", k, "") for k in sorted(cur["unexplained"])]
+    rows += [("rejected_action", k, "") for k in sorted(cur["rejected"])]
+    p = paths.CURATED / _RATCHET_FILE
+    pd.DataFrame(rows, columns=["metric", "key", "value"]).to_csv(p, index=False)
+    return p
+
+
+def check_ratchet_baseline() -> Result:
+    """Counts of close-outside-range rows, UNEXPLAINED adjusted moves and REJECTED share actions may not
+    rise above data/curated/ratchet_baseline.csv: a rise (or any new item) is FAIL, a fall is WARN.
+
+    This is what notices a price cell or a corporate-action ratio edited so that the manifest still matches.
+    It is a tripwire, not a proof: a price edit consistent with the manifest that creates no new flag is
+    caught only by an independent price source (audit stage 2.4)."""
+    p = paths.CURATED / _RATCHET_FILE
+    if not p.exists():
+        return Result("ratchet_baseline", "FAIL", f"no data/curated/{_RATCHET_FILE}")
+    try:
+        cur = _ratchet_current()
+    except FileNotFoundError as e:
+        return Result("ratchet_baseline", "FAIL", str(e))
+    b = pd.read_csv(p, dtype=str, keep_default_na=False)
+    base_oor = int(b.loc[b.metric == "out_of_range_closes", "value"].iloc[0])
+    base_un = set(b.loc[b.metric == "unexplained_move", "key"])
+    base_rej = set(b.loc[b.metric == "rejected_action", "key"])
+    new_un, gone_un = sorted(cur["unexplained"] - base_un), sorted(base_un - cur["unexplained"])
+    new_rej, gone_rej = sorted(cur["rejected"] - base_rej), sorted(base_rej - cur["rejected"])
+    rose = cur["out_of_range"] > base_oor or new_un or new_rej
+    fell = cur["out_of_range"] < base_oor or gone_un or gone_rej
+    msg = (f"close outside range {cur['out_of_range']} (baseline {base_oor}); "
+           f"unexplained adjusted moves {len(cur['unexplained'])} (baseline {len(base_un)}, new {len(new_un)}, gone {len(gone_un)}); "
+           f"rejected share actions {len(cur['rejected'])} (baseline {len(base_rej)}, new {len(new_rej)}, gone {len(gone_rej)})")
+    detail = [("new_unexplained", x) for x in new_un[:10]] + [("new_rejected", x) for x in new_rej[:10]]
+    if rose:
+        return Result("ratchet_baseline", "FAIL", msg, detail)
+    if fell:
+        return Result("ratchet_baseline", "WARN", msg + "; regenerate the baseline to lock in the improvement")
+    return Result("ratchet_baseline", "PASS", msg)
+
+
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,
        check_identity, check_actions, check_adjusted_continuity, check_indices,
-       check_curated_provenance, check_membership, check_coverage_baseline]
+       check_curated_provenance, check_membership, check_coverage_baseline, check_ratchet_baseline]
 
 
 def run(names: list[str] | None = None) -> list[Result]:
