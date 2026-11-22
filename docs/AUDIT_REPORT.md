@@ -60,6 +60,31 @@ Findings from Stage 6
 | S3-2 | S3 | `data/build/press_text/ind_prs23082021.txt` is empty (29 bytes), although the PDF has a normal text layer that PyMuPDF reads (symbols and tables included). OPEN_ISSUES B8 calls this PDF image-only; that is out of date. Any check that reads `press_text` silently sees nothing for this release (94 rows rest on it). Their content matches the PDF. |
 | S3-3 | S3 | Two weekend special sessions have partial bhavcopies, so "every member traded within the day" cannot hold there. Document it. |
 
-Still to do in Stage 6: 6.4 blind sample against independent sources (needs the owner to supply factsheets or archives), 6.5 completeness (releases we do not hold, B7 and B12; and any held release with no curated rows), 6.7 alias audit, 6.8 exemption removal.
+Still to do in Stage 6: 6.4 blind sample against independent sources (needs the owner to supply factsheets or archives), 6.5 completeness (releases we do not hold, B7 and B12; and any held release with no curated rows). 6.7 and 6.8 are below.
+
+### Stage 6.7 and 6.8 results
+
+Scripts: `audit/stage67_aliases.py`, `audit/stage68_skips.py`, `audit/mutate.py` (modes `dropexc_N`, `dropdc_N`).
+
+**6.8a Date-based skips in `check_membership`.** Removing the pre-2016 skip gives 3,144 violations (mostly Nifty 100 members absent from Nifty LargeMidcap 250 before its April 2016 launch, e.g. PATNI, RAYMOND, ZEEL, ADANIENT in 2008 to 2015). Removing the 2018 Midcap 100 skip gives 919 violations (2016-04 to 2018-04). The 2018 skip is explained in the code comments by held releases (not re-read by me). The pre-2016 one is not.
+
+**6.8b Dropping each curated exemption (39 runs, membership rebuilt each time).**
+
+| Exemption rows | Effect of dropping one | Reading |
+|---|---|---|
+| Dual-class (7 of 7: Tata Motors DVR in Nifty 50, 100 x2, 200, 500, LargeMidcap 250, Auto) | Each loses verified coverage, from 155 days (Nifty Auto) to 3,073 days (Nifty 500), and the loss spreads to the derived composites | All load-bearing: the gate really depends on them and fails safe without them |
+| Size exceptions, demerger dummies (29 of 29: Next 50, Nifty 100, 200, 500, LargeMidcap 250; Siemens, Jio, ITC Hotels, HUL, Tata Motors, Vedanta, Sanofi, HEG and others) | **No effect at all**, every row | Decorative: the build counts only real members, so these rows are documentation, not part of the proof. Confirms S2-3 for every row. |
+| Size exceptions, sector indices (3 of 3: Nifty Bank +2 from 2025-12-31, Nifty Pharma +10 from 2021-09-30, PSU Bank +1 2021-03-31..2022-03-30) | Each loses coverage (324, 1,877, 365 days) | Load-bearing. These are real size changes, not dummies. |
+
+All 39 runs: `verify` checks `curated_provenance` and `membership` stayed PASS; only coverage moved.
+
+**6.7 Alias audit (246 aliases).** Name overlap with bhavcopy names: 93 clear, 153 none or low (names are missing for older years, and many are genuine renames). I read all 153 and found no mapping that looks wrong. Date limits (valid_from, valid_to) are present on the risky ones (KPIT/BSOFT/KPITTECH, Kirloskar, Max India). But almost all the evidence is the held corporate-action feed and `EQUITY_L.csv`, which are the unverified-origin inputs (S2-1), so the check is circular until Stage 1 compares them with fresh NSE copies.
+
+| ID | Sev | Finding |
+|---|---|---|
+| S2-4 | S2 | Nifty LargeMidcap 250 is marked VERIFIED for 2008-03-14..2015-09-24, before the index existed (launched 2016-04-01). On those days Nifty 100 is not a subset of it, which would contradict NSE's definition if the series is a backcast. The source and definition of that pre-2016 history are not documented. |
+| S2-5 | S2 | Alias evidence is circular (see 6.7); depends on S2-1. |
+| S3-4 | S3 | Two aliases point to symbols with no security in the build (`AGC Networks -> BLACKBOX`, `Pudumjee -> PUDUMJEE`). Dead rows. |
+| S3-5 | S3 | The 29 dummy-demerger rows in `index_size_exceptions.csv` do not affect the result. Either make the build enforce them or label them documentation. (The README currently says they verify the dummies.) |
 
 Not yet tested in Stage 7: bhavcopy cell corruption, corporate-action ratio flip, raw-file deletion, the Nifty 500 symbol swap. Stages 1 to 6, 8 and 9 are not started.

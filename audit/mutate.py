@@ -56,6 +56,14 @@ elif name == "m7_drop_dual_class":
 elif name == "m8_flip_action":     # turn one exclusion into an inclusion
     r = ev[(ev.index_key == "NIFTY50") & (ev.action == "OUT") & (ev.date > "2021") & (ev.date < "2025")].iloc[2]
     ev.loc[r.name, "action"] = "IN"; info = f"{r.date} {r.symbol} OUT->IN"; save_ev(ev)
+elif name.startswith("dropexc_"):
+    i = int(name.split("_")[1]); x = pd.read_csv(C / "index_size_exceptions.csv", dtype=str).fillna("")
+    r = x.iloc[i]; info = f"dropped size exception #{i} {r.index_key} {r.from_date}..{r.to_date} extra={r.extra_members}"
+    x.drop(x.index[i]).to_csv(C / "index_size_exceptions.csv", index=False)
+elif name.startswith("dropdc_"):
+    i = int(name.split("_")[1]); x = pd.read_csv(C / "index_dual_class.csv", dtype=str).fillna("")
+    r = x.iloc[i]; info = f"dropped dual-class #{i} {r.index_key} {r.from_date}..{r.to_date} {r.symbols}"
+    x.drop(x.index[i]).to_csv(C / "index_dual_class.csv", index=False)
 else: raise SystemExit("unknown " + name)
 env = dict(os.environ, NSEUNIVERSE_ROOT=str(M))
 code = ("import time;t=time.time();from nseuniverse import membership,verify;"
