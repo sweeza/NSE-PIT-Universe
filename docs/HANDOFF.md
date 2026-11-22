@@ -18,3 +18,9 @@ Nothing is estimated. Every curated row cites a file in `data/raw/`. Ask before 
 4. **Mutation tests not done:** bhavcopy cell corruption, corporate-action ratio flip, raw-file deletion, Nifty 500 symbol-swap rerun.
 5. Open data issues: B9 (demerger dummies in other indices), B16a, C1-C5.
 6. Scratch tools: `audit/` scripts in the repo; scratchpad outputs are temporary.
+
+## Update 2026-11-22 (later)
+- Owner decisions: data start is **2007-01-01** (API must refuse unverified index/date); dead aliases deleted (A12 done, commit 16538f7); inferred aliases reviewed for 2007+ (A2 done, none rejected); LargeMidcap 250 floor 2016-04-01 (A10 done); `999 dump/` and the other untracked files stay until the end; do not touch them.
+- Full `verify` after these changes: 12/12 no FAIL (run before the alias deletion; membership, curated_provenance and coverage_baseline re-run after it, PASS).
+- 12+ commits ahead of origin; push only on the owner's explicit yes.
+- Waiting on the owner: fresh corporate-actions download (to scratch, never `data/raw/` without asking) and optional factsheets for the blind sample (6.4).
