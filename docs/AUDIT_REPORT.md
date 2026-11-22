@@ -103,3 +103,44 @@ Fresh copies were downloaded from `nsearchives.nseindia.com/content/equities/` i
 Effect on S2-2/S2-5: alias evidence from `symbolchange.csv` and `EQUITY_L.csv` is now confirmed authentic; the circularity remains for aliases that rest on the corporate-action feed or the workbook.
 
 Not run in Stage 1: the 150-bhavcopy, 20 daily-index, 59 constituent and 100 press-PDF re-download sample.
+
+## Stage 2: bhavcopy and calendar (2026-11-22)
+
+Scripts: `audit/stage2_bhav.py` (plain `zipfile` + `csv`, no project parser), `audit/stage2_cal_outliers.py`. Seed 20261122.
+
+| Test | Result |
+|---|---|
+| 2.1 Row count, zip lines minus header vs `data/build/bhavcopy`, all 5,684 selected days | 0 differences; no build day without a raw file |
+| 2.1 Cell by cell, 303 days (300 seeded + first/last day and first/last UDiFF day), 5,511,270 cells (ISIN, name, instrument id, all numeric columns) | 0 mismatches, 0 rows missing or extra |
+| 2.2 Calendar: weekend sessions | 30, every one with 739 to 3,550 rows except 2010-05-16 (7 rows) and 2012-11-11 (14 rows). From 2012-03-03 on, the daily index file (a second NSE publication) exists for 18 of the 19 weekend sessions in range; 2012-11-11 has none. 11 sessions before 2012-02-21 have only the bhavcopy as evidence. |
+| 2.2 Weekday non-sessions | 317 (10 to 19 a year). No index file exists on any of them, no run of 4 or more missing weekdays, and no session on 26 Jan, 15 Aug or 2 Oct. |
+| 2.2 Bhavcopy without index file since 2012-02-21 | 13 days (2012-11-11, 2013-10-09, 2014-03-19, 2014-12-15, 2015-02-02, 2015-03-12/13, 2015-05-19, 2015-07-08, 2015-09-04, 2015-10-16, 2015-12-01, 2016-06-20). The reverse (index file with no bhavcopy) is empty. |
+| 2.3 Outliers | 0 duplicate (date, symbol, series), 0 negative or zero close, 0 high<low, 0 open outside the range, 0 zero-volume rows with trades, 0 volume rows without trades. `close` outside [low, high] on 217 rows: **all** are series `T0` (T+0 settlement segment, 241 rows in all, 2024-03 onward), where the close is not a last-trade price. |
+| 2.3 Jumps | 1,197 `EQ` rows move more than 50% from the previous close with the file's own previous close unchanged. 731 have a non-dividend corporate-action event within 5 days. The other 466 (hand view: tick-size moves at Rs 0.05 to 0.10, relistings, e.g. ARIHANT 39.65 to 907.55 on 2026-04-20, VISESHINFO, VKSPL) are raw NSE values, not build errors; they are the input to Stage 4. Listed in the scratchpad only (`stage2_jumps_noevent.csv`). |
+| 2.4 Third-party close check (40 large caps x 20 dates) | **Not run.** Needs an external price source; owner to say which. |
+
+Not tested: the 317 non-sessions were not compared with NSE holiday circulars (no source held); the evidence is that neither NSE publication exists for them. The 11 weekend sessions before 2012-02-21 rest on the bhavcopy alone (their row counts are those of normal sessions, so they are real sessions).
+
+| ID | Sev | Finding |
+|---|---|---|
+| S3-6 | S3 | Weekend sessions 2010-05-16 and 2012-11-11 hold 7 and 14 symbols. They are in the calendar as trading days (muhurat-type partial sessions); anything that assumes a full cross-section on every trading day breaks there (same cause as S3-3). |
+| S3-7 | S3 | 13 trading days since 2012 have no daily index file, so index values are missing on them. Check whether C3's 929 missing index-days include them; the list is now explicit. |
+| S3-8 | S3 | `close` is outside [low, high] on 217 `T0` rows. Any consumer that assumes close within the range must exclude series `T0`. Document it in METHODOLOGY. |
+
+## Stage 3: identity (2026-11-22)
+
+Script: `audit/stage3_identity.py` (reads `data/build/identity/*.parquet`). The expectations (rename or different company) are the auditor's, from public corporate history, and are listed in the script so the owner can veto any.
+
+| Test | Result |
+|---|---|
+| 3.1 Known renames, 30 pairs expected to be one `sec_id` | 24 one `sec_id`; 5 absent because my ticker was wrong (the data uses e.g. ADANIEXPO to ADANIENT, NICOLASPIR to PIRHEALTH to PEL, SESAGOA to SSLT to VEDL, plain PNB, plain KOTAKBANK, and each of those is one `sec_id`); 1 "split" is my error (Oriental Bank of Commerce merged into PNB in 2020, so two ids is right). Net: 0 wrong. |
+| 3.1 Known mergers, 12 pairs expected to be different `sec_id` | 8 different (HDFC and HDFCBANK, Ranbaxy and Sun, Satyam and Tech Mahindra, Aditya Birla Nuvo and Grasim, LTI and Mindtree, three PSU banks); 3 absent; 1 "joined" is my error: Bharti Infratel was renamed Indus Towers after the merger, so one `sec_id` is right. |
+| Invariant: two symbols on one day inside one `sec_id` | 0 overlapping segments |
+| Invariant: one `sec_id` with more than one ISIN issuer | 0 |
+| 3.2 The two curated joins (`GESHIPPING` to `GESHIP`, `CASTROL` to `CASTROLIND`) | Both are one `sec_id`; the ISIN issuer is the same, the source rows cite the held feed and `EQUITY_L.csv` |
+| 3.2 Symbols used by more than one `sec_id` | 227. Where the ISIN issuer differs on adjacent segments, they are rightly separate. |
+
+| ID | Sev | Finding |
+|---|---|---|
+| S2-6 | S2 | **One security is split into several `sec_id`s when a symbol is absent for more than 400 days (`GAP_DAYS`), even when the full ISIN is unchanged.** 62 adjacent same-symbol pairs share a full ISIN (46 where both sides are equities), e.g. ARIHANT (S01109 to S07091, gap 2022-02 to 2026-04), SICAGEN, KOVAI (three ids), SHAIVAL (four), GOODYEAR, NOVARTIND, ATLASCYCLE, PVP, VIVIMEDLAB. The rule is documented and conservative, but a same-symbol, same-ISIN return is the same security. Effect: per-security history (adjusted prices, returns) stops at the gap and restarts under a new id. Index membership is not affected: of the 114 ids involved, the 4 that were ever index members (S00054, S00606, S02837, S02891) left every index before their gap. Owner decision: keep (document) or join on same symbol and same full ISIN. |
+| S3-9 | S3 | 89 adjacent same-symbol pairs share the ISIN issuer (62 the full ISIN). Of the rest, 124 pairs have no ISIN on one side (mostly G-sec and bond series such as `833GS2036`). They stay separate, which is harmless. |
