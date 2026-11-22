@@ -13290,3 +13290,10 @@ data/raw/held/IndexInclExcl.xls,"held: obtained before the rebuild, origin not r
 data/raw/held/raw_corporate_actions_1995_2026.json,"held: obtained before the rebuild, origin not re-verified (issue C5)",d05de9681f347810a9d02904e93e711ad3f9af91166a391487b824df02c2e52c,15619593,unknown
 data/raw/held/symbolchange.csv,"held: obtained before the rebuild, origin not re-verified (issue C5)",0c7a157c2aaf962004d0edd2f9e196d5e9683e14d3a6f1b7c838fcffd57a23cb,70175,unknown
 data/raw/indexhist/IndexMapping.json,held: IndexMapping.json copied with the index-history download,0077ca07e37603834a0b279be06fe11b0d3b4ead350d7e02901688ec14ba0cc3,30201,unknown
+data/raw/pressreleases/press-release-page_20261122.html,https://www.niftyindices.com/press-release,e56a61d0c7715c25c8297c51d5a131dfb0548d7c88df2bcdf4b56a255393ee13,671587,2026-11-22T15:51:33Z
+data/raw/pressreleases/pdf/ind_prs20112026_1.pdf,https://www.niftyindices.com/Press_Release/ind_prs20112026_1.pdf,9ee626f87edede4255e4ae943da1abf81a33d9cffa97712c20c7ccc674147b72,345264,2026-11-22T15:51:34Z
+data/raw/pressreleases/pdf/ind_prs20112026.pdf,https://www.niftyindices.com/Press_Release/ind_prs20112026.pdf,1bed624855deb826e6f096fa77f38a592dbcf2a3d4efa85a6655d528f21346b0,341743,2026-11-22T15:51:34Z
+data/raw/pressreleases/pdf/ind_prs01022006_2.pdf,https://www.niftyindices.com/Press_Release/ind_prs01022006_2.pdf,67237c4c8b37b7b002947cb9a03bb23b5d0b278c50a3852094008b04200a8d82,66317,2026-11-22T15:52:04Z
+data/raw/pressreleases/pdf/ind_prs15062026_1.pdf,https://www.niftyindices.com/Press_Release/ind_prs15062026_1.pdf,2ce1cb8b47ed97ed1a8ea51ba1f217d241cda6c1b836968109ed3215f68d52e8,327588,2026-11-22T15:58:31Z
+data/raw/pressreleases/pdf/ind_prs20072026_1.pdf,https://www.niftyindices.com/Press_Release/ind_prs20072026_1.pdf,bed334ad60bfc74c76a6cdd30dee92c320c510cc5819168b87680e9bb9cec44f,282382,2026-11-22T16:00:56Z
+data/raw/pressreleases/pdf/ind_prs25072022_1.pdf,https://www.niftyindices.com/Press_Release/ind_prs25072022_1.pdf,5ca747ee7d05190c1f5fe1f8cc4b4b769a7a40069033d04e0751b1be0ddcba17,162794,2026-11-22T16:03:57Z
