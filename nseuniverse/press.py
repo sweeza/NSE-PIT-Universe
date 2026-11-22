@@ -128,3 +128,25 @@ def extract_all_events(
                     })
 
     return pd.DataFrame(rows, columns=cols)
+
+
+def extract_text(pdf_dir: Path, out_dir: Path, min_chars: int = 100, only_empty: bool = False) -> dict:
+    """Write one .txt per press-release PDF using PyMuPDF (optional dependency: pip install pymupdf).
+
+    With only_empty=True, only PDFs whose existing .txt is missing or shorter than min_chars are (re)written.
+    Returns counts, including the names of PDFs that still yield no text (image-only, need a page render)."""
+    import pymupdf  # lazy: only this helper needs it
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    done, still_empty = 0, []
+    for pdf in sorted(pdf_dir.glob("*.pdf")):
+        dst = out_dir / (pdf.stem + ".txt")
+        if only_empty and dst.exists() and len(dst.read_text(errors="ignore").strip()) >= min_chars:
+            continue
+        with pymupdf.open(pdf) as doc:
+            text = "\n".join(pg.get_text() for pg in doc)
+        dst.write_text(text, encoding="utf-8")
+        done += 1
+        if len(text.strip()) < min_chars:
+            still_empty.append(pdf.name)
+    return {"written": done, "still_empty": still_empty}

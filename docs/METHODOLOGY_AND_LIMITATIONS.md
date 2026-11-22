@@ -60,7 +60,7 @@ on a date is rebuilt **backward from today's official constituent list**: undo e
 mapped to securities only by exact normalised match against NSE-published names or reviewed aliases
 (`data/curated/name_aliases.csv`, with optional validity dates); near misses are suggestions, never applied.
 A window is VERIFIED only if every trading day has exactly the official count of members and every
-member traded within ±3 sessions. Press-release changes after the workbook (2020-09 →) are entered from
+member traded within ±3 sessions (two weekend special sessions, 2010-05-16 and 2012-11-11, have partial bhavcopies, so members appear untraded on those two days). Press-release changes after the workbook (2020-09 →) are entered from
 the PDFs into `data/curated/index_events_press.csv`, each citing its file. Rolling back, an inclusion of a security that is
 not a member at that point (or an exclusion of one that is) is a **contradiction**: a change is missing from the sources,
 so no date from that event onward is VERIFIED.
@@ -126,6 +126,8 @@ remain `UNVERIFIED` per strict PIT methodology.
     in `data/curated/index_size_exceptions.csv`, each row citing its release (`membership.extra_members`). The dummies cannot
     trade, so they are not checked as members; the dates rest on the releases alone, not on a daily NSE constituent list.
     This relaxes "exactly 50 constituents" to "exactly 50 real members plus documented placeholders" for these days only.
+    Audit note (2026-11-22): the build checks only the real-member count; the dummy rows in `index_size_exceptions.csv` do not change any
+    result (removing each of the 29 changed nothing), so they are documentation, not evidence. The Bank, Pharma and PSU Bank rows are real size changes and do matter.
   - Before 2004-01-01 there is no bhavcopy.
   History of the 2017→today window: it was once VERIFIED on count alone while Indian Oil (in per the Feb 2017 release, out
   2022-03-31) and Apollo Hospitals (in 2022-03-31) were wrong. The missing release is `ind_prs24022022_1.pdf`, which the press

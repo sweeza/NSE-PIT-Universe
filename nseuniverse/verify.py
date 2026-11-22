@@ -67,10 +67,10 @@ def check_manifest() -> Result:
     seen = {p.resolve() for _, _, p in results if p.exists()}
 
     on_disk = [p for root in (paths.BHAV_RAW, paths.INDEX_DAILY_RAW, paths.PRESS_RAW,
-                              paths.RAW / "constituents", paths.RAW / "corporate_actions", paths.RAW / "nse_lists")
+                              paths.RAW / "constituents", paths.RAW / "corporate_actions", paths.RAW / "nse_lists", paths.HELD)
                if root.exists()
                for p in root.rglob("*") if p.is_file() and p.suffix != ".part"]
-    on_disk += [p for p in paths.INDEX_HIST_RAW.rglob("*.json") if p.name != "IndexMapping.json"]
+    on_disk += [p for p in paths.INDEX_HIST_RAW.rglob("*.json")]
     unlisted = [p.name for p in on_disk if p.resolve() not in seen]
     dup = len(rows) - len({r["path"] for r in rows})
     ok = not (bad or missing or unlisted or dup)
@@ -581,9 +581,47 @@ def check_membership() -> Result:
                   problems[:20])
 
 
+def _verified_days_by_index(cov: pd.DataFrame) -> dict[str, int]:
+    v = cov[cov["status"] == "VERIFIED"]
+    days = (pd.to_datetime(v["to_date"]) - pd.to_datetime(v["from_date"])).dt.days + 1
+    return days.groupby(v["index_key"]).sum().astype(int).to_dict()
+
+
+def check_coverage_baseline() -> Result:
+    """Verified coverage may not shrink: compare calendar days VERIFIED per index with data/curated/coverage_baseline.csv.
+
+    A membership error does not fail check_membership; it only removes VERIFIED days. This is the check that notices.
+    To accept a deliberate change, regenerate the baseline (write_coverage_baseline) and commit it."""
+    cov_p = paths.BUILD / "membership" / "coverage.parquet"
+    base_p = paths.CURATED / "coverage_baseline.csv"
+    if not cov_p.exists():
+        return Result("coverage_baseline", "FAIL", "missing coverage.parquet")
+    if not base_p.exists():
+        return Result("coverage_baseline", "FAIL", "no data/curated/coverage_baseline.csv")
+    now = _verified_days_by_index(pd.read_parquet(cov_p))
+    base = pd.read_csv(base_p).set_index("index_key")["verified_days"].to_dict()
+    lost = [(k, b, now.get(k, 0)) for k, b in base.items() if now.get(k, 0) < b]
+    gained = [(k, base.get(k, 0), n) for k, n in now.items() if n > base.get(k, 0)]
+    if lost:
+        return Result("coverage_baseline", "FAIL",
+                      f"{len(lost)} indices lost verified days vs baseline (index, baseline, now)", lost[:20])
+    if gained:
+        return Result("coverage_baseline", "WARN",
+                      f"{len(gained)} indices gained verified days; regenerate the baseline to lock them in", gained[:20])
+    return Result("coverage_baseline", "PASS", f"{len(base)} indices at or above baseline")
+
+
+def write_coverage_baseline() -> Path:
+    cov = pd.read_parquet(paths.BUILD / "membership" / "coverage.parquet")
+    d = _verified_days_by_index(cov)
+    p = paths.CURATED / "coverage_baseline.csv"
+    pd.DataFrame(sorted(d.items()), columns=["index_key", "verified_days"]).to_csv(p, index=False)
+    return p
+
+
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,
        check_identity, check_actions, check_adjusted_continuity, check_indices,
-       check_curated_provenance, check_membership]
+       check_curated_provenance, check_membership, check_coverage_baseline]
 
 
 def run(names: list[str] | None = None) -> list[Result]:

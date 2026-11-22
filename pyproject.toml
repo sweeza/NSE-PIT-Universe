@@ -27,6 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+pdf = ["pymupdf>=1.24"]
 
 [project.scripts]
 nseuniverse = "nseuniverse.cli:main"

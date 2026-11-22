@@ -13285,3 +13285,8 @@ data/raw/constituents/2026-11-19/ind_niftyretail_list.csv,https://www.niftyindic
 data/raw/constituents/2026-11-19/ind_niftysmallcap500_list.csv,https://www.niftyindices.com/IndexConstituent/ind_niftysmallcap500_list.csv,5665c9465ae5760aab38db77fe25a04f9a6771494b5403b6bae1a23cdbf9ded1,32963,2026-11-19T17:06:33Z
 data/raw/constituents/2026-11-19/ind_niftytelecommunications_list.csv,https://www.niftyindices.com/IndexConstituent/ind_niftytelecommunications_list.csv,6051a99fce96b71e6b9aefa9b3d0d7bbff784f3eeb82e327c75e12cb6884c1a4,802,2026-11-19T17:06:33Z
 data/raw/constituents/2026-11-19/ind_niftytotalmarket_list.csv,https://www.niftyindices.com/IndexConstituent/ind_niftytotalmarket_list.csv,3a1bc40095103cd46900e3b40b6279898682799ec469500ec34e06de93b2c98e,49188,2026-11-19T17:06:34Z
+data/raw/held/EQUITY_L.csv,"held: obtained before the rebuild, origin not re-verified (issue C5)",e9d56b58307b45f341897ec5d594fce19ce1a22ae38b028f73fde5e34078163c,187667,unknown
+data/raw/held/IndexInclExcl.xls,"held: obtained before the rebuild, origin not re-verified (issue C5)",8869bb7c4df67403131a494a8cc65509e80828f9438bc150b506cdbf55378046,820736,unknown
+data/raw/held/raw_corporate_actions_1995_2026.json,"held: obtained before the rebuild, origin not re-verified (issue C5)",d05de9681f347810a9d02904e93e711ad3f9af91166a391487b824df02c2e52c,15619593,unknown
+data/raw/held/symbolchange.csv,"held: obtained before the rebuild, origin not re-verified (issue C5)",0c7a157c2aaf962004d0edd2f9e196d5e9683e14d3a6f1b7c838fcffd57a23cb,70175,unknown
+data/raw/indexhist/IndexMapping.json,held: IndexMapping.json copied with the index-history download,0077ca07e37603834a0b279be06fe11b0d3b4ead350d7e02901688ec14ba0cc3,30201,unknown

@@ -33,7 +33,7 @@ def synthetic_env(tmp_path, monkeypatch):
     return root
 
 
-def test_check_manifest_flags_unlisted_constituents_and_ignores_held(synthetic_env):
+def test_check_manifest_flags_unlisted_constituents_and_held(synthetic_env):
     root = synthetic_env
     (root / "data" / "raw" / "held" / "old.xls").write_bytes(b"held")
     f = root / "data" / "raw" / "constituents" / "ind_nifty50list.csv"
@@ -42,12 +42,19 @@ def test_check_manifest_flags_unlisted_constituents_and_ignores_held(synthetic_e
     res = verify.check_manifest()
     assert res.status == "FAIL"
     assert "ind_nifty50list.csv" in res.details
-    assert "old.xls" not in res.details
+    assert "old.xls" in res.details   # held inputs must be in the manifest too
 
     sha = hashlib.sha256(b"Symbol\nAAA\n").hexdigest()
     (paths.MANIFEST).write_text(
         f"path,url,sha256,bytes,fetched_utc\n"
         f"data/raw/constituents/ind_nifty50list.csv,http://x,{sha},11,2026-01-01\n"
+    )
+    assert verify.check_manifest().status == "FAIL"   # held/old.xls is still unlisted
+    shah = hashlib.sha256(b"held").hexdigest()
+    (paths.MANIFEST).write_text(
+        f"path,url,sha256,bytes,fetched_utc\n"
+        f"data/raw/constituents/ind_nifty50list.csv,http://x,{sha},11,2026-01-01\n"
+        f"data/raw/held/old.xls,held,{shah},4,unknown\n"
     )
     assert verify.check_manifest().status == "PASS"
 
@@ -99,3 +106,17 @@ def test_check_membership_enforces_hierarchy(synthetic_env, monkeypatch):
         {"index_key": "NIFTY50", "sec_id": "S2", "from_date": d[0], "to_date": d[1]},  # excluded on d[1], so NOT in NIFTY50 on d[1]
     ]).to_parquet(paths.BUILD / "membership" / "intervals.parquet")
     assert verify.check_membership().status == "PASS"
+
+
+def test_coverage_baseline_detects_loss_and_gain(synthetic_env):
+    cov = lambda to: pd.DataFrame([{"index_key": "NIFTY50", "from_date": pd.Timestamp("2020-01-01"),
+                                    "to_date": pd.Timestamp(to), "status": "VERIFIED", "reason": ""}])
+    cov("2020-01-10").to_parquet(paths.BUILD / "membership" / "coverage.parquet")
+    assert verify.check_coverage_baseline().status == "FAIL"      # no baseline yet
+    verify.write_coverage_baseline()
+    assert verify.check_coverage_baseline().status == "PASS"
+    cov("2020-01-09").to_parquet(paths.BUILD / "membership" / "coverage.parquet")   # one day lost
+    r = verify.check_coverage_baseline()
+    assert r.status == "FAIL" and r.details[0] == ("NIFTY50", 10, 9)
+    cov("2020-01-12").to_parquet(paths.BUILD / "membership" / "coverage.parquet")   # two days gained
+    assert verify.check_coverage_baseline().status == "WARN"
