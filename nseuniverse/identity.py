@@ -5,8 +5,12 @@ security only on evidence:
   1. symbolchange.csv (old -> new, effective date) when the old segment ends and the new one
      starts around that date;
   2. the same full ISIN on adjacent, non-overlapping segments of different symbols.
+  3. curated identity_links.csv rows, each citing an NSE file.
+  4. the same symbol returning after a gap longer than GAP_DAYS with the same full equity ISIN
+     (security-type digits "01"), when both segments traded in an equity series and the ISIN is seen
+     under no other symbol in the gap. The ISIN, not the ticker, is the identity.
 Never joined on ticker alone: a ticker that vanishes for more than GAP_DAYS or whose ISIN issuer
-changes starts a new segment (recycled ticker = different security).
+changes starts a new segment (recycled ticker = different security) unless rule 4 applies.
 A join that would put two symbols on the same trading day into one security is rejected and
 reported. Mergers and demergers are not joined; they end one sec_id and start another.
 
@@ -32,6 +36,11 @@ def _issuer(isin):
     """Issuer part of an equity/fund ISIN. Partly-paid and other special ISINs (IN9...) are not an
     issuer change and are ignored for continuity."""
     return isin[:8] if isinstance(isin, str) and len(isin) >= 8 and isin[:3] in ("INE", "INF") else None
+
+
+def _equity_isin(isin) -> bool:
+    """Full ISIN of an equity share: INE issuer, security-type digits 01 (debt is 07/08, funds are INF)."""
+    return isinstance(isin, str) and len(isin) == 12 and isin[:3] == "INE" and isin[7:9] == "01"
 
 
 def segments(t: pd.DataFrame) -> pd.DataFrame:
@@ -186,6 +195,26 @@ def link(seg: pd.DataFrame, t: pd.DataFrame, symbolchange: pd.DataFrame | None =
         else:
             log.append({"seg_a": -1, "seg_b": -1, "source": "curated", "status": "AMBIGUOUS",
                         "note": f"{r.old_symbol}->{r.new_symbol} candidate pairs={len(pairs)}"})
+
+    # 4. same symbol back after a long gap with the same full equity ISIN (see module docstring)
+    isin_all: dict[str, list] = {}
+    for r in seg.itertuples():
+        for i in r.isins:
+            isin_all.setdefault(i, []).append(r)
+    for sym, g in seg.groupby("symbol"):
+        rows = sorted(g.itertuples(), key=lambda r: r.start)
+        for ra, rb in zip(rows, rows[1:]):
+            if not (ra.is_equity and rb.is_equity):
+                continue
+            shared = {i for i in ra.isins if _equity_isin(i)} & {i for i in rb.isins if _equity_isin(i)}
+            for isin in sorted(shared):
+                other = [o for o in isin_all[isin] if o.symbol != sym and o.start < rb.start and o.end > ra.end]
+                if other:
+                    log.append({"seg_a": ra.seg_id, "seg_b": rb.seg_id, "source": "symbol_isin", "status": "AMBIGUOUS",
+                                "note": f"{sym} {isin} also seen under {sorted({o.symbol for o in other})} in the gap"})
+                else:
+                    try_join(int(ra.seg_id), int(rb.seg_id), "symbol_isin", f"{sym} {isin}")
+                break
 
     seg = seg.copy()
     seg["root"] = [uf.find(i) for i in seg["seg_id"]]

@@ -109,3 +109,44 @@ def test_curated_join_is_rejected_when_the_two_symbols_overlap():
     cur = pd.DataFrame([("OLD", "NEW", "evidence")], columns=["old_symbol", "new_symbol", "source"])
     sec, *_ = identity.build(t, sc(), cur)
     assert len(sec) == 2
+
+
+def test_same_symbol_same_full_equity_isin_after_long_gap_is_one_security():
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A01011")})
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A01011")})
+    sec, sh, links, seg = identity.build(pd.concat([a, b], ignore_index=True), sc())
+    assert len(sec) == 1 and len(sh) == 2
+    assert (links[links.source == "symbol_isin"].status == "JOINED").sum() == 1
+
+
+def test_gap_join_needs_the_same_full_isin_not_just_the_issuer():
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A01011")})
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A01029")})
+    sec, *_ = identity.build(pd.concat([a, b], ignore_index=True), sc())
+    assert len(sec) == 2          # same issuer but a different ISIN after a gap: stays separate
+
+
+def test_gap_join_refused_when_isin_traded_under_another_symbol_in_the_gap():
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A01011")})
+    mid = table({"XYZ": ("2008-01-01", "2008-12-31", "INE111A01011")})
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A01011")})
+    sec, sh, links, seg = identity.build(pd.concat([a, mid, b], ignore_index=True), sc())
+    assert (links.status == "AMBIGUOUS").sum() >= 1
+    assert sh[sh.symbol == "ABC"].sec_id.nunique() == 2
+
+
+def test_gap_join_refused_for_debt_isin_and_for_non_equity_series():
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A07011")})
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A07011")})
+    assert len(identity.build(pd.concat([a, b], ignore_index=True), sc())[0]) == 2
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A01011")}).assign(series="GS")
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A01011")}).assign(series="GS")
+    assert len(identity.build(pd.concat([a, b], ignore_index=True), sc())[0]) == 2
+
+
+def test_gap_join_does_not_skip_over_a_segment_of_another_issuer():
+    a = table({"ABC": ("2005-01-03", "2005-12-30", "INE111A01011")})
+    m = table({"ABC": ("2007-01-01", "2007-12-31", "INE222B01022")})
+    b = table({"ABC": ("2012-01-02", "2012-12-31", "INE111A01011")})
+    sec, *_ = identity.build(pd.concat([a, m, b], ignore_index=True), sc())
+    assert len(sec) == 3
