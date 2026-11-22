@@ -1,0 +1,20 @@
+# Handoff for a new session (2026-11-22)
+
+Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE point-in-time dataset. Read first: `CHECKPOINT.md`, `docs/AUDIT_PLAN.md`, `docs/AUDIT_REPORT.md`, `docs/OPEN_ISSUES.md`.
+
+## State
+- All work is committed locally (latest `eab8977`); **nothing is pushed**. Untracked and the owner's: `999 dump/`, `Project Requirement.docx`, `requirements-lock.txt`, `nseuniverse.egg-info/`.
+- 78 tests pass. Run the CLI as `python -m nseuniverse.cli build|verify [--only NAME]` (no `__main__`). Full `verify` (12 checks) takes about 11 min; `build` several.
+- Audit done: Stage 0 (reproducibility), 7 (mutation test of the gate), 6.1-6.3/6.7/6.8 (membership), Stage 1 for `symbolchange.csv` and `EQUITY_L.csv`.
+- Audit fixes done: manifest covers held files; `check_coverage_baseline` added (`data/curated/coverage_baseline.csv`; regenerate with `verify.write_coverage_baseline()` only for a deliberate change); `press.extract_text`; docs honesty fixes; LargeMidcap 250 floor set to 2016-04-01 (Midcap 150 lost the same window).
+
+## Working rules (owner)
+Nothing is estimated. Every curated row cites a file in `data/raw/`. Ask before pushing, deleting, or saving downloads into `data/raw/` (state name, source, size). Downloads for audit comparison go to the scratchpad, not `data/raw/`. Do not bypass NSE bot protection (scripted calls to the corporate-actions API were refused; stop there). Add a unit test for every new code path.
+
+## Pending
+1. **Owner decisions:** A12 dead aliases (BLACKBOX, PUDUMJEE: delete + rebuild or keep); A1 push; A6/A7 untracked files; A2 spot-check of inferred aliases.
+2. **Owner action:** download a fresh NSE corporate-actions file by hand (the held JSON is unchecked, A11); optionally save missing press releases (B7, B12).
+3. **Audit not started:** Stage 1 re-download sample (150 bhavcopy, 20 index, 59 constituent, 100 press), Stages 2 (bhavcopy/calendar), 3 (identity), 4 (adjusted prices), 5 (index values), 6.4 (blind sample vs factsheets, needs owner files), 6.5 (press completeness), 8 (PIT/API), 9 (docs honesty pass).
+4. **Mutation tests not done:** bhavcopy cell corruption, corporate-action ratio flip, raw-file deletion, Nifty 500 symbol-swap rerun.
+5. Open data issues: B9 (demerger dummies in other indices), B16a, C1-C5.
+6. Scratch tools: `audit/` scripts in the repo; scratchpad outputs are temporary.

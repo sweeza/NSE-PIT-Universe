@@ -88,3 +88,18 @@ All 39 runs: `verify` checks `curated_provenance` and `membership` stayed PASS; 
 | S3-5 | S3 | The 29 dummy-demerger rows in `index_size_exceptions.csv` do not affect the result. Either make the build enforce them or label them documentation. (The README currently says they verify the dummies.) |
 
 Not yet tested in Stage 7: bhavcopy cell corruption, corporate-action ratio flip, raw-file deletion, the Nifty 500 symbol swap. Stages 1 to 6, 8 and 9 are not started.
+
+### Stage 1 (partial): held inputs vs fresh NSE copies, 2026-11-22
+
+Fresh copies were downloaded from `nsearchives.nseindia.com/content/equities/` into the audit scratch folder only; nothing in `data/raw/` changed.
+
+| Input | Result |
+|---|---|
+| `symbolchange.csv` | Held 1,066 rows, fresh 1,083. **Every held row is in the fresh file** (0 held-only); the 17 extra rows are changes effective 2026-10/11, after the held snapshot. The alias evidence that rests on this file is therefore authentic for its date range. |
+| `EQUITY_L.csv` | 2,598 symbols in common. 8 differ: 7 ISIN changes (new ISIN after a corporate event, e.g. CCAVENUE, JSWDULUX) and one listing date (LANCER). 22 held-only and 33 fresh-only symbols are renames and new listings since the snapshot; series (EQ/BE) differ on many rows because it changes over time. Nothing contradicts a curated alias. |
+| `IndexInclExcl.xls` | **Not checkable.** No live NSE link exists (SOURCES.md); origin stays undocumented. |
+| `raw_corporate_actions_1995_2026.json` | **Not checked.** The NSE corporate-actions endpoint answered 403/404 to scripted requests; no further attempt was made to get around it. A fresh copy needs a manual download by the owner from the NSE corporate-actions page. |
+
+Effect on S2-2/S2-5: alias evidence from `symbolchange.csv` and `EQUITY_L.csv` is now confirmed authentic; the circularity remains for aliases that rest on the corporate-action feed or the workbook.
+
+Not run in Stage 1: the 150-bhavcopy, 20 daily-index, 59 constituent and 100 press-PDF re-download sample.
