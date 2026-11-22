@@ -170,17 +170,30 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
     return p.sort_values(["sec_id", "date"]).reset_index(drop=True)
 
 
-def index_values(index: str, start=None, end=None, mask_conflicts: bool = False) -> pd.DataFrame:
+def index_values(index: str, start=None, end=None, mask_conflicts: bool = False, source: str | None = None) -> pd.DataFrame:
     """Official index values. Adds ret (daily change of close). Days where NSE's two sources disagree carry
     conflict=True. A return is unreliable if either its day or the previous day conflicts; with
-    mask_conflicts=True ret is NaN on those days. frame.attrs['flagged'] lists them either way."""
+    mask_conflicts=True ret is NaN on those days. frame.attrs['flagged'] lists them either way.
+    source='history' or 'daily' (explicit, never the default): on conflict days use that source's close instead of the
+    other's; open/high/low/tri/ntr are blanked on those days (they would come from the other source) and ret is computed
+    from the chosen source. The choice is yours: check the index's boundary days first (see docs/AUDIT_REPORT.md)."""
+    if source not in (None, "history", "daily"):
+        raise ValueError("source must be None, 'history' or 'daily'")
+    if source is not None and mask_conflicts:
+        raise ValueError("use either source= or mask_conflicts=True, not both")
     v = indices.values(index)
     if v.empty:
         raise CoverageError(f"no values for index {index!r}")
     v = v.sort_values("date").reset_index(drop=True)
     conf = v["conflict"].fillna(False).astype(bool) if "conflict" in v else pd.Series(False, index=v.index)
+    swapped = pd.Series(False, index=v.index)
+    if source is not None:
+        swapped = conf & (v["src"] != source)
+        v.loc[swapped, "close"] = v.loc[swapped, "alt_close"]
+        v.loc[swapped, [c for c in ("open", "high", "low", "tri", "ntr") if c in v]] = float("nan")
+        v.loc[swapped, "src"] = source
     v["ret"] = v["close"].pct_change()
-    bad = conf | conf.shift(1, fill_value=False)
+    bad = pd.Series(False, index=v.index) if source is not None else conf | conf.shift(1, fill_value=False)
     v["ret_unreliable"] = bad
     if mask_conflicts:
         v.loc[bad, "ret"] = float("nan")
@@ -189,6 +202,15 @@ def index_values(index: str, start=None, end=None, mask_conflicts: bool = False)
     if end is not None:
         v = v[v.date <= pd.Timestamp(end)]
     v = v.reset_index(drop=True)
+    if source is not None:
+        fl = v.loc[v["conflict"].fillna(False).astype(bool), ["date", "close", "alt_close"]].assign(
+            **{"class": f"SOURCE_CONFLICT_USED_{source.upper()}"})
+        v.attrs["flagged"] = fl.reset_index(drop=True)
+        if len(fl):
+            warnings.warn(f"{len(fl)} {index} conflict day(s) in the result use the {source!r} source by your choice; "
+                          f"open/high/low/tri/ntr are blank on the {int(swapped.sum())} rows that were switched.",
+                          DataQualityWarning, stacklevel=2)
+        return v
     fl = v.loc[v.ret_unreliable, ["date", "close", "alt_close"]].assign(**{"class": "SOURCE_CONFLICT"})         if "alt_close" in v else v.loc[v.ret_unreliable, ["date"]].assign(**{"class": "SOURCE_CONFLICT"})
     v.attrs["flagged"] = fl.reset_index(drop=True)
     if len(fl):

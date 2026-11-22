@@ -129,3 +129,21 @@ def test_index_returns_are_flagged_and_masked_around_source_conflicts(tiny_build
     assert m.ret.isna().tolist() == [True, False, True, True, True, True]
     clean = api.index_values("X", start=days[0], end=days[1])
     assert clean.attrs["flagged"].empty
+
+
+def test_explicit_source_choice_replaces_the_close_and_blanks_mixed_columns(tiny_build, monkeypatch):
+    days = pd.bdate_range("2017-01-02", periods=5)
+    v = pd.DataFrame({"index_key": "X", "date": days, "close": [100, 90, 91, 92, 120.0],
+                      "alt_close": [100, 102, 103, 104, 120.0], "open": [1.0] * 5, "tri": [5.0] * 5, "src": "daily",
+                      "conflict": [False, True, True, True, False]})
+    monkeypatch.setattr(indices, "values", lambda k: v)
+    with pytest.warns(api.DataQualityWarning, match="by your choice"):
+        r = api.index_values("X", source="history")
+    assert r.close.tolist() == [100, 102, 103, 104, 120]
+    assert r.src.tolist() == ["daily", "history", "history", "history", "daily"]
+    assert r.open.isna().tolist() == [False, True, True, True, False]
+    assert r.ret.round(4).tolist()[1:3] == [0.02, 0.0098]
+    with pytest.raises(ValueError):
+        api.index_values("X", source="history", mask_conflicts=True)
+    with pytest.raises(ValueError):
+        api.index_values("X", source="bogus")
