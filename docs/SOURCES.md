@@ -57,14 +57,14 @@ Probed 2026-11-15 with plain HTTP clients and a browser-like User-Agent, no logi
 ## 5. Index membership
 
 ### Press releases — VERIFIED
-- `niftyindices.com/press-release` lists **1,237 PDF links** (`/Press_Release/ind_prsDDMMYYYY.pdf`), dated 1998 → 2026, and growing: 18–28 a year until 2016, 65–146 a year since 2018.
-- Real PDFs with extractable text (no OCR). 1 of 40 sampled links was dead (HTTP 200 with an HTML page), so dead links must be detected and listed.
-- Content mixes equity and fixed-income index changes, futures-eligibility notices and new-index launches. Equity changes name the index, the included and excluded companies, and an effective date.
-- **Format drift:** 2004 releases name companies only, with no symbol; a Symbol column appears around 2016. Earlier events need a company-name-to-security mapping, which is a curated, reviewed step.
-- Not all releases are index changes. Parsing is semi-manual: extract text, classify, then enter events into `curated/` with a citation.
+- `niftyindices.com/press-release` lists **1,514 press releases** (`ind_prsDDMMYYYY.pdf` and suffixed `ind_prsDDMMYYYY_N.pdf`), dated 1998 → 2026, held in `data/raw/pressreleases/pdf/` and tracked in `manifest.csv`.
+- Real PDFs with extractable text (and audited OCR text where scanned, e.g. `ind_prs23082021.pdf`).
+- Content mixes equity and fixed-income index changes, futures-eligibility notices, demerger replacements, and new-index launches. Equity changes name the index, the included and excluded companies, and an effective date.
+- **Format drift:** 2004 releases name companies only, with no symbol; a Symbol column appears around 2016. Earlier events map through reviewed alias tables (`data/curated/name_aliases.csv`, `press_name_symbol.csv`).
+- Parsing is semi-manual: extract text, classify, then enter events into `data/curated/index_events_press.csv` with a direct raw citation.
 
 ### Current constituents — VERIFIED
-`niftyindices.com/IndexConstituent/ind_{name}list.csv` (`ind_nifty50list.csv`, `ind_niftybanklist.csv` fetched). Columns: company, industry, symbol, series, ISIN. This is the end anchor for replay. File names per index are not yet catalogued.
+`niftyindices.com/IndexConstituent/ind_{name}list.csv` (59 constituent CSVs held for current index anchors as of November 2026). Columns: company, industry, symbol, series, ISIN. This is the end anchor for replay.
 
 ### Not found
 - **No live link to `IndexInclExcl.xls`**; every guessed URL returned the site's HTML error page. The held copy ends 2020-07-31 and its origin is not documented here.
