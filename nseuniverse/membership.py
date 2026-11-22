@@ -382,7 +382,7 @@ FLOORS: dict[str, str] = {
     "NIFTY100": "2007-01-01",
     "NIFTY500": "2007-01-01",
     "NIFTY200": "2007-01-01",
-    "NIFTYLARGEMIDCAP250": "2007-01-01",
+    "NIFTYLARGEMIDCAP250": "2016-04-01",   # index launched 2016-04-01; earlier history has no documented source (audit S2-4, A10)
     "NIFTYMIDCAP100": "2007-01-01",
     "NIFTYMIDCAP50": "2007-01-01",
     "NIFTYSMALLCAP100": "2007-01-01",

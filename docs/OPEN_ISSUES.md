@@ -9,7 +9,7 @@ Add a row when something is found; change its status, do not delete it.
 | ID | Status | Item | Next step |
 |----|--------|------|-----------|
 | A9 | OPEN | Audit findings fixed 2026-11-22: five held files added to the manifest and now scanned (S2-1); `check_coverage_baseline` added with `data/curated/coverage_baseline.csv` (S3-1); `press.extract_text` added (S3-2). To accept a deliberate coverage change run `verify.write_coverage_baseline()` and commit it. | None. |
-| A10 | DECISION | **S2-4**: Nifty LargeMidcap 250 is VERIFIED 2008-03-14..2015-09-24 although the index launched 2016-04-01, and Nifty 100 is not a subset of it on those days (PATNI, RAYMOND, ZEEL, ADANIENT and others). The source and definition of that pre-2016 history are not documented. | Owner: state the source, or restrict that window to UNVERIFIED. |
+| A10 | DONE | **S2-4**: Nifty LargeMidcap 250 was VERIFIED 2008-03-14..2015-09-24 although the index launched 2016-04-01 (Nifty 100 was not a subset of it on those days). Owner decision 2026-11-22: mark UNVERIFIED. `FLOORS["NIFTYLARGEMIDCAP250"]` is now 2016-04-01; coverage baseline regenerated as a deliberate reduction. | None. |
 | A11 | OPEN | **S2-2/S2-5**: aliases rest on the held corporate-action feed and `EQUITY_L.csv` (origin unverified, issue C5); a wrong alias that coexists with the right one is not detected. | Stage 1 of `docs/AUDIT_PLAN.md`: compare the held files with fresh NSE copies. |
 | A12 | OPEN | **S3-4**: two aliases point to symbols with no security in the build (AGC Networks to BLACKBOX, Pudumjee to PUDUMJEE). | Owner decides: delete (then rebuild) or keep. |
 | A1 | OPEN | Phase 1-4 work (2026-11-15..22) is committed locally in chunks on 2026-11-22; nothing pushed. | Owner decides when to push. |
