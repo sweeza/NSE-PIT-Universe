@@ -71,3 +71,32 @@ def test_mask_gaps_needs_the_gap_table_and_an_adjust_mode(tiny_build):
         api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps=True)       # no adjustment_gaps.csv yet
     with pytest.raises(ValueError):
         api.prices("AAA", "2007-01-01", "2007-01-08", None, mask_gaps=True)
+
+
+def test_index_members_includes_pit_symbol_and_prices_resolves_past_end(tiny_build):
+    d = tiny_build
+    b = paths.BUILD
+    # Add a symbol rename in symbol_history and a verified membership window
+    pd.DataFrame([
+        {"sec_id": "S00001", "symbol": "AAA_OLD", "from_date": d[0], "to_date": d[2], "isins": ""},
+        {"sec_id": "S00001", "symbol": "AAA", "from_date": d[3], "to_date": d[-1], "isins": ""},
+    ]).to_parquet(b / "identity" / "symbol_history.parquet")
+    pd.DataFrame([
+        {"index_key": "NIFTY50", "sec_id": "S00001", "from_date": d[0], "to_date": d[-1]},
+    ]).to_parquet(b / "membership" / "intervals.parquet")
+    pd.DataFrame([
+        {"index_key": "NIFTY50", "from_date": d[0], "to_date": d[-1], "status": "VERIFIED", "reason": ""},
+    ]).to_parquet(b / "membership" / "coverage.parquet")
+    api.clear_cache()
+
+    m_early = api.index_members("NIFTY50", d[1])
+    assert m_early["symbol"].tolist() == ["AAA_OLD"]
+    m_late = api.index_members("NIFTY50", d[4])
+    assert m_late["symbol"].tolist() == ["AAA"]
+
+    # Querying past last available date resolves cleanly to AAA
+    p = api.prices("AAA", d[0], "2007-01-15", "splits")
+    assert len(p) == 6
+    # Querying delisted symbol AAA_OLD over [d[0], d[-1]] resolves uniquely
+    p_old = api.prices("AAA_OLD", d[0], d[-1], "splits")
+    assert len(p_old) == 6

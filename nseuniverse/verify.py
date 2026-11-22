@@ -10,6 +10,7 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import re
 import zipfile
 import io
 from dataclasses import dataclass, field, asdict
@@ -18,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import adjust, bhavcopy, calendar, indices, paths, pipeline
+from . import adjust, bhavcopy, calendar, indices, membership, paths, pipeline
 
 NUMCOLS = ["open", "high", "low", "close", "last", "prev_close", "volume", "turnover", "trades", "settle_price"]
 
@@ -42,18 +43,33 @@ def _waivers() -> pd.DataFrame:
 def check_manifest() -> Result:
     if not paths.MANIFEST.exists():
         return Result("raw_manifest", "FAIL", "no manifest")
-    rows = list(csv.DictReader(open(paths.MANIFEST, newline="")))
-    bad, missing = [], []
-    seen = set()
-    for r in rows:
+    rows = list(csv.DictReader(open(paths.MANIFEST, newline="", encoding="utf-8", errors="replace")))
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _hash_file(r):
         p = paths.ROOT / r["path"]
-        seen.add(p.resolve())
         if not p.exists():
-            missing.append(r["path"]); continue
-        if hashlib.sha256(p.read_bytes()).hexdigest() != r["sha256"]:
-            bad.append(r["path"])
-    on_disk = [p for root in (paths.BHAV_RAW, paths.INDEX_DAILY_RAW, paths.PRESS_RAW) for p in root.rglob("*")
-               if p.is_file() and p.suffix != ".part"]
+            return "missing", r["path"], p
+        h = hashlib.sha256()
+        with p.open("rb") as f:
+            while chunk := f.read(65536):
+                h.update(chunk)
+        digest = h.hexdigest()
+        if digest != r["sha256"]:
+            return "bad", r["path"], p
+        return "ok", None, p
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        results = list(pool.map(_hash_file, rows))
+
+    bad = [p for status, p, _ in results if status == "bad"]
+    missing = [p for status, p, _ in results if status == "missing"]
+    seen = {p.resolve() for _, _, p in results if p.exists()}
+
+    on_disk = [p for root in (paths.BHAV_RAW, paths.INDEX_DAILY_RAW, paths.PRESS_RAW,
+                              paths.RAW / "constituents", paths.RAW / "corporate_actions", paths.RAW / "nse_lists")
+               if root.exists()
+               for p in root.rglob("*") if p.is_file() and p.suffix != ".part"]
     on_disk += [p for p in paths.INDEX_HIST_RAW.rglob("*.json") if p.name != "IndexMapping.json"]
     unlisted = [p.name for p in on_disk if p.resolve() not in seen]
     dup = len(rows) - len({r["path"] for r in rows})
@@ -398,8 +414,176 @@ def check_indices() -> Result:
                   [("conflicts by index (top)", top), ("gap indices (top)", dict(sorted(gaps.items(), key=lambda x: -x[1])[:8]))])
 
 
+def check_curated_provenance() -> Result:
+    """Every data/raw/... reference in data/curated/*.csv must exist on disk."""
+    files = ["index_events_press.csv", "index_dual_class.csv", "index_size_exceptions.csv",
+             "identity_links.csv", "name_aliases.csv"]
+    checked = 0
+    n_files = 0
+    missing = []
+    for name in files:
+        p = paths.CURATED / name
+        if not p.exists():
+            continue
+        n_files += 1
+        df = pd.read_csv(p, dtype=str).fillna("")
+        if "source" not in df.columns:
+            continue
+        for src_val in df["source"]:
+            last_dir = None
+            for tok in (t.strip() for t in src_val.split(";") if t.strip()):
+                m = re.match(r"(data/raw/[^\s:;,\"']+)", tok)
+                if m:
+                    ref = m.group(1)
+                    last_dir = str(Path(ref).parent).replace("\\", "/")
+                elif last_dir and "/" not in tok and "\\" not in tok:
+                    bm = re.match(r"([^\s:;,\"']+\.[A-Za-z0-9]{2,5})$", tok)
+                    if not bm:
+                        continue
+                    ref = f"{last_dir}/{bm.group(1)}"
+                else:
+                    continue
+                checked += 1
+                if not (paths.ROOT / ref).exists():
+                    missing.append((name, ref))
+    return Result("curated_provenance", "PASS" if not missing else "FAIL",
+                  f"{checked} raw references across {n_files} curated files; missing={len(missing)}",
+                  missing[:20])
+
+
+# Prior to the 1 Apr 2016 broad-market restructuring (NSE release ind_prs22022016_1.pdf),
+# only NIFTY50 + NIFTYNEXT50 = NIFTY100 and NIFTY100/200/500 nested unconditionally; the strict
+# 100 <= 200 <= 500, 100 <= LARGEMIDCAP250 <= 500, MIDCAP50 <= MIDCAP150 <= 500, and
+# SMALLCAP50 <= SMALLCAP100 <= SMALLCAP250 <= 500 hierarchy took effect on 2016-04-01.
+# On 2018-04-02 (NSE release ind_prs05012018.pdf), NIFTY Free float Midcap 100 was renamed
+# NIFTY Midcap 100 and restructured to be drawn from Nifty Midcap 150 (making MIDCAP100 <= 200,
+# MIDCAP100 <= MIDCAP150, and MIDCAP100 <= 500 active from 2018-04-02; before then, Free Float Midcap 100
+# was an independent percentile band, and in Sep 2017 DMART entered FF Midcap 100 on 2017-09-05 per
+# ind_prs29082017.pdf while entering Nifty 500 on 2017-09-29 per ind_prs28082017.pdf).
+_SUBSET_PAIRS = [
+    ("NIFTY50", "NIFTY100"), ("NIFTYNEXT50", "NIFTY100"), ("NIFTY100", "NIFTY200"),
+    ("NIFTYMIDCAP100", "NIFTY200"), ("NIFTY100", "NIFTY500"), ("NIFTY200", "NIFTY500"),
+    ("NIFTYMIDCAP150", "NIFTY500"), ("NIFTYSMALLCAP250", "NIFTY500"),
+    ("NIFTYMIDSMALLCAP400", "NIFTY500"), ("NIFTYLARGEMIDCAP250", "NIFTY500"),
+    ("NIFTY100", "NIFTYLARGEMIDCAP250"), ("NIFTYMIDCAP50", "NIFTYMIDCAP150"),
+    ("NIFTYMIDCAP100", "NIFTYMIDCAP150"),
+    ("NIFTYSMALLCAP50", "NIFTYSMALLCAP100"), ("NIFTYSMALLCAP100", "NIFTYSMALLCAP250"),
+    ("NIFTYMIDCAP100", "NIFTY500"), ("NIFTYSMALLCAP100", "NIFTY500"),
+]
+_PRE_RESTRUCTURE_PAIRS = {("NIFTY50", "NIFTY100"), ("NIFTYNEXT50", "NIFTY100"), ("NIFTY100", "NIFTY500")}
+_RESTRUCTURE_DATE = pd.Timestamp("2016-04-01")
+_MIDCAP100_RESTRUCTURE_DATE = pd.Timestamp("2018-04-02")
+
+
+def check_membership() -> Result:
+    """Verify event/anchor resolution and cross-index hierarchy invariants on VERIFIED days."""
+    cov_p = paths.BUILD / "membership" / "coverage.parquet"
+    int_p = paths.BUILD / "membership" / "intervals.parquet"
+    seg_p = paths.BUILD / "identity" / "segments.parquet"
+    if not (cov_p.exists() and int_p.exists() and seg_p.exists()):
+        return Result("membership", "FAIL", "missing membership or identity build tables")
+    cov = pd.read_parquet(cov_p)
+    iv = pd.read_parquet(int_p)
+    seg = pd.read_parquet(seg_p)
+    ver = cov[cov["status"] == "VERIFIED"]
+    if ver.empty:
+        return Result("membership", "FAIL", "no VERIFIED indices in coverage.parquet")
+
+    problems = []
+    # (a) index_events_press.csv resolution
+    press_p = paths.CURATED / "index_events_press.csv"
+    if press_p.exists():
+        ev = pd.read_csv(press_p, dtype=str).fillna("")
+        for r in ev.itertuples(index=False):
+            if not membership._sid(seg, r.symbol, pd.Timestamp(r.date)):
+                problems.append(("press_unresolved", r.index_key, r.date, r.symbol))
+
+    # (b) ANCHORED constituent files resolution
+    for k, (_, anchor_rel) in membership.ANCHORED.items():
+        ap = paths.ROOT / anchor_rel
+        if not ap.exists():
+            continue
+        adate = pd.Timestamp(ap.parent.name) if ap.parent.name[:4].isdigit() else seg["end"].max()
+        adf = pd.read_csv(ap, dtype=str).fillna("")
+        sym_col = "Symbol" if "Symbol" in adf.columns else ("SYMBOL" if "SYMBOL" in adf.columns else None)
+        if sym_col:
+            for sym in adf[sym_col]:
+                sym = sym.strip()
+                if sym and not sym.upper().startswith("DUMMY") and not membership._sid(seg, sym, adate):
+                    problems.append(("anchor_unresolved", k, sym))
+
+    # (c) Cross-index hierarchy / partition invariants on trading days
+    cal = pd.DatetimeIndex(calendar.trading_days())
+    ver_windows: dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]] = {}
+    for r in ver.itertuples(index=False):
+        ver_windows.setdefault(r.index_key, []).append((pd.Timestamp(r.from_date), pd.Timestamp(r.to_date)))
+    dc_p = paths.CURATED / "index_dual_class.csv"
+    dc_rows = pd.read_csv(dc_p, dtype=str).fillna("") if dc_p.exists() else pd.DataFrame()
+
+    def _dual_class_sids(t: pd.Timestamp) -> set[str]:
+        if dc_rows.empty:
+            return set()
+        out = set()
+        for r in dc_rows.itertuples(index=False):
+            if pd.Timestamp(r.from_date) <= t <= pd.Timestamp(r.to_date):
+                for s in str(r.symbols).split(";"):
+                    s = s.strip()
+                    if s:
+                        sid = membership._sid(seg, s, t)
+                        if sid:
+                            out.add(sid)
+        return out
+
+    # Pre-filter trading days to those where at least 2 relevant indices are verified
+    relevant = set(["NIFTY50", "NIFTYNEXT50", "NIFTY100"]) | {c for p in _SUBSET_PAIRS for c in p}
+    active = {k: wl for k, wl in ver_windows.items() if k in relevant}
+    checked_days = 0
+    if len(active) >= 2:
+        min_d = min(w[0] for wl in active.values() for w in wl)
+        max_d = max(w[1] for wl in active.values() for w in wl)
+        days = cal[(cal >= min_d) & (cal <= max_d)]
+        # Build fast interval lookup per index
+        iv_by_idx = {k: g for k, g in iv.groupby("index_key")}
+        for t in days:
+            avail = [k for k, wl in active.items() if any(f <= t <= to for f, to in wl)]
+            if len(avail) < 2:
+                continue
+            checked_days += 1
+            mem = {}
+            for k in avail:
+                g = iv_by_idx.get(k)
+                if g is None:
+                    mem[k] = set()
+                else:
+                    mem[k] = set(g.loc[(g["from_date"].isna() | (g["from_date"] <= t)) & (g["to_date"].isna() | (g["to_date"] > t)), "sec_id"])
+            if "NIFTY50" in mem and "NIFTYNEXT50" in mem:
+                overlap = mem["NIFTY50"] & mem["NIFTYNEXT50"]
+                if overlap:
+                    problems.append(("n50_next50_overlap", str(t.date()), len(overlap)))
+            if "NIFTY50" in mem and "NIFTYNEXT50" in mem and "NIFTY100" in mem:
+                dc = _dual_class_sids(t)
+                lhs = (mem["NIFTY50"] | mem["NIFTYNEXT50"]) - dc
+                rhs = mem["NIFTY100"] - dc
+                if lhs != rhs:
+                    problems.append(("n100_partition", str(t.date()), len(lhs ^ rhs)))
+            for child, parent in _SUBSET_PAIRS:
+                if t < _RESTRUCTURE_DATE and (child, parent) not in _PRE_RESTRUCTURE_PAIRS:
+                    continue
+                if child == "NIFTYMIDCAP100" and parent in {"NIFTY200", "NIFTYMIDCAP150", "NIFTY500"} and t < _MIDCAP100_RESTRUCTURE_DATE:
+                    continue
+                if child in mem and parent in mem:
+                    diff = mem[child] - mem[parent]
+                    if diff:
+                        problems.append(("subset_violation", child, parent, str(t.date()), len(diff)))
+
+    return Result("membership", "PASS" if not problems else "FAIL",
+                  f"{len(ver)} verified indices, {checked_days} multi-index trading days checked; violations={len(problems)}",
+                  problems[:20])
+
+
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,
-       check_identity, check_actions, check_adjusted_continuity, check_indices]
+       check_identity, check_actions, check_adjusted_continuity, check_indices,
+       check_curated_provenance, check_membership]
 
 
 def run(names: list[str] | None = None) -> list[Result]:

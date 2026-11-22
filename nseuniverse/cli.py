@@ -15,11 +15,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="nseuniverse")
     sub = ap.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("fetch", help="download raw files (the only command that uses the network)")
-    f.add_argument("what", choices=["bhavcopy", "indexdaily", "indexhist", "all"])
+    f.add_argument("what", choices=["bhavcopy", "indexdaily", "indexhist", "press", "all"])
     sub.add_parser("build", help="offline: raw/ + curated/ -> build/")
     v = sub.add_parser("verify", help="run integrity checks; exit 1 on any FAIL")
     v.add_argument("--only", nargs="*")
     sub.add_parser("determinism", help="build twice into temp dirs and compare checksums")
+    sub.add_parser("update", help="fetch recent data, rebuild, and verify")
     a = ap.parse_args(argv)
 
     if a.cmd == "fetch":
@@ -29,7 +30,17 @@ def main(argv=None) -> int:
             fetch.fetch_range("index_daily")
         if a.what in ("indexhist", "all"):
             fetch.fetch_index_history()
+        if a.what in ("press", "all"):
+            fetch.fetch_press_releases()
         return 0
+    if a.cmd == "update":
+        fetch.fetch_range("bhav_udiff")
+        fetch.fetch_range("index_daily")
+        print(pipeline.build_all())
+        res = verify.run()
+        fails = [r for r in res if r.status == "FAIL"]
+        print(f"\n{len(res) - len(fails)}/{len(res)} checks without FAIL")
+        return 1 if fails else 0
     if a.cmd == "build":
         print(pipeline.build_all())
         return 0

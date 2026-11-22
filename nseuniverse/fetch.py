@@ -185,14 +185,17 @@ def fetch_index_history(names: list[str] | None = None, workers: int = 3) -> dic
         slug = re.sub(r"[^A-Za-z0-9]+", "_", nm).strip("_").lower()
         for ep, path in HIST_ENDPOINTS.items():
             for a, b in HIST_WINDOWS:
-                b = b or today
-                dest = paths.INDEX_HIST_RAW / ep / f"{slug}__{a}__{b}.json"
-                jobs.append((nm, ep, path, a, b, dest))
+                is_open = b is None
+                end_str = b or today
+                dest = paths.INDEX_HIST_RAW / ep / f"{slug}__{a}__{end_str}.json"
+                jobs.append((nm, slug, ep, path, a, end_str, is_open, dest))
     counts = {"have": 0, "fetched": 0}
 
     def one(job):
-        nm, ep, path, a, b, dest = job
+        nm, slug, ep, path, a, b, is_open, dest = job
         if dest.exists():
+            return "have"
+        if is_open and any((paths.INDEX_HIST_RAW / ep).glob(f"{slug}__{a}__*.json")):
             return "have"
         body = json.dumps({"cinfo": "{'name':'%s','startDate':'%s','endDate':'%s','indexName':'%s'}" % (nm.upper(), a, b, nm)}).encode()
         last = None
@@ -229,7 +232,7 @@ def fetch_index_history(names: list[str] | None = None, workers: int = 3) -> dic
     return counts
 
 
-def fetch_press_releases(workers: int = 4) -> dict[str, int]:
+def fetch_press_releases(workers: int = 4, since_year: int | None = None) -> dict[str, int]:
     """Download every PDF linked from the NSE Indices press-release page. The page itself is
     stored raw (dated) so the list of links is reproducible. Dead links (HTTP 200 + HTML) are
     recorded in absent.csv."""
@@ -244,7 +247,12 @@ def fetch_press_releases(workers: int = 4) -> dict[str, int]:
         _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
                 [page.relative_to(paths.ROOT).as_posix(), base + "/press-release", hashlib.sha256(body).hexdigest(),
                  len(body), dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
-    links = sorted(set(re.findall(r"/Press_Release/ind_prs\d{8}\.pdf", body.decode("utf-8", "ignore"))))
+    links = sorted(set(re.findall(r"/Press_Release/ind_prs\d{8}(?:_\d+)?\.pdf", body.decode("utf-8", "ignore"))))
+    if since_year is not None:
+        links = [
+            lnk for lnk in links
+            if (m := re.search(r"ind_prs\d{4}(\d{4})", lnk)) and int(m.group(1)) >= since_year
+        ]
     absent = _read_absent()
     counts: dict[str, int] = {}
 
@@ -275,6 +283,34 @@ def fetch_press_releases(workers: int = 4) -> dict[str, int]:
                 print(f"[press] {k}/{len(links)} {counts}", flush=True)
     print(f"[press] done {counts}", flush=True)
     return counts
+
+
+def fetch_constituent(slug: str, date_str: str | None = None) -> Path:
+    """Download an index constituent CSV into data/raw/constituents/{YYYY-MM-DD}/ind_{slug}list.csv."""
+    d_str = date_str or dt.date.today().isoformat()
+    dest = paths.RAW / "constituents" / d_str / f"ind_{slug}list.csv"
+    if dest.exists():
+        return dest
+    url = f"https://www.niftyindices.com/IndexConstituent/ind_{slug}list.csv"
+    status, body = _get(url)
+    if status != 200 or not body.lstrip().startswith(b"Company Name"):
+        raise ValueError(f"invalid constituent CSV for {slug}: status={status}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(".part")
+    tmp.write_bytes(body)
+    tmp.replace(dest)
+    _append(
+        paths.MANIFEST,
+        ["path", "url", "sha256", "bytes", "fetched_utc"],
+        [
+            dest.relative_to(paths.ROOT).as_posix(),
+            url,
+            hashlib.sha256(body).hexdigest(),
+            len(body),
+            dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        ],
+    )
+    return dest
 
 
 def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None = None,

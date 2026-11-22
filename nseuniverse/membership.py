@@ -27,7 +27,7 @@ _SUFFIX = re.compile(r"\b(limited|ltd|ltd\.|company|co|corporation|corp|inc|the)
 
 def norm_name(s: str) -> str:
     s = (s or "").lower().replace("&", " and ")
-    s = re.sub(r"\(.*?\)", " ", s) if re.search(r"\(\s*(india|i)\s*\)", s) is None else s.replace("(", " ").replace(")", " ")
+    s = s.replace("(", " ").replace(")", " ")
     s = re.sub(r"[^a-z0-9 ]+", " ", s)
     s = _SUFFIX.sub(" ", s)
     return re.sub(r"\s+", " ", s).strip()
@@ -108,6 +108,13 @@ class NameBook:
         if pr.exists():
             for r in pd.read_csv(pr, dtype=str).itertuples():
                 nb.add(r.company, r.symbol, f"press:{r.source}")
+        ca = paths.HELD / "raw_corporate_actions_1995_2026.json"
+        if ca.exists():
+            import json
+            for r in json.loads(ca.read_text(encoding="utf-8")):
+                comp, sym = r.get("comp"), r.get("symbol")
+                if comp and sym:
+                    nb.add(comp, sym, "corporate_actions")
         al = paths.CURATED / "name_aliases.csv"             # hand entries, each citing a source
         if al.exists():
             a = pd.read_csv(al, dtype=str)
@@ -115,7 +122,7 @@ class NameBook:
                 if c not in a:
                     a[c] = None
             for r in a.itertuples():
-                nb.add(r.company, r.symbol, f"alias:{r.source}", r.valid_from, r.valid_to, exclusive=(str(r.exclusive).strip().lower() == "yes"))
+                nb.add(r.company, r.symbol, f"alias:{r.source}", r.valid_from, r.valid_to, exclusive=(str(r.exclusive).strip().lower() in ("yes", "true", "1")))
         return nb
 
     def candidates(self, company: str, on=None) -> set[str]:
@@ -247,10 +254,10 @@ def build(build_dir: Path | None = None) -> dict:
     nb = NameBook.build(t[["name", "symbol"]].drop_duplicates() if "name" in t else None)
     ev = load_workbook()
     ev = resolve(ev, nb, seg_map)
-    ev = mark_relevance(ev)
+    ev = mark_relevance(ev, since="2007-01-01")
     ev["suggestion"] = [(", ".join(nb.suggest(c)) if n != "OK" else "") for c, n in zip(ev.company, ev.resolution)]
     ev.to_parquet(out / "events_resolved.parquet", index=False, compression="zstd", compression_level=9)
-    iv, cov = build_anchored(ev, seg_map, t[["date", "sec_id", "series"]], paths.ROOT)
+    iv, cov = build_anchored(ev, seg_map, t[["date", "sec_id", "series"]], paths.ROOT, contradictions_out=out / "contradictions.csv")
     uni = pd.read_csv(paths.CURATED / "index_universe.csv") if (paths.CURATED / "index_universe.csv").exists() else pd.DataFrame(columns=["category", "index_name", "index_key"])
     scope = dict(zip(uni.index_key, uni.category))
     others = sorted((set(ev.index_key) | set(scope)) - set(ANCHORED))
@@ -334,11 +341,63 @@ def size_on(iv: pd.DataFrame, days) -> pd.Series:
 # size can be checked day by day; others stay UNVERIFIED until a stronger check exists.
 ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.csv"),
             "NIFTYNEXT50": (50, "data/raw/constituents/2026-11-15/ind_niftynext50list.csv"),
-            "NIFTY100": (100, "data/raw/constituents/2026-11-15/ind_nifty100list.csv")}
+            "NIFTY100": (100, "data/raw/constituents/2026-11-15/ind_nifty100list.csv"),
+            "NIFTY500": (500, "data/raw/constituents/2026-11-15/ind_nifty500list.csv"),
+            "NIFTY200": (200, "data/raw/constituents/2026-11-19/ind_nifty200list.csv"),
+            "NIFTYLARGEMIDCAP250": (250, "data/raw/constituents/2026-11-19/ind_niftylargemidcap250list.csv"),
+            "NIFTYMIDCAP100": (100, "data/raw/constituents/2026-11-19/ind_niftymidcap100list.csv"),
+            "NIFTYMIDCAP50": (50, "data/raw/constituents/2026-11-19/ind_niftymidcap50list.csv"),
+            "NIFTYSMALLCAP100": (100, "data/raw/constituents/2026-11-19/ind_niftysmallcap100list.csv"),
+            "NIFTYSMALLCAP50": (50, "data/raw/constituents/2026-11-19/ind_niftysmallcap50list.csv"),
+            "NIFTYAUTO": (15, "data/raw/constituents/2026-11-19/ind_niftyautolist.csv"),
+            "NIFTYBANK": (12, "data/raw/constituents/2026-11-19/ind_niftybanklist.csv"),
+            "NIFTYFINANCIALSERVICES": (20, "data/raw/constituents/2026-11-19/ind_niftyfinancelist.csv"),
+            "NIFTYFMCG": (15, "data/raw/constituents/2026-11-19/ind_niftyfmcglist.csv"),
+            "NIFTYIT": (10, "data/raw/constituents/2026-11-19/ind_niftyitlist.csv"),
+            "NIFTYMEDIA": (10, "data/raw/constituents/2026-11-19/ind_niftymedialist.csv"),
+            "NIFTYMETAL": (15, "data/raw/constituents/2026-11-19/ind_niftymetallist.csv"),
+            "NIFTYPHARMA": (10, "data/raw/constituents/2026-11-19/ind_niftypharmalist.csv"),
+            "NIFTYPSUBANK": (12, "data/raw/constituents/2026-11-19/ind_niftypsubanklist.csv"),
+            "NIFTYREALTY": (10, "data/raw/constituents/2026-11-19/ind_niftyrealtylist.csv")}
+
+# Verified Composite / Identical-Constituent Index Support:
+# index_key -> (official size, anchor file on 2026-11-19, rule tuple)
+# Rule is ("EQ", parent) or ("DIFF", parent1, parent2)
+COMPOSITE_ANCHORS: dict[str, tuple[int, str, tuple[str, ...]]] = {
+    "NIFTY500MULTICAP502525": (500, "data/raw/constituents/2026-11-19/ind_nifty500multicap502525_list.csv", ("EQ", "NIFTY500")),
+    "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": (500, "data/raw/constituents/2026-11-19/ind_nifty500largemidsmallequalcapweighted_list.csv", ("EQ", "NIFTY500")),
+    "NIFTYMIDSMALLCAP400": (400, "data/raw/constituents/2026-11-19/ind_niftymidsmallcap400list.csv", ("DIFF", "NIFTY500", "NIFTY100")),
+    "NIFTYMIDSMALLCAP4005050": (400, "data/raw/constituents/2026-11-19/ind_niftymidsmallcap4005050_list.csv", ("DIFF", "NIFTY500", "NIFTY100")),
+    "NIFTYMIDCAP150": (150, "data/raw/constituents/2026-11-19/ind_niftymidcap150list.csv", ("DIFF", "NIFTYLARGEMIDCAP250", "NIFTY100")),
+    "NIFTYSMALLCAP250": (250, "data/raw/constituents/2026-11-19/ind_niftysmallcap250list.csv", ("DIFF", "NIFTY500", "NIFTYLARGEMIDCAP250")),
+    "NIFTYFINANCIALSERVICES2550": (20, "data/raw/constituents/2026-11-19/ind_niftyfinancialservices25-50list.csv", ("EQ", "NIFTYFINANCIALSERVICES")),
+}
+
 # index_key -> first date that must be verified. New indices use 2007-01-01 (adjusted prices are not verified before it, and the
 # backward replay then never has to resolve earlier events). Days before the floor are out of scope: they are neither verified nor
 # counted as failures. Decision 2026-11-16: every index is verified from 2007-01-01 only.
-FLOORS: dict[str, str] = {"NIFTY50": "2007-01-01", "NIFTYNEXT50": "2007-01-01", "NIFTY100": "2007-01-01"}
+FLOORS: dict[str, str] = {
+    "NIFTY50": "2007-01-01",
+    "NIFTYNEXT50": "2007-01-01",
+    "NIFTY100": "2007-01-01",
+    "NIFTY500": "2007-01-01",
+    "NIFTY200": "2007-01-01",
+    "NIFTYLARGEMIDCAP250": "2007-01-01",
+    "NIFTYMIDCAP100": "2007-01-01",
+    "NIFTYMIDCAP50": "2007-01-01",
+    "NIFTYSMALLCAP100": "2007-01-01",
+    "NIFTYSMALLCAP50": "2007-01-01",
+    "NIFTYAUTO": "2007-01-01", "NIFTYBANK": "2007-01-01", "NIFTYFINANCIALSERVICES": "2007-01-01", "NIFTYFMCG": "2007-01-01",
+    "NIFTYIT": "2007-01-01", "NIFTYMEDIA": "2007-01-01", "NIFTYMETAL": "2007-01-01", "NIFTYPHARMA": "2007-01-01",
+    "NIFTYPSUBANK": "2007-01-01", "NIFTYREALTY": "2007-01-01",
+    "NIFTY500MULTICAP502525": "2007-01-01",
+    "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": "2007-01-01",
+    "NIFTYMIDSMALLCAP400": "2007-01-01",
+    "NIFTYMIDSMALLCAP4005050": "2007-01-01",
+    "NIFTYMIDCAP150": "2007-01-01",
+    "NIFTYSMALLCAP250": "2007-01-01",
+    "NIFTYFINANCIALSERVICES2550": "2007-01-01",
+}
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 
@@ -390,6 +449,163 @@ def dual_class_securities(days: pd.DatetimeIndex, dc: pd.DataFrame, index_key: s
     return out
 
 
+def _active_masks(iv_df: pd.DataFrame, days: pd.DatetimeIndex) -> dict[str, np.ndarray]:
+    """Map sec_id -> boolean array of length len(days) indicating active membership."""
+    masks: dict[str, np.ndarray] = {}
+    for r in iv_df.itertuples():
+        lo = 0 if pd.isna(r.from_date) else int(days.searchsorted(r.from_date, side="left"))
+        hi = len(days) if pd.isna(r.to_date) else int(days.searchsorted(r.to_date, side="left"))
+        if r.sec_id not in masks:
+            masks[r.sec_id] = np.zeros(len(days), dtype=bool)
+        if hi > lo:
+            masks[r.sec_id][lo:hi] = True
+    return masks
+
+
+def _masks_to_intervals(days: pd.DatetimeIndex, masks: dict[str, np.ndarray], index_key: str) -> pd.DataFrame:
+    """Convert per-sec_id daily boolean masks into half-open [from_date, to_date) intervals."""
+    n_days = len(days)
+    rows = []
+    for sid in sorted(masks.keys()):
+        mask = masks[sid]
+        diff = np.diff(np.pad(mask.astype(np.int8), (1, 1), "constant"))
+        starts = np.where(diff == 1)[0]
+        ends = np.where(diff == -1)[0] - 1
+        for s_idx, e_idx in zip(starts, ends):
+            from_dt = pd.NaT if s_idx == 0 else days[s_idx]
+            to_dt = pd.NaT if e_idx == n_days - 1 else days[e_idx + 1]
+            rows.append((index_key, sid, from_dt, to_dt))
+    return pd.DataFrame(rows, columns=["index_key", "sec_id", "from_date", "to_date"])
+
+
+def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.DatetimeIndex, traded: dict, seg: pd.DataFrame, exc: pd.DataFrame, root: Path) -> None:
+    """Build membership intervals and verified coverage windows for composite / derived indices."""
+    if not ivs:
+        return
+
+    parent_anchor_files = {
+        "NIFTY500": "data/raw/constituents/2026-11-19/ind_nifty500list.csv",
+        "NIFTY100": "data/raw/constituents/2026-11-19/ind_nifty100list.csv",
+        "NIFTYLARGEMIDCAP250": "data/raw/constituents/2026-11-19/ind_niftylargemidcap250list.csv",
+        "NIFTYFINANCIALSERVICES": "data/raw/constituents/2026-11-19/ind_niftyfinancelist.csv",
+    }
+
+    def _get_clean_syms(p_rel: str) -> set[str]:
+        df = pd.read_csv(root / p_rel)
+        return set(df.Symbol.dropna().astype(str).str.strip()) - {s for s in df.Symbol if str(s).startswith("DUMMY")}
+
+    # 1. First verify exact constituent parity (sym_diff == 0) against parent anchor(s)
+    for k, (n, fpath, rule) in COMPOSITE_ANCHORS.items():
+        if not (root / fpath).exists():
+            continue
+        comp_syms = _get_clean_syms(fpath)
+        op = rule[0]
+        p1 = rule[1]
+        p1_file = parent_anchor_files.get(p1)
+        if not p1_file or not (root / p1_file).exists():
+            continue
+        p1_syms = _get_clean_syms(p1_file)
+        if op == "EQ":
+            diff = comp_syms.symmetric_difference(p1_syms)
+        elif op == "DIFF":
+            p2 = rule[2]
+            p2_file = parent_anchor_files.get(p2)
+            if not p2_file or not (root / p2_file).exists():
+                continue
+            p2_syms = _get_clean_syms(p2_file)
+            diff = comp_syms.symmetric_difference(p1_syms - p2_syms)
+        else:
+            raise ValueError(f"Unknown composite rule op {op!r} for {k}")
+        if len(diff) != 0:
+            raise ValueError(f"Constituent parity check failed on 2026-11-19 for composite {k}: sym_diff={len(diff)}")
+
+    # 2. Collect existing parent intervals & verified day masks
+    all_iv = pd.concat(ivs, ignore_index=True)
+    n_days = len(days)
+    masks_by_index = {idx_k: _active_masks(all_iv[all_iv.index_key == idx_k], days) for idx_k in all_iv.index_key.unique()}
+
+    v_days_by_index: dict[str, np.ndarray] = {}
+    for item in cov:
+        idx_k, a, b, status = item[0], item[1], item[2], item[3]
+        if status == "VERIFIED":
+            if idx_k not in v_days_by_index:
+                v_days_by_index[idx_k] = np.zeros(n_days, dtype=bool)
+            v_days_by_index[idx_k] |= (days >= a) & (days <= b)
+
+    dc_p = paths.CURATED / "index_dual_class.csv"
+    dcls = pd.read_csv(dc_p) if dc_p.exists() else None
+    dual_by_index = {idx_k: dual_class_securities(days, dcls, idx_k, all_iv[all_iv.index_key == idx_k], seg) for idx_k in all_iv.index_key.unique()}
+
+    # 3. For each composite, build intervals and emit coverage windows
+    for k, (n, fpath, rule) in COMPOSITE_ANCHORS.items():
+        op = rule[0]
+        p1 = rule[1]
+        if op == "EQ":
+            parents = [p1]
+            if p1 not in masks_by_index or p1 not in v_days_by_index:
+                continue
+            comp_masks = masks_by_index[p1]
+            parent_v = v_days_by_index[p1]
+            dual = dual_by_index.get(p1, np.zeros(n_days, dtype=int))
+            # Direct interval copy with new index_key
+            iv_comp = all_iv[all_iv.index_key == p1].copy()
+            iv_comp["index_key"] = k
+        elif op == "DIFF":
+            p2 = rule[2]
+            parents = [p1, p2]
+            if p1 not in masks_by_index or p2 not in masks_by_index:
+                continue
+            if p1 not in v_days_by_index or p2 not in v_days_by_index:
+                continue
+            parent_v = v_days_by_index[p1] & v_days_by_index[p2]
+            m1 = masks_by_index[p1]
+            m2 = masks_by_index[p2]
+            comp_masks = {}
+            for sid in m1:
+                diff_m = m1[sid] & (~m2.get(sid, np.zeros(n_days, dtype=bool)))
+                if np.any(diff_m):
+                    comp_masks[sid] = diff_m
+            dual = dual_by_index.get(p1, np.zeros(n_days, dtype=int)) - dual_by_index.get(p2, np.zeros(n_days, dtype=int))
+            iv_comp = _masks_to_intervals(days, comp_masks, k)
+
+        # Check membership size on each day
+        sz = np.zeros(n_days, dtype=int)
+        for sid, m_arr in comp_masks.items():
+            sz += m_arr.astype(int)
+
+        ok = parent_v & (sz == n + dual)
+
+        # Trading check: every member in comp_masks traded within +-TRADE_WINDOW sessions
+        for sid, m_arr in comp_masks.items():
+            tr = traded.get(sid, np.array([], dtype=int))
+            active_indices = np.where(m_arr & ok)[0]
+            for i in active_indices:
+                j = np.searchsorted(tr, i)
+                near = (j < len(tr) and tr[j] - i <= TRADE_WINDOW) or (j > 0 and i - tr[j - 1] <= TRADE_WINDOW)
+                if not near:
+                    ok[i] = False
+
+        floor = FLOORS.get(k)
+        ok, in_scope = apply_floor(ok, days, floor)
+        extra = extra_members(days, exc, k)
+        good = _ranges(days, ok)
+        for a, b in good:
+            nx = int((extra[(days >= a) & (days <= b)] > 0).sum())
+            nd = int((dual[(days >= a) & (days <= b)] > 0).sum())
+            parents_str = rule[1] if op == "EQ" else f"{rule[1]} - {rule[2]}"
+            cov.append((k, a, b, "VERIFIED", f"composite {op} parity (sym_diff == 0) with verified parent ({parents_str}); "
+                                             f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"
+                        + (f"; {nd} of these days held {n + 1} securities of {n} companies (a DVR, index_dual_class.csv)" if nd else "")
+                        + (f"; {nx} of these days also had documented zero-price dummy-symbol constituents on top (index_size_exceptions.csv)" if nx else "")))
+        bad_days = int((~ok & in_scope).sum())
+        if bad_days and np.any(in_scope):
+            cov.append((k, days[in_scope][0], days[-1], "PARTIAL", f"{bad_days} of {int(in_scope.sum())} trading days fail parent verification or size/trading check; "
+                                                                   f"gaps inherit from parent index coverage"))
+        ivs.append(iv_comp)
+        masks_by_index[k] = comp_masks
+        v_days_by_index[k] = ok
+
+
 def apply_floor(ok: np.ndarray, days: pd.DatetimeIndex, floor) -> tuple[np.ndarray, np.ndarray]:
     """Return (ok with days before the floor set False, in_scope mask). No floor: everything is in scope."""
     if floor is None:
@@ -410,33 +626,48 @@ def _ranges(days: pd.DatetimeIndex, ok: np.ndarray):
     return out
 
 
-def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame, root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame, root: Path, contradictions_out: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     from . import series
-    t = t[t["series"].isin(series.EQUITY_SERIES)]
+    t = t[t["series"].isin(series.EQUITY_SERIES | {"RR", "IV"})]
     days = pd.DatetimeIndex(sorted(t["date"].unique()))
     pos = {d: i for i, d in enumerate(days)}
     traded = {sid: np.array(sorted(pos[d] for d in g["date"].unique())) for sid, g in t.groupby("sec_id")}
     cur = pd.read_csv(paths.CURATED / "index_events_press.csv", parse_dates=["date"]) if (paths.CURATED / "index_events_press.csv").exists() else pd.DataFrame()
     exc_p = paths.CURATED / "index_size_exceptions.csv"
     exc = pd.read_csv(exc_p) if exc_p.exists() else pd.DataFrame(columns=["index_key", "from_date", "to_date", "reason", "source"])
-    ivs, cov = [], []
+    ivs, cov, bad_all = [], [], []
+    last_sym = seg.sort_values("end").drop_duplicates("sec_id", keep="last").set_index("sec_id")["symbol"].to_dict() if len(seg) else {}
     for k, (n, anchor_file) in ANCHORED.items():
-        w = ev_resolved[(ev_resolved.index_key == k) & (ev_resolved.resolution == "OK")][["date", "sec_id", "action"]]
+        w = ev_resolved[(ev_resolved.index_key == k) & (ev_resolved.resolution == "OK")][["date", "sec_id", "action"]].drop_duplicates(["date", "sec_id", "action"])
         c = cur[cur.index_key == k].copy() if len(cur) else pd.DataFrame(columns=["date", "symbol", "action"])
         c["sec_id"] = [_sid(seg, s, d - pd.Timedelta(days=3) if a == "OUT" else d + pd.Timedelta(days=3))
                        for s, d, a in zip(c.symbol, c.date, c.action)]
-        last_wb = w.date.max()
-        events = pd.concat([w[w.date <= c.date.min()] if len(c) else w, c[["date", "sec_id", "action"]]]).dropna()
+        unmapped_c = c[c["sec_id"].isna()]
+        if len(unmapped_c):
+            bad_rows = ", ".join(f"{r.date.strftime('%Y-%m-%d')}:{r.symbol}:{r.action}" for r in unmapped_c.itertuples())
+            raise ValueError(f"Unmapped press events for {k}: {bad_rows}")
+        c = c[["date", "sec_id", "action"]].drop_duplicates(["date", "sec_id", "action"])
+        frames_to_cat = [f for f in (w, c) if len(f)]
+        events = pd.concat(frames_to_cat, ignore_index=True).drop_duplicates(["date", "sec_id", "action"]) if frames_to_cat else pd.DataFrame(columns=["date", "sec_id", "action"])
         anchor_syms = pd.read_csv(root / anchor_file).Symbol.tolist()
         anchor_date = pd.Timestamp(Path(anchor_file).parent.name)
-        asids = {_sid(seg, s, days[-1] - pd.Timedelta(days=2)) for s in anchor_syms}
-        iv = anchor_intervals(asids - {None}, anchor_date, events)
+        real_syms = [s for s in anchor_syms if not str(s).startswith("DUMMY")]
+        asid_map = {s: _sid(seg, s, days[-1] - pd.Timedelta(days=2)) for s in real_syms}
+        unmapped_a = [s for s, sid in asid_map.items() if sid is None]
+        if unmapped_a:
+            raise ValueError(f"Unmapped anchor symbols for {k}: {unmapped_a}")
+        asids = set(asid_map.values())
+        iv = anchor_intervals(asids, anchor_date, events)
         iv.insert(0, "index_key", k)
         sz = size_on(iv, days).values
         dc_p = paths.CURATED / "index_dual_class.csv"
         dcls = pd.read_csv(dc_p) if dc_p.exists() else None
         dual = dual_class_securities(days, dcls, k, iv, seg)
-        ok = sz == n + dual   # tradable members number exactly n (+ documented dual-class securities of companies already in)
+        # documented dummy-symbol constituents or official size expansions:
+        extra = extra_members(days, exc, k)
+        exc_days = extra > 0
+        has_expansion = bool(len(exc) and exc[exc.index_key == k]["reason"].fillna("").str.contains("expanded|constituents between", case=False).any())
+        ok = (sz == n + dual + extra) if has_expansion else (sz == n + dual)
         # an event that cannot be undone means a change is missing: nothing from its date on can be verified
         floor = FLOORS.get(k)
         bad = contradictions(asids - {None}, anchor_date, events)
@@ -444,10 +675,10 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
             bad = bad[bad.date >= pd.Timestamp(floor)]
         if len(bad):
             ok[days >= bad.date.min()] = False
-        # documented dummy-symbol constituents: the real members still have to number exactly n; the extras are added only to the
-        # published total, which is checked against n + extras below
-        extra = extra_members(days, exc, k)
-        exc_days = extra > 0
+            b_df = bad.copy()
+            b_df.insert(0, "index_key", k)
+            b_df["last_symbol"] = b_df["sec_id"].map(last_sym).fillna("")
+            bad_all.append(b_df[["index_key", "date", "sec_id", "last_symbol", "action"]])
         # every member must have traded within +-TRADE_WINDOW sessions of the day
         for r in iv.itertuples():
             lo = 0 if pd.isna(r.from_date) else int(days.searchsorted(r.from_date, side="left"))
@@ -472,5 +703,11 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
                                                      f"gaps come from names or tickers not yet linked (see unresolved.csv)"
                                                      + (f"; {len(bad)} event(s) contradict the anchor (earliest {bad.date.min().date()}): a change is missing from the sources, so nothing from that date is verified" if len(bad) else "")))
         ivs.append(iv)
+    if COMPOSITE_ANCHORS:
+        build_composites(ivs, cov, days, traded, seg, exc, root)
+    if contradictions_out is not None:
+        contradictions_out.parent.mkdir(parents=True, exist_ok=True)
+        cdf = pd.concat(bad_all, ignore_index=True) if bad_all else pd.DataFrame(columns=["index_key", "date", "sec_id", "last_symbol", "action"])
+        cdf.to_csv(contradictions_out, index=False)
     return (pd.concat(ivs, ignore_index=True) if ivs else pd.DataFrame(columns=["index_key", "sec_id", "from_date", "to_date"]),
             pd.DataFrame(cov, columns=["index_key", "from_date", "to_date", "status", "reason"]))

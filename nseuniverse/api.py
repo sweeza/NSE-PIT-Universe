@@ -30,8 +30,14 @@ def _prices():
     return bhavcopy.load()
 
 
+@functools.lru_cache(maxsize=None)
+def _prices_year(year: int) -> pd.DataFrame:
+    p = paths.BUILD / "bhavcopy" / f"bhavcopy_{year}.parquet"
+    return pd.read_parquet(p) if p.exists() else pd.DataFrame()
+
+
 def clear_cache():
-    for f in (_identity, _adjustments, _prices, _intervals, _coverage):
+    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage):
         f.cache_clear()
 
 
@@ -59,9 +65,9 @@ def resolve(symbol: str, as_of) -> str:
 
 def bhavcopy_day(date) -> pd.DataFrame:
     """Every row NSE published for the date, unaltered."""
-    p = _prices()
     t = pd.Timestamp(date)
-    g = p[p.date == t]
+    p = _prices_year(t.year)
+    g = p[p.date == t] if not p.empty else p
     if g.empty:
         raise CoverageError(f"no bhavcopy for {t.date()} (not a trading day, or not fetched)")
     return g.reset_index(drop=True)
@@ -94,8 +100,28 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         raise CoverageError(
             f"adjusted prices before {adjust.COVERAGE_START.date()} are not verified: the corporate-action feed has almost no "
             f"splits/bonuses before then. Use adjust_mode=None, start later, or allow_unverified=True.")
-    sids = [resolve(s, end_t) for s in symbols]
-    p = _prices()
+    def _resolve_for_prices(sym: str) -> str:
+        ref = pd.Timestamp(as_of) if as_of is not None else end_t
+        try:
+            return resolve(sym, ref)
+        except CoverageError:
+            _, sh = _identity()
+            if not sh.empty:
+                latest = sh["to_date"].max()
+                if ref > latest:
+                    try:
+                        return resolve(sym, latest)
+                    except CoverageError:
+                        pass
+                ov = sh[(sh.symbol == sym) & (sh.from_date <= end_t) & (sh.to_date >= start_t)]["sec_id"].unique()
+                if len(ov) == 1:
+                    return ov[0]
+            raise
+
+    sids = [_resolve_for_prices(s) for s in symbols]
+    frames = [_prices_year(y) for y in range(start_t.year, end_t.year + 1)]
+    frames = [f for f in frames if not f.empty]
+    p = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["sec_id", "date", "series", "close"])
     p = p[p.sec_id.isin(sids)]
     if series == "primary":
         p = pipeline.primary_close(p).merge(p, on=["sec_id", "date", "series"], suffixes=("_x", ""))
@@ -158,5 +184,19 @@ def index_members(index: str, as_of) -> pd.DataFrame:
     if ok.empty:
         raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage()")
     sids = membership.members(_intervals(), k, t)
-    sec, _ = _identity()
-    return sec[sec.sec_id.isin(sids)].reset_index(drop=True)
+    sec, sh = _identity()
+    out = sec[sec.sec_id.isin(sids)].reset_index(drop=True)
+    sub = sh[sh.sec_id.isin(sids)]
+    sym_map = {}
+    for sid, g in sub.groupby("sec_id"):
+        exact = g[(g.from_date <= t) & (g.to_date >= t)]
+        if not exact.empty:
+            sym_map[sid] = exact.sort_values("to_date").iloc[-1].symbol
+        else:
+            prior = g[g.from_date <= t]
+            if not prior.empty:
+                sym_map[sid] = prior.sort_values("to_date").iloc[-1].symbol
+            else:
+                sym_map[sid] = g.sort_values("from_date").iloc[0].symbol
+    out["symbol"] = out["sec_id"].map(sym_map)
+    return out
