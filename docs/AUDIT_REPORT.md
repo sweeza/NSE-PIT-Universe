@@ -152,3 +152,72 @@ The owner downloaded `CF-CA-equities-01-01-1995-to-22-11-2026.csv` (44,032 rows,
 - **Every held record is in the fresh file**, except 29 whose symbol NSE has since renamed (NOVARTIS/NOVARTIND to EVONILE, ICICIPRULI to ICICILIFE). After mapping renames with the fresh `symbolchange.csv`, 10 held rows remain unmatched, all of them part of the same rename chains (EVONILE) or text revisions.
 - **The 216 extra fresh rows** are events after the held snapshot (ex-dates to 2026-11-20); only 7 fresh-only rows have an ex-date on or before the held file's last ex-date (2026-10-16): two EVONILE rows (rename), DTIL x2, SHIVAMAUTO and HINDCOMPOS (events added or revised after the snapshot).
 - Reading: the held feed is genuine NSE data, with no altered or missing historical rows found. Issue C5 now rests only on `IndexInclExcl.xls`. The fresh CSV has no ISIN column; the held JSON does.
+
+## Stage 7 (raw layer): bhavcopy cell, corporate-action ratio, raw deletion (2026-11-22)
+
+Script: `audit/mutate_raw.py`. Real `data/raw` untouched; each run uses a scratch root with junctions to unchanged folders and copies of the changed file. "Manifest fixed" means the manifest hash of the changed file was rewritten, i.e. an error that is consistent with the manifest. The manifest-fixed runs did a full rebuild and `verify` checks manifest, bhavcopy_lossless, overlap, calendar, table_sanity, identity, actions, adjusted_continuity. Baseline for comparison: close_outside_range 217, adjusted moves 403 flagged / 177 UNEXPLAINED / 232 securities with a break, gate KEPT 1,277 / REJECTED 15.
+
+| Injected error | Manifest not fixed | Manifest fixed |
+|---|---|---|
+| RELIANCE close x1.015 on 2015-06-10 (one cell) | FAIL (raw_manifest) | **Not caught.** All PASS/WARN. Only trace: table_sanity `close_outside_range` 218 instead of 217 (still PASS) |
+| RELIANCE close x10 on the same day | FAIL (raw_manifest) | **Not caught.** All PASS/WARN. Trace: UNEXPLAINED adjusted moves 179 instead of 177 (still WARN), `close_outside_range` 218 |
+| WIPRO 2010-06-15 "Bonus 2:3" changed to "Bonus 3:2" in the held JSON | FAIL (raw_manifest) | **Not a FAIL, but neutralised.** The evidence gate REJECTED the flipped action (KEPT 1,277 to 1,276, REJECTED 15 to 16), so the wrong factor is not applied. Status stays WARN. |
+| One raw bhavcopy zip deleted | FAIL (raw_manifest, missing=1) | not applicable (manifest row would still list it) |
+
+Reading
+- Raw inputs are protected only by the manifest. Anyone who can edit both a raw file and `manifest.csv` can change a price cell with no FAIL: `bhavcopy_lossless` compares the build with the same raw file, and no check compares prices with a second source. A one-day typo of x10 shows up only as two extra rows in a WARN count. This is a gap in the gate, expected for a single-source dataset, and the reason Stage 2.4 (third-party prices) matters.
+- The gate's protection for corporate actions works as designed (a flipped ratio is rejected rather than applied), but the rejection is silent in the status: REJECTED was already non-zero, so the check stays WARN.
+- Side effect of that rejection: a true bonus that the gate rejects leaves an unadjusted break in the series. WIPRO's real 2:3 bonus would be a 0.6 overnight move, inside the continuity check's [0.55, 1.8] band, so `adjusted_price_continuity` did not flag it (counts unchanged: 403 / 177 / 232).
+
+| ID | Sev | Finding | Suggested fix |
+|---|---|---|---|
+| S2-7 | S2 | A single changed price cell, with the manifest updated, is not detected by any check. | Add a cross-source check (second price source for a sample, Stage 2.4) and/or make `check_table_sanity` FAIL when `close_outside_range` rises above a stored baseline for non-`T0` series. |
+| S2-8 | S2 | `check_actions` stays WARN when one more action is REJECTED, so a newly rejected action is invisible in the status. Continuity bands [0.55, 1.8] cannot see a rejected 3:2 bonus (0.6). | Store a baseline for the gate counts and the rejected list; FAIL if a new rejection appears. Tighten continuity for liquid securities or check every rejected action against its adjusted series. |
+
+Not run: Nifty 500 symbol-swap rerun (the earlier scratch layout is gone; needs `audit/mutate.py` adapted to the current root).
+
+## Owner decisions of 2026-11-22 and their results
+
+### S2-6 resolved in code: same symbol and same full equity ISIN across a gap joins (not yet built)
+
+Rule 4 in `identity.link` (docstring updated): two adjacent segments of one symbol are joined when both traded in an equity series, they share a full ISIN whose security-type digits are `01` (equity share; debt is `07`/`08`, funds are `INF`), and that ISIN is seen under no other symbol inside the gap. A join that would overlap days is refused by `try_join` as before. Log source `symbol_isin`. Tests: `tests/test_identity.py` (5 new, 89 tests pass in total).
+
+Pre-check (`audit/stage3_join_check.py`, `audit/stage3_join_effect.py`; build files only, nothing written to `data/build`):
+
+| Check | Result |
+|---|---|
+| Adjacent same-symbol pairs sharing an equity-share ISIN | 56, none already one security |
+| Exact symbol, full ISIN, no overlapping days, nothing in the gap (ISIN under another symbol, another issuer under the symbol, a different-issuer segment between) | 0 problems in all 56 |
+| Joined by the rule (both segments in an equity series) | **46** (the same 46 as before), in 42 resulting securities (88 old ids absorbed); 8,182 securities become 8,136 |
+| **Cases not joined (10)**: 3RDROCK (4 pairs), GIRRESORTS (2), MMNL (2), KAWIRES, MRO | Same symbol and same full ISIN, but a segment never traded in an equity series (`is_equity` false), so the existing equity-universe rule leaves them out. Same logic would join them; owner call. |
+| Index membership intervals | **No change.** 14,851 interval rows all map; only 4 old ids are ever members (S00054, S00606, S02837, S02891, 31 interval rows), no index has two merged ids as members. Interval dates are untouched. |
+
+Consequences to know before the rebuild
+- **`sec_id` labels renumber.** Ids are assigned by order of first date, so removing 46 securities shifts 6,268 of the 8,182 existing labels (the first join shifts everything after it). The statement in the identity docstring that ids do not move holds only for appended days, not for a changed linking rule. Anything that stores a `sec_id` (A3) must be re-keyed; the ratchet baseline and coverage baseline are keyed by symbol and index, not `sec_id`, so they survive.
+- The merged securities carry 306 action events (12 splits or bonuses). Their adjusted prices will now run across the gap and change; the corporate-action, continuity and ratchet checks must be re-read after the rebuild (a fall in the ratchet is WARN, a rise is FAIL).
+- Not rebuilt: `data/build` still has the old identity.
+
+### S2-7 and S2-8: ratchet check added (`check_ratchet_baseline`, 13th check)
+
+`data/curated/ratchet_baseline.csv` stores the accepted ceiling: out-of-range closes 217, UNEXPLAINED adjusted moves 177 (by symbol and date), rejected share actions 15 (by symbol and ex-date). A new item or a higher count is **FAIL**, a fall is **WARN** (regenerate with `verify.write_ratchet_baseline()` and commit). A missing baseline or a missing `build/adjustment_gaps.csv` is FAIL. Tests: 3 new in `tests/test_verify.py`, including one-in-one-out swap.
+
+**Plainly: a price edit that keeps the manifest consistent is caught only if it creates a new flag (the ratchet) or disagrees with an independent price source (below). A small edit of one cell that creates no flag, such as the +1.5% in the Stage 7 test, would raise `close_outside_range` only when it pushes the close beyond the day's range; otherwise nothing in the repo detects it. Only an independent price source finds that.**
+
+### Stage 2.4: closing prices against a second public source
+
+Source: Yahoo Finance public chart endpoint, NSE tickers (`SYMBOL.NS`), one request per symbol, 3 seconds apart, 40 requests, saved in the scratchpad (not `data/raw`). Script `audit/stage24_prices.py`, seed 20261122. Yahoo's close is split-adjusted, so for each stock only dates after its last split, bonus or consolidation in the project's events were compared with the raw NSE `EQ` close; 20 seeded dates per stock, 2015 onward, 40 large caps (the Nifty 50 names with a long history). Tolerance 0.5%.
+
+| Result | Count |
+|---|---|
+| Comparisons | 800 |
+| Within 0.5% | 735 (the differences are about 1e-6 percent, i.e. rounding) |
+| No Yahoo row | 35: 33 after Yahoo's last day (2026-09-21), and two weekend special sessions (ONGC 2024-01-20, KOTAKBANK 2026-02-01) that Yahoo does not list |
+| Outside 0.5% | 30, all in three stocks and **all explained**: each is one constant factor on every date before a single feed event, which Yahoo adjusts for and NSE's raw close does not |
+
+The 30 misses: ITC -3.71% on 17 dates before the 2025-01-06 demerger (feed: SCHEME "Demerger"; the raw close drops 8.1% that day); GRASIM -22.85% on 2 dates before the 2017-07-19 scheme of arrangement (feed: SCHEME; raw close drops 19.7%); BHARTIARTL -9.87% on 5 dates before the 2019-04-23 rights issue and -1.84% on 6 dates between it and the 2021-09-27 rights issue (feed: RIGHTS 19:67 and 1:14). The attribution to demerger and rights adjustments is mine from the event dates and the price drops, not from Yahoo documentation. Raw NSE closes are the right values here.
+
+Limits: one source, one provider's feed; 40 stocks of the Nifty 50; no dates before 2015 or on or before a stock's last share action (those need adjusted-price comparison, Stage 4).
+
+### Nifty 500 symbol swap (Stage 7, rerun with a fresh scratch layout)
+
+`audit/mutate.py` now takes the repo as baseline and a scratch folder. Baseline run: both checks PASS, no coverage change. Swap Nifty 500 inclusion `MAXHEALTH` (2021-03-31) to `ASIANPAINT`: **`check_membership` FAIL, 465 violations**, and verified coverage drops (Nifty 500 -2,615 days, Midsmallcap 400 -2,840, Smallcap 250 -1,643). Caught both ways.
