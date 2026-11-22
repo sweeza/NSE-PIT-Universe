@@ -1,88 +1,247 @@
 company,symbol,source,valid_from,valid_to,exclusive
-East India Hotels Ltd,EIHOTEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Glaxo (India) Ltd.,GLAXO,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Nestle India Limited,NESTLEIND,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Hero Honda Motors Limited,HEROHONDA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Hero Honda Motors Limited,HEROMOTOCO,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Infosys Technologies Limited,INFOSYSTCH,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Infosys Technologies Limited,INFY,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-NIIT Ltd.,NIITLTD,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Smithkline Beecham Consumer Healthcare Ltd.,GSKCONS,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Reliance Capital Ltd.,RELCAPITAL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Satyam Computer Services Ltd.,SATYAMCOMP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Zee Telefilms Ltd,ZEETELE,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Zee Telefilms Ltd,ZEEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Videsh Sanchar Nigam Ltd.,VSNL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Videsh Sanchar Nigam Ltd.,TATACOMM,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Gas Authority of India Limited,GAIL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Bharti Tele-Ventures Ltd.,BHARTI,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Bharti Tele-Ventures Ltd.,BHARTIARTL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Maruti Udyog Limited,MARUTI,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Sterlite Industries (India) Ltd.,STER,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Idea Cellular Ltd.,IDEA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Cairn India Ltd.,CAIRN,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Infrastructure Development Finance Company Limited,IDFC,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Sesa Goa Limited,SESAGOA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Bharti Infratel Ltd.,INFRATEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Tata Motors Ltd DVR,TATAMTRDVR,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Indiabulls Housing Finance Ltd.,IBULHSGFIN,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Indiabulls Housing Finance Ltd.,SAMMAANCAP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Bajaj Auto Ltd,BAJAJAUTO,curated 2026-11-15: pre-demerger Bajaj Auto (became Bajaj Holdings 2008-03-14); ticker verified in bhavcopy,,2008-03-14
-Bajaj Auto Ltd,BAJAJ-AUTO,curated 2026-11-15: post-demerger Bajaj Auto; ticker verified in bhavcopy,2008-03-15,
-Ranbaxy Laboratories Ltd.,RANBAXY,curated 2026-11-15: ticker verified in bhavcopy (merged into Sun Pharma 2015),,
-Reliance Petroleum Ltd.,RPL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Tata Tea Limited,TATATEA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Oriental Bank of Commerce,ORIENTBANK,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Indian Petrochemicals Corporation Ltd.,IPCL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Colgate Palmolive (I) Ltd,COLGATE,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-NIIT Ltd.,NIIT,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Digital Equipment (india) Ltd.,DIGITALEQP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,
-Punjab & National Bank,PNB,"curated 2026-11-16: NSE workbook data/raw/held IndexInclExcl.xls sheet Nifty Next 50, row dated 2004-05-28 (excluded) is a typo of Punjab National Bank, which the same workbook shows included in Nifty 50 on 2004-05-24 (sheet Nifty 50); ticker PNB present in bhavcopy",2004-05-01,2004-06-30
-Adani Transmission Ltd.,ADANITRANS,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082017.pdf page 4, company name and symbol on the same table row",,
-Berger Paints India Ltd.,BERGEPAINT,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082019.pdf page 1, company name and symbol on the same table row",,
-HDFC Standard Life Insurance Company Ltd.,HDFCLIFE,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082018.pdf page 1, company name and symbol on the same table row",,
-L&T Finance Holdings Ltd.,L&TFH,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 2, company name and symbol on the same table row",,
-Rural Electrification Corporation Ltd.,RECLTD,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082018.pdf page 1, company name and symbol on the same table row",,
-Apollo Hospitals Enterprises Ltd.,APOLLOHOSP,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs16022017.pdf page 3, company name and symbol on the same table row",,
-Tata Global Beverages Ltd.,TATAGLOBAL,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 19, company name and symbol on the same table row",,
-Cadila Healthcare Ltd.,CADILAHC,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 10, company name and symbol on the same table row",,
-Motherson Sumi Systems Ltd.,MOTHERSUMI,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs07012013.pdf page 1, company name and symbol on the same table row",,
-Crompton Greaves Ltd.,CROMPGREAV,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs06012015.pdf page 2, company name and symbol on the same table row",,
-GMR Infrastructure Ltd.,GMRINFRA,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs10062020.pdf page 22, company name and symbol on the same table row",,
-Indiabulls Real Estate Ltd.,IBREALEST,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs07012013.pdf page 2, company name and symbol on the same table row",,
-Shriram Transport Finance Co. Ltd.,SRTRANSFIN,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs01102010.pdf page 2, company name and symbol on the same table row",,
-Titan Industries Ltd.,TITAN,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs02072013.pdf page 1, company name and symbol on the same table row",,
-Andhra Bank,ANDHRABANK,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Andhra Bank' symbol=ANDHRABANK exDate 11-May-2005",,
-CMC Ltd.,CMC,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='CMC Limited' symbol=CMC exDate 10-Jun-2005",,
-IBP Co. Ltd.,IBP,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='IBP Company Limited' symbol=IBP exDate 12-Aug-2005",,
-Punj Lloyd Ltd.,PUNJLLOYD,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Punj Lloyd Limited' symbol=PUNJLLOYD exDate 13-Sep-2006",,
-Reliance Natural Resources Ltd.,RNRL,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Reliance Natural Resources Limited' symbol=RNRL exDate 28-Jun-2007",,
-Syndicate Bank,SYNDIBANK,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Syndicate Bank' symbol=SYNDIBANK exDate 20-May-2005",,
-Vijaya Bank,VIJAYABANK,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Vijaya Bank' symbol=VIJAYABANK exDate 15-Jun-2005",,
-Kochi Refineries Ltd.,COCHINREFN,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Kochi Refineries Limited' symbol=COCHINREFN exDate 28-Jun-2004",,
-Bongaigaon Refinery & Petrochemicals Ltd.,BONGAIREFN,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Bongaigaon Refinery & Petrochemicals Limited' symbol=BONGAIREFN exDate 12-Aug-2005",,
+East India Hotels Ltd,EIHOTEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Glaxo (India) Ltd.,GLAXO,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Nestle India Limited,NESTLEIND,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Hero Honda Motors Limited,HEROHONDA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Hero Honda Motors Limited,HEROMOTOCO,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Infosys Technologies Limited,INFOSYSTCH,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Infosys Technologies Limited,INFY,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+NIIT Ltd.,NIITLTD,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Smithkline Beecham Consumer Healthcare Ltd.,GSKCONS,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Reliance Capital Ltd.,RELCAPITAL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Satyam Computer Services Ltd.,SATYAMCOMP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Zee Telefilms Ltd,ZEETELE,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Zee Telefilms Ltd,ZEEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Videsh Sanchar Nigam Ltd.,VSNL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Videsh Sanchar Nigam Ltd.,TATACOMM,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Gas Authority of India Limited,GAIL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Bharti Tele-Ventures Ltd.,BHARTI,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Bharti Tele-Ventures Ltd.,BHARTIARTL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Maruti Udyog Limited,MARUTI,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Sterlite Industries (India) Ltd.,STER,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Idea Cellular Ltd.,IDEA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Cairn India Ltd.,CAIRN,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Infrastructure Development Finance Company Limited,IDFC,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Sesa Goa Limited,SESAGOA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Bharti Infratel Ltd.,INFRATEL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Tata Motors Ltd DVR,TATAMTRDVR,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Indiabulls Housing Finance Ltd.,IBULHSGFIN,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Indiabulls Housing Finance Ltd.,SAMMAANCAP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Bajaj Auto Ltd,BAJAJAUTO,curated 2026-11-15: pre-demerger Bajaj Auto (became Bajaj Holdings 2008-03-14); ticker verified in bhavcopy,,2008-03-14,
+Bajaj Auto Ltd,BAJAJ-AUTO,curated 2026-11-15: post-demerger Bajaj Auto; ticker verified in bhavcopy,2008-03-15,,
+Ranbaxy Laboratories Ltd.,RANBAXY,curated 2026-11-15: ticker verified in bhavcopy (merged into Sun Pharma 2015),,,
+Reliance Petroleum Ltd.,RPL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Tata Tea Limited,TATATEA,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Oriental Bank of Commerce,ORIENTBANK,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Indian Petrochemicals Corporation Ltd.,IPCL,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Colgate Palmolive (I) Ltd,COLGATE,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+NIIT Ltd.,NIIT,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Digital Equipment (india) Ltd.,DIGITALEQP,curated 2026-11-15: ticker verified present in the bhavcopy table over the relevant dates,,,
+Punjab & National Bank,PNB,"curated 2026-11-16: NSE workbook data/raw/held IndexInclExcl.xls sheet Nifty Next 50, row dated 2004-05-28 (excluded) is a typo of Punjab National Bank, which the same workbook shows included in Nifty 50 on 2004-05-24 (sheet Nifty 50); ticker PNB present in bhavcopy",2004-05-01,2004-06-30,
+Adani Transmission Ltd.,ADANITRANS,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082017.pdf page 4, company name and symbol on the same table row",,,
+Berger Paints India Ltd.,BERGEPAINT,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082019.pdf page 1, company name and symbol on the same table row",,,
+HDFC Standard Life Insurance Company Ltd.,HDFCLIFE,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082018.pdf page 1, company name and symbol on the same table row",,,
+L&T Finance Holdings Ltd.,L&TFH,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 2, company name and symbol on the same table row",,,
+Rural Electrification Corporation Ltd.,RECLTD,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082018.pdf page 1, company name and symbol on the same table row",,,
+Apollo Hospitals Enterprises Ltd.,APOLLOHOSP,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs16022017.pdf page 3, company name and symbol on the same table row",,,
+Tata Global Beverages Ltd.,TATAGLOBAL,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 19, company name and symbol on the same table row",,,
+Cadila Healthcare Ltd.,CADILAHC,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs21022018.pdf page 10, company name and symbol on the same table row",,,
+Motherson Sumi Systems Ltd.,MOTHERSUMI,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs07012013.pdf page 1, company name and symbol on the same table row",,,
+Crompton Greaves Ltd.,CROMPGREAV,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs06012015.pdf page 2, company name and symbol on the same table row",,,
+GMR Infrastructure Ltd.,GMRINFRA,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs10062020.pdf page 22, company name and symbol on the same table row",,,
+Indiabulls Real Estate Ltd.,IBREALEST,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs07012013.pdf page 2, company name and symbol on the same table row",,,
+Shriram Transport Finance Co. Ltd.,SRTRANSFIN,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs01102010.pdf page 2, company name and symbol on the same table row",,,
+Titan Industries Ltd.,TITAN,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs02072013.pdf page 1, company name and symbol on the same table row",,,
+Andhra Bank,ANDHRABANK,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Andhra Bank' symbol=ANDHRABANK exDate 11-May-2005,,,
+CMC Ltd.,CMC,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='CMC Limited' symbol=CMC exDate 10-Jun-2005,,,
+IBP Co. Ltd.,IBP,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='IBP Company Limited' symbol=IBP exDate 12-Aug-2005,,,
+Punj Lloyd Ltd.,PUNJLLOYD,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Punj Lloyd Limited' symbol=PUNJLLOYD exDate 13-Sep-2006,,,
+Reliance Natural Resources Ltd.,RNRL,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Reliance Natural Resources Limited' symbol=RNRL exDate 28-Jun-2007,,,
+Syndicate Bank,SYNDIBANK,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Syndicate Bank' symbol=SYNDIBANK exDate 20-May-2005,,,
+Vijaya Bank,VIJAYABANK,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Vijaya Bank' symbol=VIJAYABANK exDate 15-Jun-2005,,,
+Kochi Refineries Ltd.,COCHINREFN,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Kochi Refineries Limited' symbol=COCHINREFN exDate 28-Jun-2004,,,
+Bongaigaon Refinery & Petrochemicals Ltd.,BONGAIREFN,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Bongaigaon Refinery & Petrochemicals Limited' symbol=BONGAIREFN exDate 12-Aug-2005,,,
 United Breweries Ltd.,UBL,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs28082017.pdf page 1 and ind_prs25022019.pdf page 1, row United Breweries Ltd. UBL (the Next 50 constituent; UBHOLDINGS is United Breweries (Holdings) Ltd., a different company)",2013-04-01,2019-12-31,yes
 Moser Baer India Ltd.,MOSERBAER,"curated 2026-11-16: data/raw/pressreleases/pdf/ind_prs25082011.pdf page 5, company name and symbol on the same table row",,,
-"Aventis Pharma Ltd.",AVENTIS,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Sanofi India Limited,AVENTIS,SANOFI,11-JUL-2012'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"Mundra Port and Special Economic Zone Ltd.",MUNDRAPORT,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Adani Ports and Special Economic Zone Limited,MUNDRAPORT,ADANIPORTS,17-JAN-2012'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"United Phosphorus Ltd.",UNIPHOS,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'UPL Limited,UNIPHOS,UPL,23-OCT-2013'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"Motor Industries Ltd.",MICO,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Bosch Limited,MICO,BOSCHLTD,28-FEB-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"Motor Industries Co. Ltd.",MICO,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Bosch Limited,MICO,BOSCHLTD,28-FEB-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"ICI India Ltd.",ICI,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Akzo Nobel India Limited,ICI,AKZOINDIA,27-MAY-2010'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"E.Merck (India) Ltd.",EMERCK,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Procter & Gamble Health Limited,EMERCK,MERCK,05-NOV-2007'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-"Piramal Healthcare Ltd.",PIRHEALTH,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Piramal Enterprises Limited,NICOLASPIR,PIRHEALTH,19-JUN-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
-Corporation Bank,CORPBANK,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Corporation Bank' symbol=CORPBANK exDate 17-Jun-2005",,,
-Punjab Tractors Ltd.,PUNJABTRAC,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Punjab Tractors Limited' symbol=PUNJABTRAC exDate 18-May-2005 (exact)",,,
-Jindal Vijayanagar Steel Ltd.,JINDVIJSTL,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Jindal Vijayanagar Steel Limited' symbol=JINDVIJSTL exDate 13-Jun-2003 (exact)",,,
-Jindal Vijaynagar Steel Ltd.,JINDVIJSTL,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Jindal Vijayanagar Steel Limited' symbol=JINDVIJSTL exDate 13-Jun-2003 (spelling variant of the exact row; link INFERRED)",,,
-Escorts Ltd.,ESCORTS,"curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row ESCORTS = Escorts Kubota Limited (current name of the same listing since 1995-03-01); the link from the workbook name is INFERRED (rule accepted by the project owner 2026-11-16)",,,
-India Cement Ltd.,INDIACEM,"curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row INDIACEM = The India Cements Limited (listed 2000-05-31); the link from the workbook name is INFERRED (rule accepted by the project owner 2026-11-16)",,,
+Aventis Pharma Ltd.,AVENTIS,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Sanofi India Limited,AVENTIS,SANOFI,11-JUL-2012'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+Mundra Port and Special Economic Zone Ltd.,MUNDRAPORT,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Adani Ports and Special Economic Zone Limited,MUNDRAPORT,ADANIPORTS,17-JAN-2012'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+United Phosphorus Ltd.,UNIPHOS,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'UPL Limited,UNIPHOS,UPL,23-OCT-2013'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+Motor Industries Ltd.,MICO,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Bosch Limited,MICO,BOSCHLTD,28-FEB-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+Motor Industries Co. Ltd.,MICO,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Bosch Limited,MICO,BOSCHLTD,28-FEB-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+ICI India Ltd.,ICI,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Akzo Nobel India Limited,ICI,AKZOINDIA,27-MAY-2010'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+E.Merck (India) Ltd.,EMERCK,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Procter & Gamble Health Limited,EMERCK,MERCK,05-NOV-2007'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+Piramal Healthcare Ltd.,PIRHEALTH,"curated 2026-11-16: NSE ticker history data/raw/held/symbolchange.csv row 'Piramal Enterprises Limited,NICOLASPIR,PIRHEALTH,19-JUN-2008'; the link from the workbook name to this ticker is INFERRED from the name (rule accepted by the project owner 2026-11-16)",,,
+Corporation Bank,CORPBANK,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Corporation Bank' symbol=CORPBANK exDate 17-Jun-2005,,,
+Punjab Tractors Ltd.,PUNJABTRAC,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Punjab Tractors Limited' symbol=PUNJABTRAC exDate 18-May-2005 (exact),,,
+Jindal Vijayanagar Steel Ltd.,JINDVIJSTL,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Jindal Vijayanagar Steel Limited' symbol=JINDVIJSTL exDate 13-Jun-2003 (exact),,,
+Jindal Vijaynagar Steel Ltd.,JINDVIJSTL,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Jindal Vijayanagar Steel Limited' symbol=JINDVIJSTL exDate 13-Jun-2003 (spelling variant of the exact row; link INFERRED),,,
+Escorts Ltd.,ESCORTS,curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row ESCORTS = Escorts Kubota Limited (current name of the same listing since 1995-03-01); the link from the workbook name is INFERRED (rule accepted by the project owner 2026-11-16),,,
+India Cement Ltd.,INDIACEM,curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row INDIACEM = The India Cements Limited (listed 2000-05-31); the link from the workbook name is INFERRED (rule accepted by the project owner 2026-11-16),,,
 Polaris Software Lab Ltd.,POLARIS,"curated 2026-11-16: ticker POLARIS in data/raw/pressreleases/pdf/ind_prs20082014.pdf page 3 (Polaris Financial Technology Ltd.) and data/raw/nse_lists/delisted.csv (Polaris Consulting & Services Limited), the same NSE ticker traded 2004-01-01..2018-07-24; the link from the workbook name is INFERRED (rule accepted by the project owner 2026-11-16)",,,
-Himachal Futuristic Communications Ltd,HIMACHLFUT,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Himachal Futuristic Communications Limited' symbol=HIMACHLFUT exDate 21-Sep-2005 (also data/raw/corporate_actions/CF-CA-equities-01-01-2004-to-31-12-2006.csv) (exact name)",,,
+Himachal Futuristic Communications Ltd,HIMACHLFUT,curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Himachal Futuristic Communications Limited' symbol=HIMACHLFUT exDate 21-Sep-2005 (also data/raw/corporate_actions/CF-CA-equities-01-01-2004-to-31-12-2006.csv) (exact name),,,
 Himachal Futuristic Communication Ltd.,HIMACHLFUT,"curated 2026-11-16: NSE corporate-actions file data/raw/held/raw_corporate_actions_1995_2026.json row comp='Himachal Futuristic Communications Limited' symbol=HIMACHLFUT exDate 21-Sep-2005 (also data/raw/corporate_actions/CF-CA-equities-01-01-2004-to-31-12-2006.csv); the workbook row of 2004-03-01 drops the final s of Communications, link INFERRED as a spelling variant",,,
-"ABB Ltd.",ABB,"curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row 'ABB,ABB India Limited' and corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json (comp 'ABB India Limited', symbol ABB); the ticker ABB trades in data/build/bhavcopy from 2004-01-01; the link from the workbook name 'ABB Ltd.' is INFERRED from the name (rename rule accepted by the project owner 2026-11-16)",,,
-"Colgate Palmolive (India) Ltd.",COLGATE,"curated 2026-11-16: corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json (comp 'Colgate Palmolive India Limited', symbol COLGATE) and bhavcopy table (COLGATE trades 2004-01-01..2007-11-28, COLPAL from 2007-12-17); the ticker later became COLPAL (the same security, shared ISIN in data/build/identity)",,2007-12-16,
-"Larsen & Toubro Ltd.-Sus",L&T,"curated 2026-11-16: the workbook name 'Larsen & Toubro Ltd.-Sus' is the company name 'Larsen & Toubro Limited' with the workbook's own '-Sus' suffix (INFERRED: suffix stripped); corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json comp='Larsen & Toubro Limited' symbol=L&T; L&T traded 2004-01-01..2004-05-21 in data/build/bhavcopy",,2004-12-31,
-"NIIT Ltd.-Sus",NIIT,"curated 2026-11-16: the workbook name 'NIIT Ltd.-Sus' is the company name 'NIIT Limited' with the workbook's own '-Sus' suffix (INFERRED: suffix stripped); corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json comp='NIIT Limited' symbol=NIIT; NIIT traded 2004-01-01..2004-07-08 in data/build/bhavcopy",,2004-12-31,
-"JSW Steel Ltd.",JINDVIJSTL,"curated 2026-11-16: INFERRED (rename rule accepted by the project owner 2026-11-16): the same security traded as JINDVIJSTL 'Jindal Vijayanagar Steel Limited' (data/raw/held/raw_corporate_actions_1995_2026.json isin INE019A01012, same issuer INE019A as 'JSW Steel Limited' INE019A01020) until 2005-02-18 and as JSWSTL from 2005-03-23 (data/raw/held/symbolchange.csv row 'JSW Steel Limited,JSWSTL,JSWSTEEL,16-SEP-2005'); linked in identity_links.csv",2004-01-01,2005-02-28,yes
-"Merck Ltd.",EMERCK,"curated 2026-11-16: INFERRED (rename rule accepted by the project owner 2026-11-16): data/raw/held/symbolchange.csv rows 'Procter & Gamble Health Limited,EMERCK,MERCK,05-NOV-2007' and 'Procter & Gamble Health Limited,MERCK,PGHL,11-JUN-2019' (the ticker is MERCK in between); EMERCK trades in series EQ in the raw bhavcopy from 2004-01-01 (e.g. data/raw/bhavcopy/legacy/2004/cm07APR2004bhav.csv.zip)",2004-01-01,2007-11-04,
+ABB Ltd.,ABB,"curated 2026-11-16: NSE equity list data/raw/held/EQUITY_L.csv row 'ABB,ABB India Limited' and corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json (comp 'ABB India Limited', symbol ABB); the ticker ABB trades in data/build/bhavcopy from 2004-01-01; the link from the workbook name 'ABB Ltd.' is INFERRED from the name (rename rule accepted by the project owner 2026-11-16)",,,
+Colgate Palmolive (India) Ltd.,COLGATE,"curated 2026-11-16: corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json (comp 'Colgate Palmolive India Limited', symbol COLGATE) and bhavcopy table (COLGATE trades 2004-01-01..2007-11-28, COLPAL from 2007-12-17); the ticker later became COLPAL (the same security, shared ISIN in data/build/identity)",,2007-12-16,
+Larsen & Toubro Ltd.-Sus,L&T,curated 2026-11-16: the workbook name 'Larsen & Toubro Ltd.-Sus' is the company name 'Larsen & Toubro Limited' with the workbook's own '-Sus' suffix (INFERRED: suffix stripped); corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json comp='Larsen & Toubro Limited' symbol=L&T; L&T traded 2004-01-01..2004-05-21 in data/build/bhavcopy,,2004-12-31,
+NIIT Ltd.-Sus,NIIT,curated 2026-11-16: the workbook name 'NIIT Ltd.-Sus' is the company name 'NIIT Limited' with the workbook's own '-Sus' suffix (INFERRED: suffix stripped); corporate-actions feed data/raw/held/raw_corporate_actions_1995_2026.json comp='NIIT Limited' symbol=NIIT; NIIT traded 2004-01-01..2004-07-08 in data/build/bhavcopy,,2004-12-31,
+JSW Steel Ltd.,JINDVIJSTL,"curated 2026-11-16: INFERRED (rename rule accepted by the project owner 2026-11-16): the same security traded as JINDVIJSTL 'Jindal Vijayanagar Steel Limited' (data/raw/held/raw_corporate_actions_1995_2026.json isin INE019A01012, same issuer INE019A as 'JSW Steel Limited' INE019A01020) until 2005-02-18 and as JSWSTL from 2005-03-23 (data/raw/held/symbolchange.csv row 'JSW Steel Limited,JSWSTL,JSWSTEEL,16-SEP-2005'); linked in identity_links.csv",2004-01-01,2005-02-28,yes
+Merck Ltd.,EMERCK,"curated 2026-11-16: INFERRED (rename rule accepted by the project owner 2026-11-16): data/raw/held/symbolchange.csv rows 'Procter & Gamble Health Limited,EMERCK,MERCK,05-NOV-2007' and 'Procter & Gamble Health Limited,MERCK,PGHL,11-JUN-2019' (the ticker is MERCK in between); EMERCK trades in series EQ in the raw bhavcopy from 2004-01-01 (e.g. data/raw/bhavcopy/legacy/2004/cm07APR2004bhav.csv.zip)",2004-01-01,2007-11-04,
+Sri Adhikari Brothers Television Network Ltd.,SRIADIKARI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SRIADIKARI last traded 2007-10-24 vs SABTN 2007-11-16),,2007-11-15,yes
+Ceat Ltd.,CEAT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (CEAT last traded 2007-12-24 vs CEATLTD 2008-02-01),,2008-01-31,yes
+Ballarpur Industries Ltd.,BILT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BILT last traded 2008-02-28 vs BALLARPUR 2008-03-31),,2008-03-30,yes
+Hindustan Motors Ltd.,HINDMOTOR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (HINDMOTOR traded through 2011-01-25 vs HINDMOTORS 2011-02-21),,2011-02-20,yes
+Provogue (India) Ltd.,PROVOGUE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PROVOGUE last traded 2012-03-06 vs PROVOGE 2012-03-26),,2012-03-25,yes
+Gujarat NRE Coke Ltd.,GUJNRECOKE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GUJNRECOKE ordinary INE110D01013 vs GUJNREDVR DVR IN9110D01011),,,yes
+Geojit BNP Paribas Financial Services Ltd.,GEOJITFSL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GEOJITFSL 2005-07-01..2026-11-13),,,
+Siti Cable Network Ltd.,SITINET,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SITINET 2007-01-10..2026-11-13),,,
+Banco Products (India) Ltd.,BANCOINDIA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BANCOINDIA 2006-12-22..2026-11-13),,,
+Sujana Towers Ltd.-old,SUJANATOW,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SUJANATOW 2008-10-13..2013-08-06),,,
+Arshiya International Ltd.,ARSHIYA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ARSHIYA 2009-12-14..2026-11-13),,,
+Flexituff International Ltd.,FLEXITUFF,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FLEXITUFF 2011-10-19..2026-11-13),,,yes
+Vakrangee Software Ltd.,VAKRANGEE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (VAKRANGEE 2006-04-03..2026-11-13),,,
+Dr. Datsons Labs Ltd.,DRDATSONS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DRDATSONS 2011-05-27..2015-05-21),,,
+Magma Fincorp Ltd.,POONAWALLA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (POONAWALLA 2004-04-27..2026-11-13),,,
+Jyothy Laboratories Ltd.,JYOTHYLAB,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (JYOTHYLAB 2007-12-19..2026-11-13),,,
+Astral Poly Technik Ltd.,ASTRAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ASTRAL 2007-03-20..2026-11-13),,,
+Adlabs Entertainment Ltd.,IMAGICAA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IMAGICAA 2015-04-06..2026-11-13),,,
+8K Miles Soft Services Ltd.,SECURKLOUD,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SECURKLOUD 2014-01-29..2026-11-13),,,
+Tide Water Oil (India) Ltd.,VEEDOL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (VEEDOL 2007-01-16..2026-11-13),,,
+Shilpi Cable Tech Ltd.,SHILPI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SHILPI 2011-04-08..2019-05-15),,,
+IIFL Holdings Ltd.,IIFL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IIFL 2005-05-17..2026-11-13),,,
+Westlife Development Ltd.,WESTLIFE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (WESTLIFE 2019-08-19..2026-11-13),,,yes
+Amtek India Ltd.,CASTEXTECH,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AMTEKINDIA->CASTEXTECH 2005-06-27..2021-07-20),,,
+India Infoline Ltd.,IIFL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (INDIAINFO->IIFL 2005-05-17..2026-11-13),,,
+Puravankara Projects Ltd.,PURVA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PURVA 2007-08-30..2026-11-13),,,
+UTV Software Communication Ltd.,UTVSOF,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (UTVSOF 2005-03-17..2012-03-07),,,
+Development Credit Bank Ltd,DCBBANK,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DCB->DCBBANK 2006-10-27..2026-11-13),,,
+Indiabulls Power Ltd.,RTNPOWER,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IBPOW->RTNPOWER 2009-10-30..2026-11-13),,,
+Techno Elt & Eng Co. Ltd.,TECHNO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TECHNO 2010-11-10..2018-08-07),,,
+Bajaj Corp Ltd.,BAJAJCON,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BAJAJCORP->BAJAJCON 2010-08-18..2026-11-13),,,
+MBL Infrastructures Ltd.,MBLINFRA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MBLINFRA 2010-01-11..2026-11-13),,,yes
+TI Financial Holdings Ltd.,CHOLAHLDNG,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TIFIN->CHOLAHLDNG 2017-09-25..2026-11-13),,,
+Security and Intelligence Services (India) Ltd.,SIS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SIS 2017-08-10..2026-11-13),,,
+Sundaram Clayton Ltd.,TVSHLTD,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SUNCLAYLTD->TVSHLTD 2012-10-23..2026-11-13),2012-10-23,,yes
+Orient Refractories Ltd.,RHIM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ORIENTREF->RHIM 2012-03-12..2026-11-13),,,yes
+Sterling And Wilson Solar Ltd.,SWSOLAR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SWSOLAR 2019-08-20..2026-11-13),,,yes
+IIFL Wealth Management Ltd.,360ONE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IIFLWAM->360ONE 2019-09-19..2026-11-13),,,
+Gammon Infrastructure Projects Ltd.,AJRINFRA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GAMMNINFRA->AJRINFRA 2008-04-03..2023-10-03),,,
+International Paper APPM Ltd.,ANDHRAPAP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (APPAPER->ANDHRAPAP 2004-05-13..2026-11-13),,,
+Indiabulls Securities Ltd.,DHANI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IBSEC->DHANI 2008-04-02..2025-10-27),,,
+Indiabulls Integrated Services Ltd.,IBULLSLTD,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IBWSL->IBULLSLTD 2011-08-18..2026-11-13),,,
+Hitachi Home & Life Solutions (India) Ltd.,BOSCH-HCIL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AMTREXAPPL->BOSCH-HCIL 2004-01-01..2026-11-13),,,
+Lakshmi Energy & Foods Ltd.,LAKSHMIEFL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (LAKSHMIEFL 2007-02-06..2019-06-17),,,yes
+Television Eighteen India Ltd.,TV-18,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TV-18 2006-12-27..2011-06-20),,,yes
+Binani Cement Ltd.,BINANICEM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BINANICEM 2007-05-28..2011-05-20),,,yes
+ARSS Infrastructure Projects Ltd.,ARSSINFRA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ARSSINFRA 2010-03-03..2025-09-03),,,yes
+Balaji Telefilms Ltd.,BALAJITELE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BALAJITELE 2004-01-01..2026-11-13),,,yes
+Dhampur Sugar Mills Ltd.,DHAMPURSUG,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DHAMPURSUG 2004-01-01..2026-11-13),,,yes
+Surya Roshni Ltd.,SURYAROSNI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SURYAROSNI 2004-01-01..2026-11-13),,,yes
+Tata Metaliks Ltd.,TATAMETALI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TATAMETALI 2004-01-01..2024-02-05),,,yes
+First Leasing Co. of India Ltd.,FIRSTLEASE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FIRSTLEASE 2004-01-01..2014-12-08),,,yes
+Mandhana Industries Ltd.,MANDHANA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MANDHANA 2010-05-19..2019-02-13),,,yes
+Shri Lakshmi Cotsyn Ltd.,SHLAKSHMI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SHLAKSHMI 2007-12-03..2016-03-21),,,yes
+Indo Rama Synthetics Ltd.,INDORAMA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (INDORAMA 2004-01-01..2026-11-13),,,yes
+Oriental Hotels Ltd.,ORIENTHOT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ORIENTHOT 2004-01-01..2026-11-13),,,yes
+Unity Infraprojects Ltd.,UNITY,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (UNITY 2006-06-12..2021-05-07),,,yes
+Shanthi Gears Ltd.,SHANTIGEAR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SHANTIGEAR 2004-01-01..2026-11-13),,,yes
+SML Isuzu Ltd.,SMLMAH,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SMLMAH 2004-01-01..2026-11-13),,,yes
+Zee Learn Ltd.,ZEELEARN,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ZEELEARN 2010-12-20..2026-11-13),,,yes
+V-Mart Retail Ltd.,VMART,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (VMART 2013-02-20..2026-11-13),,,yes
+Johnson Controls - Hitachi Air Conditioning India Ltd.,BOSCH-HCIL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BOSCH-HCIL 2004-01-01..2026-11-13),,,yes
+Reliance Nippon Life Asset Management Ltd.,NAM-INDIA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (RNAM->NAM-INDIA 2017-11-06..2026-11-13; overrides false press_name_symbol.csv RECLTD pairing),,,yes
+Gujarat Fluorochemicals Ltd.,GFLLIMITED,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GUJFLUORO->GFLLIMITED 2004-01-01..2026-11-13),,2019-10-15,yes
+Amara Raja Batteries Ltd.,ARE&M,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AMARAJABAT->ARE&M 2004-01-01..2026-11-13),,,
+Future Retail Ltd.,PANTALOONR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PANTALOONR->FEL 2004-01-01..2026-11-13),,2016-08-28,yes
+KPIT Technologies Ltd.,BSOFT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KPIT->BSOFT 2004-01-01..2026-11-13),,2019-04-21,yes
+NIIT Technologies Ltd.,COFORGE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NIITTECH->COFORGE 2004-08-30..2026-11-13),,,
+Alstom T&D India Ltd.,GVT&D,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AREVA->GVT&D 2008-06-30..2026-11-13),,,
+Ajanta Pharmaceuticals Ltd.,AJANTPHARM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AJANTPHARM 2004-01-01..2026-11-13),,,
+Jubilant Life Sciences Ltd.,JUBLPHARMA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (JUBILANT->JUBLPHARMA 2004-01-01..2026-11-13),,,
+IDFC Bank Ltd.,IDFCFIRSTB,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IDFCBANK->IDFCFIRSTB 2015-11-06..2026-11-13),,,
+Indiabulls Ventures Ltd.,DHANI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IBSEC->DHANI 2008-04-02..2025-10-27),,,
+H.E.G. Ltd.,HEGAM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (HEG->HEGAM 2004-01-01..2026-11-13),,,
+Larsen & Toubro Infotech Ltd.,LTM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (LTI->LTM 2016-07-21..2026-11-13),,,
+Adani Gas Ltd.,ATGL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ADANIGAS->ATGL 2018-11-05..2026-11-13),,,
+Financial Technologies (India) Ltd.,63MOONS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FINANTECH->63MOONS 2005-06-20..2026-11-13),,,
+IVRCL Infrastructures & Projects Ltd.,IVRCLINFRA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (IVRCLINFRA 2004-01-01..2019-08-30),,,
+Colgate Palmolive (India) Ltd.,COLPAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (COLPAL S01340 2007-12-17..2026-11-13),2007-12-17,,yes
+GVK Power & Infrastructures Ltd.,GVKPIL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GVKPIL 2006-02-27..2026-11-13),,,
+Areva T&D India Ltd.,GVT&D,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AREVA->GVT&D 2008-06-30..2026-11-13),,,
+Kirloskar Brothers Ltd.,KBL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KBL S01005 vs KIRLOSBROS S01583 from 2010-04-20),,2010-04-19,yes
+Pantaloon Retail (India) Ltd.,PANTALOONR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PANTALOONR->FEL 2004-01-01..2026-11-13),,,
+Bhushan Steel Ltd.,TATASTLBSL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BHUSANSTL->TATASTLBSL 2004-01-01..2021-11-12),,,
+Infibeam Incorporation Ltd.,CCAVENUE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (INFIBEAM->CCAVENUE 2016-04-04..2026-11-13),,,
+Kwality Dairy (India) Ltd.,KWALITY,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KWALITY 2010-01-08..2021-02-23),,,
+Bajaj Hindusthan Ltd.,BAJAJHIND,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BAJAJHIND 2004-01-01..2026-11-13),,,
+AstraZenca Pharma India Ltd.,ASTRAZEN,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ASTRAIDL->ASTRAZEN 2004-01-01..2026-11-13),,,
+D B Realty Ltd.,DBREALTY,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DBREALTY 2010-02-24..2026-11-13),,,
+S.E. Investments Ltd.,PAISALO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SEINV->PAISALO 2011-10-17..2026-11-13),2011-10-17,,yes
+Gati Ltd.,ACLGATI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (GATI->ACLGATI 2006-10-10..2025-11-11),,,
+Himachal Fut Com Ltd.,HFCL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (HFCL 2011-03-09..2026-11-13),,,
+Jain Irrigation Systems Ltd.,JISLJALEQS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (JISLJALEQS S00349 2004-01-01..2026-11-13),,,yes
+Reliance Defence and Engineering Ltd.,RNAVAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PIPAVAVYD->RNAVAL 2009-10-09..2023-07-13),,,
+Future Consumer Enterprise Ltd.,FCONSUMER,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FVIL->FCONSUMER 2013-07-04..2026-08-31),,,
+PVR Ltd.,PVRINOX,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PVR->PVRINOX 2006-01-04..2026-11-13),,,
+Zensar Technolgies Ltd.,ZENSARTECH,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FUJITSICIM->ZENSARTECH 2004-01-01..2026-11-13),,,
+Bombay Dyeing & Manufacturing Co. Ltd.,BOMDYEING,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BOMDYEING 2004-01-01..2026-11-13),,,
+E.I.D. Parry (India) Ltd.,EIDPARRY,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (EIDPARRY 2004-01-01..2026-11-13),,,
+Lakshmi Machine Works Ltd.,LMW,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (LAXMIMACH->LMW 2004-01-01..2026-11-13),,,
+Phillips Carbon Black Ltd.,PCBL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PHILIPCARB->PCBL 2004-01-01..2026-11-13),,,
+Merck Ltd.,MERCK,"curated 2026-11-19: data/raw/held/symbolchange.csv (EMERCK->MERCK 2007-11-05, MERCK->PGHL 2019-06-11)",2007-11-05,2019-06-10,yes
+Minda Industries Ltd.,UNOMINDA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MINDAIND->UNOMINDA 2007-02-02..2026-11-13),,,
+J.K. Cement Ltd.,JKCEMENT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (JKCEMENT 2006-03-14..2026-11-13),,,
+Century Textile & Industries Ltd.,ABREL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (CENTURYTEX->ABREL 2004-01-01..2026-11-13),,,
+Edelweiss Capital Ltd.,EDELWEISS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (EDELWEISS 2007-12-12..2026-11-13),,,
+Tube Investments of India Ltd.-Old,TUBEINVEST,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TUBEINVEST 2004-01-01..2017-08-23),,,
+Castrol (India) Ltd.-Old,CASTROLIND,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (CASTROL->CASTROLIND 2007-08-16..2026-11-13),,,
+Future Enterprises Ltd.,FEL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PANTALOONR->FEL S00497 2004-01-01..2026-11-13),,,yes
+Subex Ltd.,SUBEX,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SUBEX S00628 2004-01-01..2020-10-21),,,yes
+Navneet Publications (India) Ltd.,NAVNETEDUL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NAVNETPUBL->NAVNETEDUL 2004-01-01..2026-11-13),,,
+UFO Moviez India Ltd.,UFO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (UFO S02123 2015-05-14..2026-11-13),,,yes
+Jump Networks Ltd.,WINPRO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (JUMPNET->WINPRO 2019-08-19..2023-04-28),,,
+Nippon Life India Asset Management Ltd.,NAM-INDIA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (RNAM->NAM-INDIA S02534 2017-11-06..2026-11-13),,,yes
+Future Retail Ltd.,FRETAIL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FRETAIL 2016-08-29..2024-08-01),2016-08-29,,yes
+Colgate Palmolive (India) Ltd.,COLPAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (COLPAL S00140 before 2007-12-17),,2007-12-16,yes
+Pipavav Defence and Offshore Engineering Company Ltd.,RNAVAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PIPAVAVYD->RNAVAL 2009-10-09..2023-07-13),,,
+S.E. Investments Ltd.,SEINVEST,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SEINVEST S01471 2009-06-16..2011-10-03),,2011-10-16,yes
+KPIT Technologies Ltd.,KPITTECH,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KPITTECH S02795 2019-04-22..2026-11-13),2019-04-22,,yes
+Gujarat Fluorochemicals Ltd.,FLUOROCHEM,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (FLUOROCHEM S02875 2019-10-16..2026-11-13),2019-10-16,,yes
+Tata Motors Ltd.,TATAMOTORS,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TATAMOTORS ordinary S00655 vs TATAMTRDVR),,,yes
+Nahar Poly Films Ltd.,NAHAREXP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NAHAREXP 2004-01-01..2007-01-23),,2007-01-23,yes
+Hinduja Ventures Ltd.,NDLVENTURE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (HINDUJATMT->NDLVENTURE 2007-04-24..2026-11-13),,,
+Orient Information Technologies Ltd.,ORIENTINFO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ORIENTINFO 2004-01-01..2008-12-19),,,
+Pritish Nandy Communications Ltd.,PNC,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PNC 2004-01-01..2026-11-13),,,
+GSL Nova Petrochemicals Ltd.,NOVAPETRO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NOVAPETRO 2004-01-01..2009-10-20),,2009-10-20,yes
+Birla Ericsson Optical Ltd.,BIRLACABLE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BIRLAERIC->BIRLACABLE 2004-01-01..2026-11-13),,,
+Oswal Chemicals & Fertilizers Ltd.,OSWALGREEN,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (BINDALAGRO->OSWALGREEN 2004-01-01..2026-11-13),,,
+Rane Brake Linings Ltd. -old,RANEBRAKE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (RANEBRAKE 2004-01-01..2008-02-14),,,
+Sundaram Clayton Ltd.- OLD,SUNCLAYTON,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SUNCLAYTON 2008-06-20..2012-09-06),,,
+Zenith Computer Ltd.,ZENITHCOMP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ZENITHCOMP 2004-01-01..2016-03-10),,,
+Accelya Kale Solutions Ltd.,ACCELYA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KALECONSUL->ACCELYA 2004-01-01..2026-11-13),,,
+Essar Ports Ltd.,ESSARSHIP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ESSARSHIP 2008-03-11..2011-05-17),,2011-05-17,yes
+Summit Securities Ltd.- Old,SUMMIT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KECINTL->SUMMIT 2004-01-01..2010-02-02),,,
+MRO-TEK Ltd.,UMIYA-MRO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MRO-TEK->UMIYA-MRO 2004-01-01..2026-11-13),,,
+UCAL Fuel Systems Ltd.,UCAL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (UCALFUEL->UCAL 2004-01-01..2026-11-13),,,
+Honda SIEL Power Products Ltd.,HONDAPOWER,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (SHRMHONDA->HONDAPOWER 2004-01-01..2026-11-13),,,
+Smartlink Network Systems Ltd.,SMARTLINK,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (D-LINK->SMARTLINK 2004-01-01..2026-11-13),,,
+Kirloskar Industries Ltd.,KIRLOSOIL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KIRLOSOIL 2004-01-01..2010-04-20),,2010-04-20,yes
+Dwarikesh Sugar Industrial Ltd.,DWARKESH,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DWARKESH 2004-12-31..2026-11-13),,,
+Alembic Ltd.,ALEMBICLTD,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ALEMBICLTD S00020 2004-01-01..2026-11-13),,,yes
+NRB Bearings Ltd.,NRBBEARING,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NRBBEARING 2004-01-01..2026-11-13),,,
+Zuari Global Ltd.,ZUARIIND,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ZUARIAGRO->ZUARIIND 2004-01-01..2026-11-13),,,
+NELCO Ltd.,NELCO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NELCO S00461 2004-01-01..2026-11-13),,,yes
+Paper Products Ltd.,HUHTAMAKI,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PAPERPROD->HUHTAMAKI 2004-01-01..2026-11-13),,,
+Hotel Leela Venture Ltd.,HLVLTD,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (HOTELEELA->HLVLTD 2004-01-01..2026-11-13),,,
+Max India Ltd.,MFSL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MAX->MFSL 2004-01-01..2026-11-13),,2016-07-01,yes
+Century Enka Ltd.,CENTENKA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (CENTENKA S00121 2004-01-01..2026-11-13),,,yes
+KSB Pumps Ltd.,KSB,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (KSBPUMPS->KSB 2004-01-01..2026-11-13),,,
+Nava Bharat Ventures Ltd.,NAVA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (NAVBARFERO->NAVA 2004-01-01..2026-11-13),,,
+Strides Shasun Ltd.,STAR,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (STAR 2004-01-01..2026-11-13),,,
+Essel Propack Ltd.,EPL,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ESSELPACK->EPL 2004-01-01..2026-11-13),,,
+Deepak Fertilisers & Petrochemicals Corp. Ltd.,DEEPAKFERT,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (DEEPAKFERT 2004-01-01..2026-11-13),,,
+Tata Sponge Iron Ltd.,TATASPONGE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (TATASPONGE),,,
+Max India Ltd.,MAXINDIA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MAXINDIA S02293 from 2016-07-01),2016-07-01,,yes
+Essar Ports Ltd.,ESSARSHIP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ESSARSHIP S01383 through 2011-05-17),,2011-05-20,yes
+Styrolution ABS (India) Ltd.,INEOSSTYRO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (STYLUS->INEOSSTYRO),,,
+AGC Networks Ltd.,BLACKBOX,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (AGCNET->BLACKBOX),,,
+Pudumjee Pulp & Paper Mills Ltd.,PUDUMJEE,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (PUDUMJEE),,,

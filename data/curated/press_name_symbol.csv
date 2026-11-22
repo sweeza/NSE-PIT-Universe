@@ -1,0 +1,626 @@
+company,symbol,source
+A G Universal Ltd.,AGUL,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+ANI Integrated Services Ltd.,AISL,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+ATC Energies System Ltd.,ATCENERGY,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+AVP Infracon Ltd.,AVPINFRA,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Aakaar Medical Technologies Ltd.,AAKAAR,data/raw/pressreleases/pdf/ind_prs22082025.pdf
+Abans Holdings Ltd.,AHL,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+AceVector Ltd.,ACEVECTOR,data/raw/pressreleases/pdf/ind_prs06102026.pdf
+Acetech E-Commerce Ltd.,ACETEC,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Ackruti City Ltd.,ACKRUTI,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Active Infrastructures Ltd.,ACTIVEINFR,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Adhunik Metaliks Ltd.,ADHUNIK,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Adisoft Technologies Ltd.,ADISOFT,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Aditya Birla Chemicals (India) Ltd.,ABCIL,data/raw/pressreleases/pdf/ind_prs07012016.pdf
+Aditya Ultra Steel Ltd.,AUSL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Ador Welding Ltd.,ADORWELD,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Adroit Industries (India) Ltd.,ADROITIND,data/raw/pressreleases/pdf/ind_prs01102026.pdf
+Advanta Ltd.,ADVANTA,data/raw/pressreleases/pdf/ind_prs22042016.pdf
+Aeron Composite Ltd.,AERON,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Aesthetik Engineers Ltd.,AESTHETIK,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Aftek Ltd.,AFTEK,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Agarwal Float Glass India Ltd.,AGARWALFT,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Airan Ltd.,LIBAS,data/raw/pressreleases/pdf/ind_prs03042019.pdf
+Ajooni Biotech Ltd.,AJOONI,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Aksh Optifibre Ltd.,AKSHOPTFBR,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Alembic Ltd.,UCOBANK,data/raw/pressreleases/pdf/ind_prs20082020.pdf
+Amba Auto Sales and Services Ltd.,AMBAAUTO,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Ambani Organics Ltd.,AMBANIORG,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Ambey Laboratories Ltd.,FALCONTECH,data/raw/pressreleases/pdf/ind_prs23082024.pdf
+Ameya Precision Engineers Ltd.,AMEYA,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Amiable Logistics (India) Ltd.,AMIABLE,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Amir Chand Jagdish Kumar (Exports) Ltd.,AMIRCHAND,data/raw/pressreleases/pdf/ind_prs06042026.pdf
+Anant Raj Industries Ltd.,ANANTRAJ,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Andhra Paper Ltd.,APEX,data/raw/pressreleases/pdf/ind_prs15092021.pdf
+Annapurna Swadisht Ltd.,ANNAPURNA,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Ansal Properties & Infrastructure Ltd.,ANSALAPI,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Anya Polytech & Fertilizers Ltd.,APEXECO,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Apar Industries Ltd. Note,APARINDS,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Aprameya Engineering Ltd.,APRAMEYA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Apsis Aerocom Ltd.,APSISAERO,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Aptech Ltd.,APTECHT,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+ArMee Infotech Ltd.,ARMEE,data/raw/pressreleases/pdf/ind_prs01102026.pdf
+Arisinfra Solutions Ltd.,ARIS,data/raw/pressreleases/pdf/ind_prs24062026.pdf
+Aristo Bio-Tech and Lifescience Ltd.,ARISTO,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Arkade Developers Ltd.,ARKADE,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Armour Security (India) Ltd.,ARMOUR,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Arunaya Organics Ltd.,ARUNAYA,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Arvind and Company Shipping Agencies Ltd.,ACSAL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Ashapura Logistics Ltd.,ASHALOG,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Asset Reconstruction Company (India) Ltd.,ARCIL,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+Astra Microwave Products Ltd.,ASTRAMICRO,data/raw/pressreleases/pdf/ind_prs12082016.pdf
+Atmastco Ltd.,ATMASTCO,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Australian Premium Solar (India) Limited,APS,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Avana Electrosystems Ltd.,AVANA,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Avi Ansh Textile Ltd.,AVIANSH,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Avience Biomedicals Ltd.,AVIENCE,data/raw/pressreleases/pdf/ind_prs10082026.pdf
+B L Kashyap & Sons Ltd.,BLKASHYAP,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Baazar Style Retail Ltd.,STYLEBAAZA,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Baba Food Processing (India) Ltd.,BABAFP,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Balaji Phosphates Ltd.,BALAJIPHOS,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Balu Forge Industries Ltd.,BANSALWIRE,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Bannari Amman Sugars Ltd.,BANARISUG,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Basilic Fly Studio Ltd.,BASILIC,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Baweja Studios Ltd.,BAWEJA,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Bikewo Green Tech Ltd.,BIKEWO,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Biopol Chemicals Ltd.,BIOPOL,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Blackbuck Ltd.,BLACKBUCK,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Blue Pebble Ltd.,BLUEPEBBLE,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Bodhi Tree Multimedia ltd.,BTML,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Bonfiglioli Transmissions Ltd.,BONFIG,data/raw/pressreleases/pdf/ind_prs26102026.pdf
+Boss Packaging Solutions Ltd.,BOSS,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Brace Port Logistics Ltd.,BRACEPORT,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Brand Concepts Ltd.,BCONCEPTS,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Brandman Retail Ltd.,BRANDMAN,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Bright Solar Ltd.,BRIGHT,data/raw/pressreleases/pdf/ind_prs27062024.pdf
+Bulkcorp International Ltd.,BULKCORP,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+C K K Retail Mart Ltd.,CKKRETAIL,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+C P S Shapers Ltd.,CPS,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+CARE Ltd.,CARERATING,data/raw/pressreleases/pdf/ind_prs08102014.pdf
+CKP Leisure Ltd.,CKPLEISURE,data/raw/pressreleases/pdf/ind_prs25022019.pdf
+Canarys Automations Ltd.,CANARYS,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Carraro India Ltd.,CARRARO,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Cellecor Gadgets Ltd.,CELLECOR,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Century Enka Ltd.,CENTURYTEX,data/raw/pressreleases/pdf/ind_prs23082024.pdf
+Chamunda Electrical Ltd.,CHAMUNDA,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Chandan Healthcare Ltd.,CHANDAN,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Chavda Infra Ltd.,CHAVDA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Chetana Education Ltd.,CHETANA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Committed Cargo Care Ltd.,COMMITTED,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Concord Enviro Systems Ltd.,CEWATER,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Continental Seeds and Chemicals Ltd.,CONTI,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Cosmo Films Ltd.,COSMOFILMS,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Creative Graphics Solutions India Ltd.,CGRAPHICS,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Crop Life Science Ltd.,CLSL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Cyber Media Research & Services Ltd.,CMRSL,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+D. S. Kulkarni Developers Ltd.,DSKULKARNI,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+DCG Cables & Wires Ltd.,DCG,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Dalmia Cement (Bharat) Ltd.,DALMIACEM,data/raw/pressreleases/pdf/ind_prs22092010.pdf
+Dam Capital Advisors Ltd.,DAMCAPITAL,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Danish Power Ltd.,DANISH,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+De Neers Tools Ltd.,DENEERS,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Debock Sales and Marketing Ltd.,DSML,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Deccan Transcon Leasing Ltd.,DECCANTRAN,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Deem Roll Tech Ltd.,DEEM,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Delaplex Ltd.,DELAPLEX,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Development Credit Bank Ltd.,DCB,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Dhani Services Ltd.,DHANI,data/raw/pressreleases/pdf/ind_prs10032021.pdf
+Dhanlaxmi Bank Ltd.,DHANBANK,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Dhariwalcorp Ltd.,DHARIWAL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Dharmaj Crop Guard Ltd.,DHARMAJ,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Diffusion Engineers Ltd.,DIFFNKG,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Digikore Studios Ltd.,DIGIKORE,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Divine Hira Jewellers Ltd.,DIVINEHIRA,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Divyadhan Recycling Industries Ltd.,DIVYADHAN,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Docmode Health Technologies Ltd.,DHTL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Dr. Datsons Labs Ltd.,DRDATSONS,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Drone Destination Ltd.,DRONE,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Ducol Organics And Colours Ltd.,DUCOL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+E Factor Experiences Ltd.,EFACTOR,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+E To E Transportation Infrastructure Ltd.,INVICTA,data/raw/pressreleases/pdf/ind_prs23022026.pdf
+EMA Partners India Ltd.,EMAPARTNER,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Ecos (India) Mobility & Hospitality Ltd.,ECOSMOBLTY,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Elder Pharmaceuticals Ltd.,ELDERPHARM,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Eleganz Interiors Ltd.,ELGNZ,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Elevate Campuses Ltd.,ELEVATE,data/raw/pressreleases/pdf/ind_prs01102026.pdf
+Elin Electronics Ltd.,ELIN,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Emcure Pharmaceuticals Ltd.,EMCURE,data/raw/pressreleases/pdf/ind_prs15092025.pdf
+Energy Mission Machineries (India) Ltd.,EMMIL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Enfuse Solutions Ltd.,ENFUSE,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Enser Communications Ltd.,ENSER,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Envirotech Systems Ltd.,ENVIRO,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Eppeltone Engineers Ltd.,MAYASHEEL,data/raw/pressreleases/pdf/ind_prs22082025.pdf
+Esconet Technologies Ltd.,ESCONET,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Esprit Stones Ltd.,ESPRIT,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Everest Industries Ltd.,EVERESTIND,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Everonn Education Ltd.,EVERONN,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Excellent Wires and Packaging Ltd.,EXCELLENT,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Fidel Softech Ltd.,FIDEL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Fonebox Retail Ltd.,FONEBOX,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Forcas Studio Ltd.,FORCAS,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Forge Auto International Ltd.,FORGEAUTO,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Freshara Agro Exports Ltd.,FRESHARA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Frog Cellsat Ltd.,FROG,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Fusion CX Ltd.,FUSIONCX,data/raw/pressreleases/pdf/ind_prs23102026.pdf
+Gajanand International Ltd.,GAJANAND,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Gala Precision Engineering Ltd.,GALAPREC,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Gammon India Ltd.,GAMMONIND,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Gandhar Oil Refinery (India) Ltd.,GANDHAR,data/raw/pressreleases/pdf/ind_prs25032025.pdf
+Garuda Construction and Engineering Ltd.,GARUDA,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Gayatri Rubbers And Chemicals Ltd.,GRCL,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Geodesic Ltd.,GEODESIC,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+German Green Steel and Power Ltd.,GERMAN,data/raw/pressreleases/pdf/ind_prs06102026.pdf
+Gitanjali Gems Ltd.,GITANJALI,data/raw/pressreleases/pdf/ind_prs02072013.pdf
+Glass Wall Systems (India) Ltd.,GLASSWALL,data/raw/pressreleases/pdf/ind_prs17092026.pdf
+Global Pet Industries Ltd.,INFOLLION,data/raw/pressreleases/pdf/ind_prs17082023.pdf
+Global Surfaces Ltd.,GSLSU,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Globe Civil Projects Ltd.,GLOBECIVIL,data/raw/pressreleases/pdf/ind_prs02072025.pdf
+Glodyne Technoserve Ltd.,GLODYNE,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Godavari Biorefineries Ltd.,GODAVARIB,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Goyal Salt Ltd.,GOYALSALT,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Grand Continent Hotels Ltd.,GCHOTELS,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Greaves Cotton Ltd.,GREAVESCOT,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Grover Jewells Ltd.,GJL,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Gujarat NRE Coke Ltd.,GUJNRECOKE,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Gujarat Narmada Valley Fert. & Chem. Ltd.,GNFC,data/raw/pressreleases/pdf/ind_prs03012017.pdf
+HP Telecom India Ltd.,HPTL,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+HSBC Invest Direct (India) Limited,HINVDIR,data/raw/pressreleases/pdf/ind_prs07072010.pdf
+HT Media Ltd.,HTMEDIA,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+HVAX Technologies Ltd.,HVAX,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Havell's India Ltd.,HAVELLS,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Hero Motors Ltd.,HEROMOTORS,data/raw/pressreleases/pdf/ind_prs24092026.pdf
+Hi-Green Carbon Ltd.,HIGREEN,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Highway Infrastructure Ltd.,HILINFRA,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Himachal Futurastic Com Ltd.,HFCL,data/raw/pressreleases/pdf/ind_prs08102014.pdf
+Himachal Futuristic Communications Ltd.,HFCL,data/raw/pressreleases/pdf/ind_prs02072015.pdf
+Hindcon Chemicals Ltd.,HINDCON,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Holmarc Opto-Mechatronics Ltd.,HOLMARC,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Hubtown Ltd.,HUBTOWN,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Hy-Tech Engineers Ltd.,HTEL,data/raw/pressreleases/pdf/ind_prs02092026.pdf
+IL&FS Engineering and Construction Co. Ltd.,IL&FSENGG,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+INDIAN,OIL,data/raw/pressreleases/pdf/ind_prs20032024.pdf
+INDO-MIM Ltd.,INDOMIM,data/raw/pressreleases/pdf/ind_prs31072026.pdf
+INE002A08500,RELIANCE,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE002A08641,RELIANCE,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE110L07096,RELIANCE,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE110L08037,RELIANCE,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE148I07GK5,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE148I07GL3,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE148I07IN5,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE148I07IP0,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE148I08124,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE244L08042,INDIABULLS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE523L07660,EDELWEISS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE523L07710,EDELWEISS,data/raw/pressreleases/pdf/ind_prs26092022.pdf
+INE752E08783 NATIONAL HIGHWAYS,INFRA,data/raw/pressreleases/pdf/ind_prs23092025.pdf
+IRM Energy Ltd.,IRMENERGY,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Ice Make Refrigeration Ltd.,ICEMAKE,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Ideal Technoplast Industries Ltd.,IDEALTECHO,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+India Glycols Ltd.,INDIAGLYCO,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Indian Phosphate Ltd.,IPHL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Indiqube Spaces Ltd.,INDIQUBE,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Indraprastha Medical Corporation Ltd.,INDRAMEDCO,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Infinite Computer Solutions (India) Ltd,INFINITE,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Infinium Pharmachem Ltd.,INFINIUM,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+InfoBeans Technologies Ltd.,SANGINITA,data/raw/pressreleases/pdf/ind_prs08072019.pdf
+Infotech Enterprises Ltd.,INFOTECENT,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Innomet Advanced Materials Ltd.,INNOMET,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Innovana Thinklabs Ltd.,INNOVANA,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Inspire Films Ltd.,INSPIRE,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Integrated Personnel Services Ltd.,IPSL,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Interarch Building Solutions Ltd.,INTERARCH,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Interiors & More Ltd.,INM,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Iris Clothings Ltd.,IRISDOREME,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Ishan International Ltd.,ISHAN,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Italian Edibles Ltd.,ITALIANE,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Ivalue Infosolutions Ltd.,IVALUE,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Iware Supplychain Services Ltd.,IWARE,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+JFL Life Sciences Ltd.,JFLLIFE,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+JSW Cement Ltd.,JSWCEMENT,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Jaro Institute of Technology Management and Research Ltd.,JARO,data/raw/pressreleases/pdf/ind_prs01102025.pdf
+Jay Bee Laminations Ltd.,JAYBEE,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Jay Shree Tea & Industries Ltd.,STER,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Jeyyam Global Foods Ltd.,JEYYAM,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Jindal SouthWest Holdings Ltd.,JINDALSWHL,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Jindal Supreme (India) Ltd.,JSIPL,data/raw/pressreleases/pdf/ind_prs24092026.pdf
+Jiwanram Sheoduttrai Industries Ltd.,JIWANRAM,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Jyothy Laboratories Ltd.,JYOTHYLAB,data/raw/pressreleases/pdf/ind_prs21022014.pdf
+Jyoti Structures Ltd.,JYOTISTRUC,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+K.S. Oils Ltd.,KSOILS,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+K2 Infragen Ltd.,K2INFRA,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+KN Agri Resources Ltd.,KNAGRI,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+KRM Ayurveda Ltd.,KRMAYURVED,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Kabra Jewels Ltd.,KKJEWELS,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Kalahridhaan Trendz Ltd.,KTL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Kalana Ispat Ltd.,KALANA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Kalpataru Power Transmission Ltd.,KALPATPOWR,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Kandarp Digi Smart BPO Ltd.,KANDARP,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Kanohar Electricals Ltd.,KANOHAR,data/raw/pressreleases/pdf/ind_prs17092026.pdf
+Karamtara Engineering Ltd.,KARAMTARA,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+Karnika Industries Ltd.,KARNIKA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Karuturi Global Ltd.,KGL,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Kataria Industries Ltd.,KATARIA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Kemrock Industries and Exports Ltd.,KEMROCK,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Ken Enterprises Ltd.,KEN,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Kirloskar Oil Engines Limited,KIRLOSOIL,data/raw/pressreleases/pdf/ind_prs12042010.pdf
+Kody Technolab Ltd.,KODYTECH,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Konstelec Engineers Ltd.,KONSTELEC,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Kontor Space Ltd.,KONTOR,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Kotyark Industries Ltd.,KOTYARK,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Koutons Retail India Ltd.,KOUTONS,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Krishna Defence and Allied Industries Ltd.,KRISHNADEF,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Krishna Institute of Medical Sciences Ltd.,KIMS,data/raw/pressreleases/pdf/ind_prs23092024.pdf
+Kross Ltd.,KROSS,data/raw/pressreleases/pdf/ind_prs17092024.pdf
+Kundan Edifice Ltd.,KEL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Kusumgar Ltd.,KUSUMGAR,data/raw/pressreleases/pdf/ind_prs16072026.pdf
+LCC Projects Ltd.,LCCPROJECT,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+LG Balakrishnan & Bros Ltd.,LGBBROSLTD,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Lakshya Powertech Ltd.,LAKSHYA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Laxmi Goldorna House Ltd.,LGHL,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Laxmi India Finance Ltd.,LAXMIINDIA,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Le Merite Exports Ltd.,LEMERITE,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Lead Reclaim And Rubber Products Ltd.,LRRPL,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Lloyds Luxuries Ltd.,LLOYDS,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Lohia Corp Ltd.,LCL,data/raw/pressreleases/pdf/ind_prs31072026.pdf
+M K Proteins Ltd.,MKPL,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+M.V.K. Agro Food Product Ltd.,MVKAGRO,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+MT Educare Ltd.,MTEDUCARE,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Macobs Technologies Ltd.,MACOBSTECH,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Macpower CNC Machines Ltd.,MCL,data/raw/pressreleases/pdf/ind_prs12082020.pdf
+Madhusudan Masala Ltd.,MADHUSUDAN,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Madras Cements Ltd.,MADRASCEM,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Mahindra Ugine Steel Co. Ltd.,MAHINDUGIN,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Maitreya Medicare Ltd.,MAITREYA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Maks Energy Solutions India Ltd.,MAKS,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Mamata Machinery Ltd.,MAMATA,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Man Industries (India) Ltd.,MANINDS,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Manba Finance Ltd.,MANBA,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Mangal Electrical Industries Ltd.,MEIL,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Mangalam Alloys Ltd.,MAL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Mangalam Global Enterprise Ltd.,MGEL,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Mangalore Chemicals & Fertilizers Ltd.,MANGCHEFER,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Manglam Infra & Engineering Ltd.,MIEL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Manilam Industries India Ltd.,MANILAM,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Manipal Payment and Identity Solutions Ltd.,MPIMANIPAL,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+Manoj Vaibhav Gems 'N' Jewellers Ltd.,MVGJL,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Marco Cables & Conductors Ltd.,MARCO,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Marushika Technology Ltd.,MARUSHIKA,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Master Components Ltd.,MASTER,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Maxposure Ltd.,MAXPOSURE,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Maxvolt Energy Industries Ltd.,MAXVOLT,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Mcon Rasayan India Ltd.,MCON,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Mega Flex Plastics Ltd.,MEGAFLEX,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Megatherm Induction Ltd.,MEGATHERM,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Mercator Ltd.,MERCATOR,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Metalyst Forgings Ltd.,METALFORGE,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Micropro Software Solutions Ltd.,MICROPRO,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Midwest Ltd.,MIDWESTLTD,data/raw/pressreleases/pdf/ind_prs27102025.pdf
+Mitcon Consultancy & Engineering Services Ltd.,MITCON,data/raw/pressreleases/pdf/ind_prs10032022.pdf
+Mobilise App Lab Ltd.,MOBILISE,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Moksh Ornaments Ltd.,MOKSH,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Monnet Ispat and Energy Ltd.,MONNETISPA,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Mono Pharmacare Ltd.,MONOPHARMA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Mos Utility Ltd.,MOS,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Motisons Jewellers Ltd.,MOTISONS,data/raw/pressreleases/pdf/ind_prs25032025.pdf
+My Mudra Fincorp Ltd.,MYMUDRA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+NELCO Ltd.,SURYAROSNI,data/raw/pressreleases/pdf/ind_prs14032012.pdf
+Naman In-Store (India) Ltd.,NAMAN,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Namo eWaste Management Ltd.,NAMOEWASTE,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+National Buildings Construction Corp. Ltd.,NBCC,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Nephrocare Health Services Ltd.,SENORES,data/raw/pressreleases/pdf/ind_prs10082026.pdf
+Network People Services Technologies Ltd.,NPST,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+New Delhi Television Ltd.,STCINDIA,data/raw/pressreleases/pdf/ind_prs14032012.pdf
+Newjaisa Technologies Ltd.,NEWJAISA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Nidan Laboratories And Healthcare Ltd.,NIDAN,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Nifty,MNC,data/raw/pressreleases/pdf/ind_prs02042025.pdf
+Nifty MidSmall IT Vodafone Idea Ltd.,IDEA,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Nifty Rural Vodafone Idea Ltd.,IDEA,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Nifty Total Market Prism Johnson Ltd.,PRSMJOHNSN,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Nirman Agri Gentics Ltd.,NIRMAN,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Nitin Fire Protection Industries Ltd.,NITINFIRE,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+OBSC Perfection Ltd.,OBSCP,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+On Door Concepts Ltd.,ONDOOR,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+OnMobile Global Ltd.,ONMOBILE,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+One Mobikwik Systems Ltd.,MOBIKWIK,data/raw/pressreleases/pdf/ind_prs19122024.pdf
+One Point One Solutions Ltd.,ONEPOINT,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Oneclick Logistics India Ltd.,OLIL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Onelife Capital Advisors Ltd.,ONELIFECAP,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Opto Circuits (I) Ltd.,OPTOCIRCUI,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Orbit Corporation Ltd.,ORBITCORP,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Orchid Chemicals & Pharmaceuticals Ltd.,ORCHIDCHEM,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Orient Cables (India) Ltd.,ORIENTCABL,data/raw/pressreleases/pdf/ind_prs06102026.pdf
+Orient Technologies Ltd.,ORIENTTECH,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Orissa Min Development Co. Ltd.,ORISSAMINE,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Osel Devices Ltd.,OSELDEVICE,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Osia Hyper Retail Ltd.,OSIAHYPER,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+P S Raj Steels Ltd.,PSRAJ,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+P. E. Analytics Ltd.,PROPEQUITY,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+PCBL Chemical Ltd.,PCBL,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+PNB Gilts Ltd.,PNBGILTS,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Pace Digitek Ltd.,PACEDIGITK,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Paragon Fine and Speciality Chemical Ltd.,PARAGON,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Paramatrix Technologies Ltd.,PARAMATRIX,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Paramount Dye Tec Ltd.,PARAMOUNT,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Paramount Speciality Forgings Ltd.,PSFL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Party Cruisers Ltd.,PARTYCRUS,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+Patel Retail Ltd.,PATELRMART,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Patni Computer Systems Ltd.,PATNI,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Pavna Industries Ltd.,PAVNAIND,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+Pelatro Ltd.,PELATRO,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Pennar Industries Ltd.,PENIND,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Penta Gold Ltd.,PENTAGOLD,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Phantom Digital Effects Ltd.,PHANTOMFX,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Phoenix Overseas Ltd.,PHOGLOBAL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Picturepost Studios Ltd.,PPSL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Pipavav Defence and Offshore Engn. Co. Ltd.,PIPAVAVDOC,data/raw/pressreleases/pdf/ind_prs11012016.pdf
+Plada Infotech Services Ltd.,PLADAINFO,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Polaris Consulting & Services Ltd.,POLARIS,data/raw/pressreleases/pdf/ind_prs08012018.pdf
+Polaris Financial Technology Ltd.,POLARIS,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Polysil Irrigation Systems Ltd.,POLYSIL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Positron Energy Ltd.,POSITRON,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Prakash Industries Ltd.,PRAKASH,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Pramara Promotions Ltd.,PRAMARA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Pranik Logistics Ltd.,PRANIK,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Prasol Chemicals Ltd.,PRASOLCHEM,data/raw/pressreleases/pdf/ind_prs17092026.pdf
+Pratham EPC Projects Ltd.,PRATHAM,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Premier Roadlines Ltd.,PRLIND,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Premium Plast Ltd.,PREMIUM,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Priti International Ltd.,PRITI,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Prizor Viztech Ltd.,PRIZOR,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Procter & Gamble Hygiene & Healthcare Ltd.,PGHH,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Prostarm Info Systems Ltd.,PROSTARM,data/raw/pressreleases/pdf/ind_prs24062026.pdf
+Purv Flexipack Ltd.,PURVFLEXI,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Pyramid Technoplast Ltd.,PYRAMID,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+QMS Medical Allied Services Ltd.,QMSMEDI,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+QVC Exports Ltd.,QVCEL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Quadpro ITeS Ltd.,QUADPRO,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Quality Foils (India) Ltd.,QFIL,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Quicktouch Technologies Ltd.,QUICKTOUCH,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+REI Agro Ltd.,REIAGROLTD,data/raw/pressreleases/pdf/ind_prs14032012.pdf
+RFBL Flexi Pack Ltd.,RFBL,data/raw/pressreleases/pdf/ind_prs10082026.pdf
+RHI MAGNESITA INDIA LTD.,RHIM,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+RNFI Services Ltd.,RNFI,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Radiant Cash Management Services Ltd.,RADIANTCMS,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Radiowalla Network Ltd.,RADIOWALLA,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Raj Television Network Ltd.,RAJTV,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Rajgor Castor Derivatives Ltd.,RCDL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Rajputana Industries Ltd.,RAJINDLTD,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Ramco Industries Ltd.,RAMCOIND,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Rapid Fleet Management Services Ltd.,RAPIDFLEET,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Rappid Valves (India) Ltd.,RAPPID,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Rasoya Proteins Ltd.,RASOYPR,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Ratnaveer Precision Engineering Ltd.,RATNAVEER,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Readymix Construction Machinery Ltd.,READYMIX,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Redington (India) Ltd.,REDINGTON,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Refex Industries Ltd.,TARIL,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Refractory Shapes Ltd.,REFRACTORY,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Regaal Resources Ltd.,REGAAL,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Reliance Natural Resources Ltd.,RNRL,data/raw/pressreleases/pdf/ind_prs01102010.pdf
+Reliance Nippon Life Asset Management Ltd.,RECLTD,data/raw/pressreleases/pdf/ind_prs28082018.pdf
+Rentomojo Ltd.,RENTOMOJO,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+Rex Pipes and Cables Industries Ltd.,REXPIPES,data/raw/pressreleases/pdf/ind_prs08122021.pdf
+Rexpro Enterprises Ltd.,REXPRO,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Richa Info Systems Ltd.,RICHA,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Rico Auto Industries Ltd.,RICOAUTO,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Rishabh Instruments Ltd.,RISHABH,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Rite Zone Chemcon India Ltd.,RITEZONE,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Rox Hi-Tech Ltd.,ROXHITECH,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Royal Arc Electrodes Ltd.,ROYALARC,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Ruchi Soya Industries Ltd.,RUCHISOYA,data/raw/pressreleases/pdf/ind_prs13022013.pdf
+Runwal Enterprises Ltd.,RUNWALENTR,data/raw/pressreleases/pdf/ind_prs06102026.pdf
+S A Tech Software India Ltd.,SATECH,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+S D Retail Ltd.,SDREAMS,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+S K S Textiles Ltd.,SKSTEXTILE,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+S. Kumars Nationwide Ltd.,SKUMARSYNF,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+S.S. Infrastructure Development Consultants Ltd.,SSINFRA,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+SEAMEC Ltd.,SEAMECLTD,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+SKS Microfinance Ltd.,SKSMICRO,data/raw/pressreleases/pdf/ind_prs02072013.pdf
+SMVD Ploy Pack Ltd.,SMVD,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+SP Refractories Ltd.,SPRL,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+SPP Polymer Ltd.,SPPPOLY,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+SS Retail Ltd.,SSRETAIL,data/raw/pressreleases/pdf/ind_prs24092026.pdf
+Saakshi Medtech and Panels Ltd.,SAAKSHI,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sabar Flex India Ltd.,SABAR,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Sadhav Shipping Ltd.,SADHAV,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Sagility Ltd.,SAGILITY,data/raw/pressreleases/pdf/ind_prs12032026.pdf
+Sahaj Fashions Ltd.,SAHAJ,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sahaj Solar Ltd.,SAHAJSOLAR,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sahajanand Medical Technologies Ltd.,SMT,data/raw/pressreleases/pdf/ind_prs26102026.pdf
+Sahasra Electronic Solutions Ltd.,SAHASRA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sai Parenterals Ltd.,SAIPARENT,data/raw/pressreleases/pdf/ind_prs06042026.pdf
+Saj Hotels Ltd.,SAJHOTELS,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sakthi Sugars Ltd.,SAKHTISUG,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Sambhv Steel Tubes Ltd.,SAMBHV,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Sammaan Capital Ltd.,SAMMAANCAP,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Sanathan Textiles Ltd.,SANATHAN,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Sangani Hospitals Ltd.,SANGANI,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sanofi India Ltd. Note,SANOFI,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Sanstar Ltd.,SANSTAR,data/raw/pressreleases/pdf/ind_prs26072024.pdf
+Sar Televenture Ltd.,SARTELE,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Saraswati Saree Depot Ltd.,SSDL,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Saroja Pharma Industries India Ltd.,SAROJA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sarveshwar Foods Ltd.,SARVESHWAR,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Sathlokhar Synergys E&C Global Ltd.,SSEGL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sati Poly Plast Ltd.,SATIPOLY,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sattva Engineering Construction Ltd.,SAVY,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Savy Infra and Logistics Ltd.,SAWALIYA,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Scoda Tubes Ltd.,SCODATUBES,data/raw/pressreleases/pdf/ind_prs24062026.pdf
+Security and Intelligence Services (India) Ltd.,SIS,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Service Care Ltd.,SERVICE,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sesa Sterlite Ltd.,SSLT,data/raw/pressreleases/pdf/ind_prs05032014.pdf
+Shaily Engineering Plastics Ltd.,SHAKTIPUMP,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Shakti Pumps (India) Ltd.,SHOPERSTOP,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Shalby Ltd.,SHALBY,data/raw/pressreleases/pdf/ind_prs01092022.pdf
+Shanthala FMCG Products Ltd.,SHANTHALA,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Shanti Gold International Ltd.,SHANTIGOLD,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Shanti Overseas (India) Ltd.,SHANTI,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+Sharp Chucks and Machines Ltd.,SCML,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sheel Biotech Ltd.,SHIVASHRIT,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Shera Energy Ltd.,SHERA,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Shigan Quantum Technologies Ltd.,SHIGAN,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Shilpi Cable Tech Ltd.,SHILPI,data/raw/pressreleases/pdf/ind_prs16022017.pdf
+Shivashrit Foods Ltd.,SHETHJI,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Shradha Infraprojects (Nagpur) Ltd.,SHRADHA,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Shree Ashtavinayak Cine Vision Ltd.,SHREEASHTA,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Shree Karni Fabcom Ltd.,SHREEKARNI,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Shree Ram Proteins Ltd.,SRPL,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Shree Tirupati Balajee Agro Trading Company Ltd.,BALAJEE,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Shri Ahimsa Naturals Ltd.,SHRIAHIMSA,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Shri Techtex Ltd.,SHRITECH,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Shubhshree Biofuels Energy Ltd.,SHUBHSHREE,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Siddhika Coatings Ltd.,SIDDHIKA,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+Sigma Solve Ltd.,SIGMA,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Signoria Creation Ltd.,SIGNORIA,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Silkflex Polymers (India) Ltd.,SILKFLEX,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Silly Monks Entertainment Ltd.,SILLYMONKS,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Simca Advertising Ltd.,SIMCA,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Simplex Infrastructures Ltd.,SIMPLEXINF,data/raw/pressreleases/pdf/ind_prs16022017.pdf
+Sintercom India Ltd.,SINTERCOM,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Siti Cable Network Ltd.,SITICABLE,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Siti Networks Ltd.,SITINET,data/raw/pressreleases/pdf/ind_prs16022017.pdf
+Skipper Ltd.,TVSSCS,data/raw/pressreleases/pdf/ind_prs21022025.pdf
+Skyways Air Services Ltd.,SKYWAYS,data/raw/pressreleases/pdf/ind_prs02092026.pdf
+Slone Infosystems Ltd.,SLONE,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Sobha Developers Ltd.,SOBHA,data/raw/pressreleases/pdf/ind_prs02072013.pdf
+Softtech Engineers Ltd.,SOFTTECH,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Solara Active Pharma Sciences Ltd.,SOLARA,data/raw/pressreleases/pdf/ind_prs01092022.pdf
+Solarworld Energy Solutions Ltd.,SOLARWORLD,data/raw/pressreleases/pdf/ind_prs01102025.pdf
+Solex Energy Ltd.,SOLEX,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Sona Koyo Steering Systems Ltd.,SONASTEER,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Sona Machinery Ltd.,SONAMAC,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Soni Soya Products Ltd.,SONISOYA,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Sonu Infratech Ltd.,SONUINFRA,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Sotac Pharmaceuticals Ltd.,SOTAC,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+South West Pinnacle Exploration Ltd.,SOUTHWEST,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Spectrum Electrical Industries Ltd.,SPECTRUM,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Srikalahasthi Pipes Ltd.,SRIPIPES,data/raw/pressreleases/pdf/ind_prs12082015.pdf
+Srinibas Pradhan Constructions Ltd.,SPCON,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Srivari Spices And Foods Ltd.,SSFL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Srivasavi Adhesive Tapes Ltd.,SRIVASAVI,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+State Trading Corporation of India Ltd.,STCINDIA,data/raw/pressreleases/pdf/ind_prs28082017.pdf
+Steamhouse India Ltd.,STEAMHOUSE,data/raw/pressreleases/pdf/ind_prs18092026.pdf
+Sterling Biotech Ltd,STERLINBIO,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Striders Impex Ltd.,STRIDERS,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Strides Arcolab Ltd.,STAR,data/raw/pressreleases/pdf/ind_prs06012015.pdf
+Subex Ltd.,VSTIND,data/raw/pressreleases/pdf/ind_prs15092021.pdf
+Sudarshan Chemical Industries Ltd.,SUDARSCHEM,data/raw/pressreleases/pdf/ind_prs16022017.pdf
+Sujana Towers Ltd.,SUJANATOW,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Sula Vineyards Ltd.,SULA,data/raw/pressreleases/pdf/ind_prs25092024.pdf
+Sun Pharma Adv. Research Co. Ltd.,SPARC,data/raw/pressreleases/pdf/ind_prs22042016.pdf
+Sungarner Energies Ltd.,SEL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Sunlite Recycling Industries Ltd.,SUNLITE,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Sunteck Realty Ltd.,SUNTECK,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Supreme Infrastructure India Ltd.,SUPREMEINF,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Suraj Estate Developers Ltd.,SURAJEST,data/raw/pressreleases/pdf/ind_prs25032025.pdf
+Suraksha Diagnostic Ltd.,SURAKSHA,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Surani Steel Tubes Ltd.,SURANI,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Surya Roshni Ltd.,SUZLON,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Swan Corp Ltd.,SWANCORP,data/raw/pressreleases/pdf/ind_prs15092026.pdf
+Swaraj Suiting Ltd.,SWARAJ,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Swastik Pipe Ltd.,SWASTIK,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Swastika Infra Ltd.,SWASTIKAIN,data/raw/pressreleases/pdf/ind_prs01102026.pdf
+Symbiotec Pharmalab Ltd.,SYMBIOTEC,data/raw/pressreleases/pdf/ind_prs02092026.pdf
+Systango Technologies Ltd.,SYSTANGO,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+TAC Infosec Ltd.,TAC,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+TVS Srichakra Ltd.,TVSSRICHAK,data/raw/pressreleases/pdf/ind_prs01092022.pdf
+Tankup Engineers Ltd.,TANKUP,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Tapi Fruit Processing Ltd.,TAPIFRUIT,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Tara Chand Logistic Solutions Ltd.,TARACHAND,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Tata Motors Passenger Vehicles Ltd.,TMPV,data/raw/pressreleases/pdf/ind_prs15092026.pdf
+TechEra Engineering (India) Ltd.,TECHERA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Teerth Gopicon Ltd.,TGL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Tega Industries Ltd.,TEGA,data/raw/pressreleases/pdf/ind_prs12032026.pdf
+Tejas Cargo India Ltd.,TEJASCARGO,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Thaai Casting Ltd.,TCL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Thematic CNX MNC Nifty,MNC,data/raw/pressreleases/pdf/ind_prs22092015.pdf
+Thinking Hats Entertainment Solutions Ltd.,THESL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Tide Water Oil (India) Ltd.,TIDEWATER,data/raw/pressreleases/pdf/ind_prs28082017.pdf
+Tilaknagar Industries Ltd.,TI,data/raw/pressreleases/pdf/ind_prs20022015.pdf
+Tinplate Company of India Ltd.,TINPLATE,data/raw/pressreleases/pdf/ind_prs07072010.pdf
+Tolins Tyres Ltd.,TOLINS,data/raw/pressreleases/pdf/ind_prs17092024.pdf
+Tonbo Imaging India Ltd.,TONBO,data/raw/pressreleases/pdf/ind_prs26102026.pdf
+Total Transport Systems Ltd.,TOTAL,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Touchwood Entertainment Ltd.,TOUCHWOOD,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Tourism Finance Corporation of India Ltd.,TFCILTD,data/raw/pressreleases/pdf/ind_prs25082011.pdf
+Transteel Seating Technologies Ltd.,TRANSTEEL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Transwind Infra Ltd.,TRANSWIND,data/raw/pressreleases/pdf/ind_prs11122020.pdf
+Tribhovandas Bhimji Zaveri Ltd.,TBZ,data/raw/pressreleases/pdf/ind_prs12082016.pdf
+Trom Industries Ltd.,TROM,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+TruAlt Bioenergy Ltd.,TRUALT,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Trust Fintech Ltd.,TRUST,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Tulip Telecom Ltd.,TULIP,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Tunwal E-Motors Ltd.,TUNWAL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Ujjivan Financial Services Ltd.,UJJIVAN,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Ultra Wiring Connectivity System Ltd.,UWCSL,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Unicommerce Esolutions Ltd.,UNIECOM,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Unihealth Consultancy Ltd.,UNIHEALTH,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Unilex Colours and Chemicals Ltd.,UNILEX,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+United Breweries (Holdings) Ltd.,UBHOLDINGS,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+United Heat Transfer Ltd.,UHTL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Univastu India Ltd.,UNIVASTU,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Upsurge Seeds of Agriculture Ltd.,USASEEDS,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Uravi T and Wedge Lamps Ltd.,URAVI,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Usha Financial Services Ltd.,USHAFIN,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Utssav CZ Gold Jewels Ltd.,UTSSAV,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+V Marc India Ltd.,VMARCIND,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+V R Infraspace Ltd.,VR,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+V.L.Infraprojects Ltd.,VLINFRA,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+VMS TMT Ltd.,VMSTMT,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Vakrangee Software Ltd.,VAKRANSOFT,data/raw/pressreleases/pdf/ind_prs16082012.pdf
+Valiant Laboratories Ltd.,VALIANTLAB,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Value 360 Communications Ltd.,VALUE360,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Varanium Cloud Ltd.,CLOUD,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Varun Shipping Co. Ltd.,VARUNSHIP,data/raw/pressreleases/pdf/ind_prs27082013.pdf
+Vasa Retail and Overseas Ltd.,VASA,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Vdeal System Ltd.,VDEAL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Veekayem Fashion and Apparels Ltd,VEEKAYEM,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Vels Film International Ltd.,VELS,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Vera Synthetic Ltd.,VERA,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Vertexplus Technologies Ltd.,VERTEXPLUS,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Vertoz Advertising Ltd.,VERTOZ,data/raw/pressreleases/pdf/ind_prs21022018.pdf
+Vertoz Ltd.,VERTOZ,data/raw/pressreleases/pdf/ind_prs20062025.pdf
+Viaz Tyres Ltd.,VIAZ,data/raw/pressreleases/pdf/ind_prs09062023.pdf
+Vigor Plast India Ltd.,VIJAYPD,data/raw/pressreleases/pdf/ind_prs11122025.pdf
+Vikran Engineering Ltd.,VIKRAN,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Vinny Overseas Ltd.,VINNY,data/raw/pressreleases/pdf/ind_prs15062022.pdf
+Vinsys IT Services India Ltd.,VINSYS,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Vinyas Innovative Technologies Ltd.,VINYAS,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Virtual Galaxy Infotech Ltd.,VGINFOTECH,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Visagar Polytex Ltd.,VIVIDHA,data/raw/pressreleases/pdf/ind_prs29042015.pdf
+Vishal Mega Mart Ltd.,VMM,data/raw/pressreleases/pdf/ind_prs19122024.pdf
+Vishal Nirmiti Ltd.,NITYAS,data/raw/pressreleases/pdf/ind_prs09102026.pdf
+Vishnu Prakash R Punglia Ltd.,VPRPL,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Vishnusurya Projects and Infra Ltd.,VISHNUINFR,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Vishwas Agri Seeds Ltd.,VISHWAS,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Vision Infra Equipment Solutions Ltd.,VIESL,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Vital Chemtech Ltd.,VITAL,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Viviana Power Tech Ltd.,VIVIANA,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Vivid Electromech Ltd.,VIVIDEL,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Voler Car Ltd.,VOLERCAR,data/raw/pressreleases/pdf/ind_prs06062025.pdf
+Waaree Energies Ltd.,WAAREEENER,data/raw/pressreleases/pdf/ind_prs17102025.pdf
+We Win Ltd.,WEWIN,data/raw/pressreleases/pdf/ind_prs15062021.pdf
+WeWork India Management Ltd.,WEWORK,data/raw/pressreleases/pdf/ind_prs25092026.pdf
+Wealth First Portfolio Managers Ltd.,WEALTH,data/raw/pressreleases/pdf/ind_prs15062018.pdf
+Welspun India Ltd.,WELSPUNIND,data/raw/pressreleases/pdf/ind_prs08102015.pdf
+Western Carriers (India) Ltd.,WCIL,data/raw/pressreleases/pdf/ind_prs26122025.pdf
+Wheels India Ltd.,WHEELS,data/raw/pressreleases/pdf/ind_prs20082014.pdf
+Winsol Engineers Ltd.,WINSOL,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Wise Travel India Ltd.,WTICAB,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Wol 3D India Ltd.,WOL3D,data/raw/pressreleases/pdf/ind_prs11122024.pdf
+Womancart Ltd.,WOMANCART,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Xtranet Technologies Ltd.,XTRANET,data/raw/pressreleases/pdf/ind_prs31072026.pdf
+Yaap Digital Ltd.,YAAP,data/raw/pressreleases/pdf/ind_prs10062026.pdf
+Yash Optics & Lens Ltd.,YASHOPTICS,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Yasons Chemex Care Ltd.,YCCL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Yatra Online Ltd.,YATRA,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Yudiz Solutions Ltd.,YUDIZ,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+ZF Commercial Vehicle Control Systems India,ZFCVINDIA,data/raw/pressreleases/pdf/ind_prs06122022.pdf
+Zaggle Prepaid Ocean Services Ltd.,ZAGGLE,data/raw/pressreleases/pdf/ind_prs26122024.pdf
+Zeal Global Services Ltd.,ZEAL,data/raw/pressreleases/pdf/ind_prs07122023.pdf
+Zee Learn Ltd.,LEMONTREE,data/raw/pressreleases/pdf/ind_prs28082018.pdf
+Zee Media Corporation Ltd.,ZEEMEDIA,data/raw/pressreleases/pdf/ind_prs10062020.pdf
+Zee News Limited,ZEENEWS,data/raw/pressreleases/pdf/ind_prs12042010.pdf
+Zenith Drugs Ltd.,ZENITHDRUG,data/raw/pressreleases/pdf/ind_prs07062024.pdf
+Zetwerk Manufacturing Businesses Ltd.,ZETWERK,data/raw/pressreleases/pdf/ind_prs26102026.pdf
+Zodiac Clothing Co. Ltd.,ZODIACLOTH,data/raw/pressreleases/pdf/ind_prs27022014.pdf
+Zodiac Energy Ltd.,ZODIAC,data/raw/pressreleases/pdf/ind_prs21022018.pdf
