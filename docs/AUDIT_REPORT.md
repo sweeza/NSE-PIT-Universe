@@ -144,3 +144,11 @@ Script: `audit/stage3_identity.py` (reads `data/build/identity/*.parquet`). The 
 |---|---|---|
 | S2-6 | S2 | **One security is split into several `sec_id`s when a symbol is absent for more than 400 days (`GAP_DAYS`), even when the full ISIN is unchanged.** 62 adjacent same-symbol pairs share a full ISIN (46 where both sides are equities), e.g. ARIHANT (S01109 to S07091, gap 2022-02 to 2026-04), SICAGEN, KOVAI (three ids), SHAIVAL (four), GOODYEAR, NOVARTIND, ATLASCYCLE, PVP, VIVIMEDLAB. The rule is documented and conservative, but a same-symbol, same-ISIN return is the same security. Effect: per-security history (adjusted prices, returns) stops at the gap and restarts under a new id. Index membership is not affected: of the 114 ids involved, the 4 that were ever index members (S00054, S00606, S02837, S02891) left every index before their gap. Owner decision: keep (document) or join on same symbol and same full ISIN. |
 | S3-9 | S3 | 89 adjacent same-symbol pairs share the ISIN issuer (62 the full ISIN). Of the rest, 124 pairs have no ISIN on one side (mostly G-sec and bond series such as `833GS2036`). They stay separate, which is harmless. |
+
+### Stage 1 (continued): corporate-actions feed vs fresh NSE download, 2026-11-22
+
+The owner downloaded `CF-CA-equities-01-01-1995-to-22-11-2026.csv` (44,032 rows, 5,580,662 bytes) from NSE's Corporate Actions page; it is in `999 dump/` (not in `data/raw/`). Compared with `held/raw_corporate_actions_1995_2026.json` (43,816 records) on (symbol, ex-date, purpose text).
+
+- **Every held record is in the fresh file**, except 29 whose symbol NSE has since renamed (NOVARTIS/NOVARTIND to EVONILE, ICICIPRULI to ICICILIFE). After mapping renames with the fresh `symbolchange.csv`, 10 held rows remain unmatched, all of them part of the same rename chains (EVONILE) or text revisions.
+- **The 216 extra fresh rows** are events after the held snapshot (ex-dates to 2026-11-20); only 7 fresh-only rows have an ex-date on or before the held file's last ex-date (2026-10-16): two EVONILE rows (rename), DTIL x2, SHIVAMAUTO and HINDCOMPOS (events added or revised after the snapshot).
+- Reading: the held feed is genuine NSE data, with no altered or missing historical rows found. Issue C5 now rests only on `IndexInclExcl.xls`. The fresh CSV has no ISIN column; the held JSON does.

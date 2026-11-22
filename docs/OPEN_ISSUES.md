@@ -10,7 +10,7 @@ Add a row when something is found; change its status, do not delete it.
 |----|--------|------|-----------|
 | A9 | OPEN | Audit findings fixed 2026-11-22: five held files added to the manifest and now scanned (S2-1); `check_coverage_baseline` added with `data/curated/coverage_baseline.csv` (S3-1); `press.extract_text` added (S3-2). To accept a deliberate coverage change run `verify.write_coverage_baseline()` and commit it. | None. |
 | A10 | DONE | **S2-4**: Nifty LargeMidcap 250 was VERIFIED 2008-03-14..2015-09-24 although the index launched 2016-04-01 (Nifty 100 was not a subset of it on those days). Owner decision 2026-11-22: mark UNVERIFIED. `FLOORS["NIFTYLARGEMIDCAP250"]` is now 2016-04-01; coverage baseline regenerated as a deliberate reduction. | None. |
-| A11 | OPEN | **S2-2/S2-5**: `symbolchange.csv` and `EQUITY_L.csv` were checked against fresh NSE copies on 2026-11-22 (held rows all present; no contradiction). Still unchecked: `raw_corporate_actions_1995_2026.json` (NSE API refuses scripted requests) and `IndexInclExcl.xls` (no live link). | Owner downloads a fresh corporate-actions file by hand; then diff. Rest of Stage 1 (re-download sample) not run. |
+| A11 | DONE | **S2-2/S2-5**: `symbolchange.csv`, `EQUITY_L.csv` and `raw_corporate_actions_1995_2026.json` were compared with fresh NSE copies on 2026-11-22: no altered or missing historical rows (differences are renames and post-snapshot events; see `docs/AUDIT_REPORT.md`). `IndexInclExcl.xls` has no live NSE source and stays unchecked (C5). | None. |
 | A12 | DONE | **S3-4**: the two dead aliases (AGC Networks -> BLACKBOX, Pudumjee -> PUDUMJEE) were deleted 2026-11-22. Their four Nifty 500 events (1998, 2007, 2011) now show NAME_UNKNOWN as before in effect: no security exists for them; membership and coverage baseline unchanged. | None. |
 | A1 | OPEN | Phase 1-4 work (2026-11-15..22) is committed locally in chunks on 2026-11-22; nothing pushed. | Owner decides when to push. |
 | A8 | OPEN | Independent audit of the curated data (press events, aliases, size exceptions) and of the verification logic itself has not been done. | Execute `docs/AUDIT_PLAN.md`. |
@@ -48,11 +48,11 @@ Add a row when something is found; change its status, do not delete it.
 
 | ID | Status | Item |
 |----|--------|------|
-| C1 | BLOCKED | Adjusted prices before 2007-01-01 are unverified (the held corporate-action feed has almost no splits/bonuses for 2004-2006; a fresh NSE download for those years was identical). |
+| C1 | OUT OF SCOPE | Adjusted prices before 2007-01-01 are unverified (the held corporate-action feed has almost no splits/bonuses for 2004-2006; a fresh NSE download for those years was identical). The data bank starts at 2007-01-01 (owner decision 2026-11-22); earlier days are not claimed. |
 | C2 | OPEN | 15 share actions contradicted by prices are not applied (`build/actions_rejected_or_shifted.csv`); 108 documented adjustment breaks (`waivers.csv`); 177 unexplained overnight moves; 3 rights days differ >25% from the theoretical adjustment. |
 | C3 | OPEN | Index values: 1,061 index-days where the two NSE sources disagree (338 by >=0.1%), flagged `conflict=True`; 929 index-days missing inside index lives across 208 indices (869,785 index-days total). |
-| C4 | BLOCKED | 2004 prices for some large companies are absent from NSE's own files (e.g. L&T before 2004-06-23). |
-| C5 | OPEN | `IndexInclExcl.xls`, `raw_corporate_actions_1995_2026.json`, `symbolchange.csv`, `EQUITY_L.csv` are held inputs of unverified origin (only 2004-2006 of the corporate-action feed was re-checked against NSE). |
+| C4 | OUT OF SCOPE | 2004 prices for some large companies are absent from NSE's own files (e.g. L&T before 2004-06-23). Before the 2007-01-01 start, so not claimed. |
+| C5 | OPEN | `IndexInclExcl.xls` is a held input of unverified origin with no live NSE source; it feeds early index membership history. The corporate-action feed, `symbolchange.csv` and `EQUITY_L.csv` were verified against fresh NSE copies on 2026-11-22. |
 
 ## D. Working rules (from the owner)
 
