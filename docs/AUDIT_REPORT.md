@@ -221,3 +221,14 @@ Limits: one source, one provider's feed; 40 stocks of the Nifty 50; no dates bef
 ### Nifty 500 symbol swap (Stage 7, rerun with a fresh scratch layout)
 
 `audit/mutate.py` now takes the repo as baseline and a scratch folder. Baseline run: both checks PASS, no coverage change. Swap Nifty 500 inclusion `MAXHEALTH` (2021-03-31) to `ASIANPAINT`: **`check_membership` FAIL, 465 violations**, and verified coverage drops (Nifty 500 -2,615 days, Midsmallcap 400 -2,840, Smallcap 250 -1,643). Caught both ways.
+
+### Stage 6.4b: archived NSE constituent lists vs the build, 2026-11-22
+
+Source: 157 distinct Internet Archive captures of NSE's own constituent CSVs (`audit/stage64b_archive.py`; held in the scratchpad pending the owner's approval to save them in `data/raw/constituents_archive/`). Compared as symbol sets (ISIN match for renamed tickers; DUMMY rows ignored) with `index_members(index, capture date)`.
+
+**Coverage of the test.** Captures start 2016-03 (Nifty 50), 2017-2019 (most indices) and 2010 (Midcap 50 only). **Membership before about 2016, and the workbook-only history 2007-2016, cannot be tested with this source.** 150 captures could be compared; 6 fell in unverified windows (refused by the API) and 1 had an unparseable header.
+
+**Result.** 141 exact matches; 9 differences after the fix below (10 before):
+- **S2-9 (fixed): Tata Motors DVR in derived indices.** The build carried TATAMTRDVR in Nifty MidSmallcap 400 and Smallcap 250 from 2020-06-26 to 2023-09-28 (DIFF of Nifty 500 and Nifty 100 / LargeMidcap 250 left it in because the DVR was only in the parent). NSE's lists on 2023-08-12 (MidSmallcap 400: 400 rows, no DVR) and 2023-08-08 (Midcap 150: 150 rows, no DVR) show it was in neither, hence not in Smallcap 250. Fix: `build_composites` removes the named dual-class security from DIFF composites and makes no size allowance for it; unit test added. Rebuild: coverage days unchanged for every index; MidSmallcap 400 now matches the archive.
+- **Nifty Bank 2024-09-28** (CANBK in the archive, BANDHANBNK in the build): NSE published the list before the 2024-09-30 effective date. Publication lag, not an error.
+- **Nifty 500, LargeMidcap 250, Midcap 150, Smallcap 250 on 2026-10-09..25** (REITs BAGMANE, BIRET, EMBASSY in the build, absent from the archived CSVs): the build follows `ind_prs10082026.pdf` (effective 2026-09-30); NSE's 2026-11-15 list contains the REITs. Read as NSE's CSV lagging the release; not provable from held data. Open note.

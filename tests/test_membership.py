@@ -301,3 +301,32 @@ def test_build_composites_derives_eq_and_diff_indices(tmp_path, monkeypatch):
     m_diff_day0 = m.members(c_diff_iv, "C_DIFF", days[0])
     assert m_diff_day0 == {"S2", "S3"}
 
+
+
+def test_difference_composite_drops_the_dual_class_dvr_of_its_parent(tmp_path, monkeypatch):
+    """NSE's derived lists (e.g. MidSmallcap 400) do not carry a DVR that is in the parent index only."""
+    days = pd.bdate_range("2026-01-01", "2026-01-10")
+    traded = {f"S{i}": np.arange(len(days)) for i in range(1, 5)}
+    seg = pd.DataFrame([{"sec_id": f"S{i}", "symbol": f"SYM{i}", "start": days[0], "end": days[-1]} for i in range(1, 5)])
+    exc = pd.DataFrame(columns=["index_key", "from_date", "to_date", "reason", "source"])
+    cur = tmp_path / "curated"; cur.mkdir()
+    pd.DataFrame([{"index_key": "NIFTY500", "from_date": days[0], "to_date": days[-1], "extra_securities": 1,
+                   "symbols": "SYM4", "parent_symbol": "SYM3", "reason": "dvr", "source": "x"}]
+                 ).to_csv(cur / "index_dual_class.csv", index=False)
+    monkeypatch.setattr(m.paths, "CURATED", cur)
+    anchor = tmp_path / "data" / "raw" / "constituents" / "2026-11-19"; anchor.mkdir(parents=True)
+    (anchor / "ind_nifty500list.csv").write_text("Symbol\nSYM1\nSYM2\nSYM3\n", encoding="utf-8")
+    (anchor / "ind_nifty100list.csv").write_text("Symbol\nSYM1\n", encoding="utf-8")
+    (tmp_path / "raw").mkdir()
+    (tmp_path / "raw" / "c_diff.csv").write_text("Symbol\nSYM2\nSYM3\n", encoding="utf-8")
+    monkeypatch.setattr(m, "COMPOSITE_ANCHORS", {"C_DIFF": (2, "raw/c_diff.csv", ("DIFF", "NIFTY500", "NIFTY100"))})
+    monkeypatch.setattr(m, "FLOORS", {"C_DIFF": "2026-01-01"})
+    nat = pd.NaT
+    ivs = [pd.DataFrame([{"index_key": "NIFTY500", "sec_id": s, "from_date": nat, "to_date": nat} for s in ("S1", "S2", "S3", "S4")]),
+           pd.DataFrame([{"index_key": "NIFTY100", "sec_id": "S1", "from_date": nat, "to_date": nat}])]
+    cov = [("NIFTY500", days[0], days[-1], "VERIFIED", ""), ("NIFTY100", days[0], days[-1], "VERIFIED", "")]
+    m.build_composites(ivs, cov, days, traded, seg, exc, tmp_path)
+    iv = [d for d in ivs if d["index_key"].iloc[0] == "C_DIFF"][0]
+    assert m.members(iv, "C_DIFF", days[0]) == {"S2", "S3"}           # S4 (the DVR) is not carried
+    ok = [c for c in cov if c[0] == "C_DIFF" and c[3] == "VERIFIED"]
+    assert len(ok) == 1 and ok[0][1] == days[0] and ok[0][2] == days[-1]

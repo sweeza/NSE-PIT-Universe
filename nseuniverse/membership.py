@@ -560,12 +560,23 @@ def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.Datetim
             parent_v = v_days_by_index[p1] & v_days_by_index[p2]
             m1 = masks_by_index[p1]
             m2 = masks_by_index[p2]
+            # NSE's derived lists do not carry a dual-class DVR that sits in the parent but not in the subtracted index
+            # (archived NSE lists: MidSmallcap 400 on 2023-08-12 has 400 rows and no Tata Motors DVR while Nifty 500 had it).
+            # So named dual-class securities are removed from the difference and no size allowance is made for them.
+            dvr_sids = set()
+            if dcls is not None and len(dcls):
+                for r in dcls[dcls.index_key == p1].itertuples():
+                    s_x = _sid(seg, r.symbols, pd.Timestamp(r.from_date))
+                    if s_x is not None:
+                        dvr_sids.add(s_x)
             comp_masks = {}
             for sid in m1:
+                if sid in dvr_sids:
+                    continue
                 diff_m = m1[sid] & (~m2.get(sid, np.zeros(n_days, dtype=bool)))
                 if np.any(diff_m):
                     comp_masks[sid] = diff_m
-            dual = dual_by_index.get(p1, np.zeros(n_days, dtype=int)) - dual_by_index.get(p2, np.zeros(n_days, dtype=int))
+            dual = np.zeros(n_days, dtype=int)
             iv_comp = _masks_to_intervals(days, comp_masks, k)
 
         # Check membership size on each day
