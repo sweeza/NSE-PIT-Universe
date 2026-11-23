@@ -149,6 +149,27 @@ def test_explicit_source_choice_replaces_the_close_and_blanks_mixed_columns(tiny
         api.index_values("X", source="bogus")
 
 
+def test_source_rule_resolves_zero_and_small_and_leaves_large_conflicts(tiny_build, monkeypatch):
+    days = pd.bdate_range("2017-01-02", periods=7)
+    v = pd.DataFrame({"index_key": "X", "date": days,
+                      "close": [100, 0.0, 101, 100.0, 100.0, 100.0, 100.0],
+                      "alt_close": [100, 102.0, 101.05, 100.0, 90.0, 100.0, 100.0],
+                      "open": [1.0] * 7, "tri": [5.0] * 7, "src": ["daily", "daily", "history", "daily", "daily", "daily", "daily"],
+                      "conflict": [False, True, True, False, True, False, False]})
+    monkeypatch.setattr(indices, "values", lambda k: v)
+    with pytest.warns(api.DataQualityWarning, match="1 remain unresolved"):
+        r = api.index_values("X", source="rule")
+    # zero close -> the other source; 0.05% apart -> the daily file's close (here the alt of a history row)
+    assert r.close.tolist() == [100, 102, 101.05, 100, 100, 100, 100]
+    assert r.conflict_class.tolist() == ["", "SOURCE_CONFLICT_RESOLVED_ZERO", "SOURCE_CONFLICT_RESOLVED_DAILY", "",
+                                         "SOURCE_CONFLICT_UNRESOLVED", "", ""]
+    assert r.open.isna().tolist() == [False, True, True, False, False, False, False]   # blanked where switched
+    assert r.ret.isna().tolist() == [True, False, False, False, True, True, False]    # unresolved day and the next
+    assert r.attrs["flagged"]["class"].tolist() == r.conflict_class[r.conflict_class != ""].tolist()
+    with pytest.raises(ValueError):
+        api.index_values("X", source="rule", mask_conflicts=True)
+
+
 def test_range_with_no_trading_day_is_an_error_not_an_empty_frame(tiny_build):
     # audit 8.2: prices('RELIANCE', Saturday, Sunday) used to return 0 rows silently
     with pytest.raises(api.CoverageError):

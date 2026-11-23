@@ -226,9 +226,14 @@ def index_values(index: str, start=None, end=None, mask_conflicts: bool = False,
     mask_conflicts=True ret is NaN on those days. frame.attrs['flagged'] lists them either way.
     source='history' or 'daily' (explicit, never the default): on conflict days use that source's close instead of the
     other's; open/high/low/tri/ntr are blanked on those days (they would come from the other source) and ret is computed
-    from the chosen source. The choice is yours: check the index's boundary days first (see docs/AUDIT_REPORT.md)."""
-    if source not in (None, "history", "daily"):
-        raise ValueError("source must be None, 'history' or 'daily'")
+    from the chosen source. The choice is yours: check the index's boundary days first (see docs/AUDIT_REPORT.md).
+    source='rule' (explicit, never the default) applies a fixed rule to each conflict day, estimating nothing:
+      a close of 0 in one source is a placeholder: the other source's close is used (class SOURCE_CONFLICT_RESOLVED_ZERO);
+      the two closes differ by less than 0.1%: the daily file's close is used (SOURCE_CONFLICT_RESOLVED_DAILY);
+      they differ by 0.1% or more: neither is chosen, the close stays as built and the return of that day and the next
+      is NaN (SOURCE_CONFLICT_UNRESOLVED). open/high/low/tri/ntr are blanked on rows whose close was switched."""
+    if source not in (None, "history", "daily", "rule"):
+        raise ValueError("source must be None, 'history', 'daily' or 'rule'")
     if source is not None and mask_conflicts:
         raise ValueError("use either source= or mask_conflicts=True, not both")
     v = indices.values(index)
@@ -237,6 +242,8 @@ def index_values(index: str, start=None, end=None, mask_conflicts: bool = False,
     v = v.sort_values("date").reset_index(drop=True)
     conf = v["conflict"].fillna(False).astype(bool) if "conflict" in v else pd.Series(False, index=v.index)
     swapped = pd.Series(False, index=v.index)
+    if source == "rule":
+        return _index_values_rule(index, v, conf, start, end)
     if source is not None:
         swapped = conf & (v["src"] != source)
         v.loc[swapped, "close"] = v.loc[swapped, "alt_close"]
@@ -265,6 +272,45 @@ def index_values(index: str, start=None, end=None, mask_conflicts: bool = False,
     v.attrs["flagged"] = fl.reset_index(drop=True)
     if len(fl):
         warnings.warn(_flag_summary(fl, f"{index} source-conflict", mask_conflicts), DataQualityWarning, stacklevel=2)
+    return v
+
+
+RULE_TOLERANCE = 0.001  # index_values(source="rule"): relative close difference below which the daily file is used
+
+
+def _index_values_rule(index, v, conf, start, end):
+    alt = v["alt_close"] if "alt_close" in v else pd.Series(float("nan"), index=v.index)
+    zero = conf & ((v["close"] == 0) | (alt == 0))
+    rel = (v["close"] - alt).abs() / pd.concat([v["close"].abs(), alt.abs()], axis=1).max(axis=1)
+    small = conf & ~zero & (rel < RULE_TOLERANCE)
+    unresolved = conf & ~zero & ~small
+    swapped = (zero & (v["close"] == 0)) | (small & (v["src"] != "daily"))
+    v.loc[swapped, "close"] = alt[swapped]
+    v.loc[swapped, [c for c in ("open", "high", "low", "tri", "ntr") if c in v]] = float("nan")
+    v.loc[swapped & zero, "src"] = "history"
+    v.loc[swapped & small, "src"] = "daily"
+    cls = pd.Series("", index=v.index)
+    cls[zero] = "SOURCE_CONFLICT_RESOLVED_ZERO"
+    cls[small] = "SOURCE_CONFLICT_RESOLVED_DAILY"
+    cls[unresolved] = "SOURCE_CONFLICT_UNRESOLVED"
+    v["ret"] = v["close"].pct_change()
+    bad = unresolved | unresolved.shift(1, fill_value=False)
+    v["ret_unreliable"] = bad
+    v.loc[bad, "ret"] = float("nan")
+    v["conflict_class"] = cls
+    if start is not None:
+        v = v[v.date >= pd.Timestamp(start)]
+    if end is not None:
+        v = v[v.date <= pd.Timestamp(end)]
+    v = v.reset_index(drop=True)
+    fl = v.loc[v["conflict_class"] != "", ["date", "close", "alt_close", "conflict_class"]].rename(
+        columns={"conflict_class": "class"})
+    v.attrs["flagged"] = fl.reset_index(drop=True)
+    n_un = int((v["conflict_class"] == "SOURCE_CONFLICT_UNRESOLVED").sum())
+    if len(fl):
+        warnings.warn(f"{len(fl)} {index} conflict day(s) in the result were handled by source='rule': {n_un} remain "
+                      f"unresolved (return NaN); see frame.attrs['flagged'] and the 'class' column.",
+                      DataQualityWarning, stacklevel=3)
     return v
 
 
