@@ -271,3 +271,8 @@ def test_update_prints_the_feed_warning_before_and_after_the_run(monkeypatch, ca
     monkeypatch.setattr(actions, "feed_lag_warning", lambda: None)
     assert cli.main(["update"]) == 0
     assert "WARNING" not in capsys.readouterr().out
+
+
+def test_data_quirks_are_in_the_caveat_catalogue():
+    from nseuniverse import caveats
+    assert {"PARTIAL_WEEKEND_SESSIONS", "T0_CLOSE_OUTSIDE_RANGE"} <= set(caveats.catalogue().id)
