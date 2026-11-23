@@ -231,3 +231,38 @@ def test_deals_identical_rows_inside_one_file_are_kept_and_cross_file_repeats_ar
     monkeypatch.setattr(paths, "MARKET_RAW", tmp_path / "market")
     out = market._read_deals()
     assert len(out) == 2                                                  # not 1 (over-merged) and not 3 (double-counted)
+
+
+def test_parse_mii_reads_issued_share_count_and_ignores_free_float(tmp_path):
+    import gzip
+    import pandas as pd
+    from nseuniverse import market
+    csv_ = ("FinInstrmId,TckrSymb,SctySrs,ISIN,ParVal,IssdCptl,FreeFltCptl,Other\n"
+            "1,AAA,EQ,INE001A01010,1000,1.0E+08,,x\n"
+            "2,BBB,BE,INE002A01010,500,abc,5,x\n"
+            "3,,EQ,INE003A01010,1,5,,x\n").encode()
+    df = market.parse_mii(gzip.compress(csv_), pd.Timestamp("2024-02-05"))
+    assert df.columns.tolist() == ["date", "symbol", "series", "isin", "par_val", "shares_outstanding"]
+    assert df.symbol.tolist() == ["AAA", "BBB"]                          # empty symbol dropped
+    assert df.shares_outstanding.iloc[0] == 1e8 and pd.isna(df.shares_outstanding.iloc[1])      # not filled
+    import pytest
+    with pytest.raises(market.UnknownLayout):
+        market.parse_mii(gzip.compress(b"a,b\n1,2\n"), pd.Timestamp("2024-02-05"))
+    with pytest.raises(market.UnknownLayout):
+        market.parse_mii(b"<html>", pd.Timestamp("2024-02-05"))
+
+
+def test_build_keeps_only_shares_rows_of_the_series_that_traded_that_day(tmp_path, monkeypatch):
+    import gzip
+    root = tmp_path / "market"
+    (root / "mii" / "2024").mkdir(parents=True)
+    body = ("TckrSymb,SctySrs,ISIN,ParVal,IssdCptl,FreeFltCptl\n"
+            "AAA,EQ,INE001A01010,10,1000,\nAAA,BL,INE001A01010,10,1000,\nBBB,EQ,INE002A01010,10,500,\n").encode()
+    (root / "mii" / "2024" / "NSE_CM_security_05022024.csv.gz").write_bytes(gzip.compress(body))
+    monkeypatch.setattr(paths, "MARKET_RAW", root)
+    t = pd.DataFrame({"date": [pd.Timestamp("2024-02-05")], "symbol": ["AAA"], "series": ["EQ"], "sec_id": ["S1"],
+                      "volume": [1.0], "isin": ["INE001A01010"]})
+    info = market.build(tmp_path / "out", t)
+    s = pd.read_parquet(tmp_path / "out" / "shares.parquet")
+    assert s[["symbol", "series", "shares_outstanding", "sec_id"]].values.tolist() == [["AAA", "EQ", 1000.0, "S1"]]
+    assert info["shares"] == {"rows": 1, "unattached": 2}              # AAA/BL and BBB did not trade in that series that day

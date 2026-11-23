@@ -119,4 +119,4 @@ Four rows in `data/raw/manifest.csv` carry a `fetched_utc` that is an estimate (
 
 ## 10. NSE MII security master (shares outstanding) — HELD (2026-11-23)
 
-`https://nsearchives.nseindia.com/content/cm/NSE_CM_security_{DDMMYYYY}.csv.gz`, one gzip CSV per trading day, 2024-02-05 to 2026-11-20 (694 files, 691 MB) in `data/raw/market/mii/`. Key columns: `TckrSymb`, `SctySrs`, `ISIN`, `ParVal`, `IssdCptl` (issued share count), `ListgDt`, `RmvlDt`. `FreeFltCptl` is empty for every EQ row (no free float). Not yet parsed by the build.
+`https://nsearchives.nseindia.com/content/cm/NSE_CM_security_{DDMMYYYY}.csv.gz`, one gzip CSV per trading day, 2024-02-05 to 2026-11-20 (694 files, 691 MB) in `data/raw/market/mii/`. Key columns: `TckrSymb`, `SctySrs`, `ISIN`, `ParVal`, `IssdCptl` (issued share count), `ListgDt`, `RmvlDt`. `FreeFltCptl` is empty for every EQ row (no free float). Parsed by `market.parse_mii` into `data/build/market/shares.parquet` (rows of the symbol and series that traded that day) and served by `api.shares_outstanding()`.

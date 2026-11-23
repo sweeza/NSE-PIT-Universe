@@ -267,3 +267,22 @@ def test_index_availability_gives_the_reliable_start_and_the_gaps(tiny_build, tm
     assert a.loc["NIFTYIT", "membership_status"] == "UNVERIFIED" and pd.isna(a.loc["NIFTYIT", "reliable_from"])
     assert a.loc["NIFTYIT", "values_from"] == d[0]
     assert list(api.index_availability("sectoral").index_key) == ["NIFTYBANK", "NIFTYIT"]
+
+
+def test_shares_outstanding_returns_nse_counts_and_refuses_outside_coverage(tiny_build):
+    d = tiny_build
+    (paths.BUILD / "market").mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"date": [d[0], d[1]], "symbol": "AAA", "series": "EQ", "isin": None, "par_val": 10.0,
+                  "shares_outstanding": [1e6, 2e6], "sec_id": "S00001"}).to_parquet(paths.BUILD / "market" / "shares.parquet")
+    api.clear_cache()
+    r = api.shares_outstanding("AAA", d[0], d[1])
+    assert r.shares_outstanding.tolist() == [1e6, 2e6]
+    assert api.shares_outstanding(None, d[1], d[1]).shares_outstanding.tolist() == [2e6]
+    with pytest.raises(api.CoverageError):
+        api.shares_outstanding("AAA", d[0], d[3])             # after the last covered day: refused, not filled
+    with pytest.raises(api.CoverageError):
+        api.shares_outstanding("AAA", d[1], d[0])
+    (paths.BUILD / "market" / "shares.parquet").unlink()
+    api.clear_cache()
+    with pytest.raises(api.CoverageError):
+        api.shares_outstanding("AAA", d[0], d[1])

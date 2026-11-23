@@ -745,11 +745,23 @@ def check_market() -> Result:
             ic_fail = neg > 0
             ic_msg = (f"; impact_cost rows={len(ic)} ({ic.date.nunique()}/{bhav_months} months "
                       f"{ic.date.min().date()}..{ic.date.max().date()}, attached={att:.1%}, neg={neg}, >100%={over100})")
-    fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01 or dl_fail or ic_fail
+    sh_msg = ""
+    sh_fail = False
+    if (mdir / "shares.parquet").exists():
+        sh = pd.read_parquet(mdir / "shares.parquet")
+        if len(sh):
+            eq = sh[sh.series == "EQ"]
+            nonpos = int((eq.shares_outstanding <= 0).sum())
+            nan_eq = int(eq.shares_outstanding.isna().sum())
+            dup = int(sh.duplicated(["date", "sec_id", "series"]).sum())
+            sh_fail = nonpos > 0 or dup > 0
+            sh_msg = (f"; shares rows={len(sh)} ({sh.date.nunique()} days {sh.date.min().date()}..{sh.date.max().date()}, "
+                      f"EQ non-positive={nonpos}, EQ missing={nan_eq}, duplicate keys={dup})")
+    fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01 or dl_fail or ic_fail or sh_fail
     status = "FAIL" if fail else ("WARN" if any(unatt.values()) else "PASS")
     return Result("market", status,
                   f"delivery rows={len(d)} ({cov}); deliverable>traded={bad_q}; percent differs from own quantities={bad_pct}; "
-                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}{fo}{dl_msg}{ic_msg}")
+                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}{fo}{dl_msg}{ic_msg}{sh_msg}")
 
 
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,

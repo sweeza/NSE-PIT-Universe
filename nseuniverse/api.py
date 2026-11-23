@@ -562,6 +562,33 @@ def deals(symbols, start, end, kind: str | None = None) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
+def shares_outstanding(symbols, start, end) -> pd.DataFrame:
+    """Issued share count per security and trading day from NSE's MII security master (2024-02-05 onward), with the
+    face value. A count is NSE's figure for that day, never filled or carried across days that have no file.
+    Free float is not published in that file (it is empty), so no free-float or float-adjusted market cap exists.
+    A market cap would be the raw (unadjusted) `close * shares_outstanding`, computed by the caller. Raises
+    CoverageError outside the covered dates or if the build holds no MII data."""
+    d = _market("shares")
+    if d.empty:
+        raise CoverageError("no shares data in this build (python -m nseuniverse.cli fetch market, then build)")
+    s0, e0 = pd.Timestamp(start), pd.Timestamp(end)
+    lo, hi = d.date.min(), d.date.max()
+    if s0 > e0 or s0 < lo or e0 > hi:
+        raise CoverageError(f"shares outstanding cover {lo.date()}..{hi.date()}; requested {s0.date()}..{e0.date()}")
+    out = d[(d.date >= s0) & (d.date <= e0)]
+    if symbols is not None:
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        sids = set()
+        for s in symbols:
+            try:
+                sids.add(_sid_for(s, e0))
+            except CoverageError:
+                sids.add(_sid_for(s, s0))
+        out = out[out.sec_id.isin(sids)]
+    return out.reset_index(drop=True)
+
+
 def impact_cost(symbols, start, end) -> pd.DataFrame:
     """Monthly NSE Clearing security category (1/2/3) and 6-month rolling mean impact cost (%) for a standard
     Rs 1 lakh order (continuous from 2023-10; sporadic earlier months from 2019-03). Raises CoverageError if no

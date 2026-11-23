@@ -10,6 +10,8 @@ Tables written to data/build/market/:
   fo_ban.parquet        date, symbol, sec_id                                             (securities in the F&O ban period)
   deals.parquet         date, symbol, client_name, buy_sell, quantity, price, remarks, kind, sec_id
   impact_cost.parquet   date, symbol, series, isin, category, impact_cost_pct, sec_id    (monthly NCL file, 2019-)
+  shares.parquet        date, symbol, series, isin, par_val, shares_outstanding, sec_id  (NSE MII security master, 2024-02-05-;
+                        only rows attached to a security that traded that day)
 """
 from __future__ import annotations
 
@@ -239,6 +241,27 @@ def parse_impact_cost(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:
     return df[df.symbol != ""].reset_index(drop=True)
 
 
+MII_COLUMNS = ["TckrSymb", "SctySrs", "ISIN", "ParVal", "IssdCptl"]
+
+
+def parse_mii(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:
+    """NSE MII security master (gzip CSV, one row per security and series). `IssdCptl` is the issued share count;
+    `FreeFltCptl` is empty in NSE's file and is not read. Raises UnknownLayout if the expected columns are absent.
+    A missing or non-numeric count stays NaN."""
+    import gzip
+    try:
+        body = gzip.decompress(raw)
+    except OSError as e:
+        raise UnknownLayout(f"not gzip: {e}")
+    df = pd.read_csv(io.BytesIO(body), dtype=str, encoding="latin-1", index_col=False, usecols=lambda c: c in MII_COLUMNS)
+    if any(c not in df.columns for c in MII_COLUMNS):
+        raise UnknownLayout(f"MII columns {list(df.columns)} lack {MII_COLUMNS}")
+    out = pd.DataFrame({"date": date, "symbol": df["TckrSymb"].str.strip(), "series": df["SctySrs"].str.strip(),
+                        "isin": df["ISIN"].str.strip(), "par_val": pd.to_numeric(df["ParVal"], errors="coerce"),
+                        "shares_outstanding": pd.to_numeric(df["IssdCptl"], errors="coerce")})
+    return out[out.symbol.notna() & (out.symbol != "")].reset_index(drop=True)
+
+
 def _read_impact_cost() -> pd.DataFrame:
     frames = []
     root = paths.MARKET_RAW / "impactcost"
@@ -317,15 +340,22 @@ def build(out: Path, t: pd.DataFrame) -> dict:
         "fo_stocks": _read_fo(),
         "deals": _read_deals(),
         "impact_cost": _read_impact_cost(),
+        "shares": _read_dir("mii", "NSE_CM_security_*.csv.gz", parse_mii),
     }
     for name, df in tabs.items():
+        n_unattached = 0
+        if name == "shares" and len(df):       # the master lists every instrument and auxiliary series (BL, RL, IQ ...):
+            keys = t[["date", "symbol", "series"]].drop_duplicates()        # keep the rows that traded that day in that series
+            kept = df.merge(keys, on=["date", "symbol", "series"], how="inner")
+            n_unattached = len(df) - len(kept)
+            df = kept
         df = _attach_monthly(df, t) if name == "impact_cost" else _attach(df, t)
         tabs[name] = df
         if len(df):
             sort_cols = [c for c in ("date", "kind", "symbol", "series", "client_name") if c in df.columns]
             df = df.sort_values(sort_cols, kind="mergesort").reset_index(drop=True)
         df.to_parquet(out / f"{name}.parquet", index=False, compression="zstd", compression_level=9)
-        info[name] = {"rows": len(df), "unattached": int(df["sec_id"].isna().sum()) if len(df) else 0}
+        info[name] = {"rows": len(df), "unattached": n_unattached if name == "shares" else (int(df["sec_id"].isna().sum()) if len(df) else 0)}
     info["skipped_unknown_layout"] = sorted(SKIPPED)
     d = tabs["delivery"]
     if len(d):
