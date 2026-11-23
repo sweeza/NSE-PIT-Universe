@@ -1,5 +1,7 @@
+import pandas as pd
 import pytest
 
+from nseuniverse import actions
 from nseuniverse.actions import classify
 
 
@@ -229,3 +231,43 @@ def test_rights_at_par_with_an_at_sign():
     c = classify("Rights - 2:3@ Par Rs 10 Per Share", 10.0)   # ALOKTEXT 2013: issue price is the face value
     r = [x for x in c if x["kind"] == "RIGHTS"][0]
     assert r["issue_price"] == pytest.approx(10.0) and r["rights_new"] == 2 and r["rights_held"] == 3
+
+
+def test_feed_lag_warning_fires_only_when_feed_ends_over_14_days_before_last_bhavcopy(tmp_path):
+    ca = tmp_path / "corporate_actions"; ca.mkdir()
+    (ca / "CF-CA-equities-01-01-2004-to-31-12-2006.csv").write_text("x")
+    (ca / "CF-CA-equities-01-01-2004-to-01-11-2026.csv").write_text("x")
+    assert actions.feed_end_date(ca) == pd.Timestamp("2026-11-01")
+    assert actions.feed_end_date(tmp_path / "none") is pd.NaT
+    bh = tmp_path / "bhavcopy"; (bh / "udiff" / "2026").mkdir(parents=True); (bh / "legacy" / "2024").mkdir(parents=True)
+    (bh / "udiff" / "2026" / "BhavCopy_NSE_CM_0_0_0_20261120_F_0000.csv.zip").write_text("x")
+    (bh / "legacy" / "2024" / "cm31MAY2024bhav.csv.zip").write_text("x")
+    assert actions.last_bhavcopy_date(bh) == pd.Timestamp("2026-11-20")
+    assert actions.last_bhavcopy_date(tmp_path / "none") is pd.NaT
+    assert actions.feed_lag("2026-11-01", "2026-11-15")[0] == 14
+    assert actions.feed_lag_warning("2026-11-01", "2026-11-15") is None             # exactly 14 days: no warning
+    w = actions.feed_lag_warning("2026-11-01", "2026-11-16")                          # 15 days: warning
+    assert "2026-11-01" in w and "15 days" in w and "2026-11-16" in w
+    assert actions.feed_lag_warning("2026-11-23", "2026-11-20") is None             # feed newer than bhavcopy
+    assert "no corporate-action feed file" in actions.feed_lag_warning(pd.NaT, "2026-11-16")
+    assert actions.feed_lag_warning(pd.NaT, pd.NaT) is None
+
+
+def test_feed_lag_is_in_the_caveat_catalogue():
+    from nseuniverse import caveats
+    assert "FEED_LAGS_BHAVCOPY" in set(caveats.catalogue().id)
+
+
+def test_update_prints_the_feed_warning_before_and_after_the_run(monkeypatch, capsys):
+    from nseuniverse import cli, fetch, pipeline, verify
+    monkeypatch.setattr(fetch, "fetch_range", lambda *a, **k: None)
+    monkeypatch.setattr(fetch, "fetch_deals_today", lambda: {})
+    monkeypatch.setattr(pipeline, "build_all", lambda: {})
+    monkeypatch.setattr(verify, "run", lambda: [])
+    monkeypatch.setattr(actions, "feed_lag_warning", lambda: "WARNING: feed old")
+    assert cli.main(["update"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("WARNING: feed old") == 2
+    monkeypatch.setattr(actions, "feed_lag_warning", lambda: None)
+    assert cli.main(["update"]) == 0
+    assert "WARNING" not in capsys.readouterr().out

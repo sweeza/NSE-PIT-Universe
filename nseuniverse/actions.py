@@ -259,3 +259,61 @@ def build_events(records: list[dict] | None = None, extra: pd.DataFrame | None =
         if col not in df:
             df[col] = float("nan")
     return df.sort_values(["ex_date", "symbol", "rec_id", "comp"], kind="mergesort").reset_index(drop=True)
+
+
+FEED_LAG_DAYS = 14      # warn when the feed ends more than this many days before the last bhavcopy
+
+
+def feed_end_date(folder: Path | None = None) -> pd.Timestamp:
+    """End of the newest downloaded corporate-action feed: the 'to-DD-MM-YYYY' in the CF-CA file names of
+    data/raw/corporate_actions (the feed cannot be fetched by script, so this is the date the owner downloaded to).
+    NaT if there is no such file."""
+    import re
+    folder = folder or (paths.RAW / "corporate_actions")
+    ends = []
+    for f in folder.glob("CF-CA-equities-*.csv") if folder.exists() else []:
+        m = re.search(r"to-(\d{2})-(\d{2})-(\d{4})", f.name)
+        if m:
+            ends.append(pd.Timestamp(int(m.group(3)), int(m.group(2)), int(m.group(1))))
+    return max(ends) if ends else pd.NaT
+
+
+def last_bhavcopy_date(folder: Path | None = None) -> pd.Timestamp:
+    """Date of the newest raw bhavcopy file (UDiFF YYYYMMDD or legacy cmDDMONYYYY names). NaT if none."""
+    import re
+    folder = folder or paths.BHAV_RAW
+    mon = {m: i + 1 for i, m in enumerate("JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC".split())}
+    last = pd.NaT
+    for f in folder.rglob("*.zip") if folder.exists() else []:
+        m = re.search(r"_(\d{4})(\d{2})(\d{2})_F_", f.name)
+        if m:
+            d = pd.Timestamp(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        else:
+            m = re.match(r"cm(\d{2})([A-Z]{3})(\d{4})bhav", f.name)
+            if not m or m.group(2) not in mon:
+                continue
+            d = pd.Timestamp(int(m.group(3)), mon[m.group(2)], int(m.group(1)))
+        if pd.isna(last) or d > last:
+            last = d
+    return last
+
+
+def feed_lag(feed_end=None, bhav_end=None) -> tuple[int | None, pd.Timestamp, pd.Timestamp]:
+    """(days the feed ends before the last bhavcopy, feed end, last bhavcopy); days is None if either is unknown."""
+    fe = feed_end_date() if feed_end is None else pd.Timestamp(feed_end)
+    be = last_bhavcopy_date() if bhav_end is None else pd.Timestamp(bhav_end)
+    if pd.isna(fe) or pd.isna(be):
+        return None, fe, be
+    return int((be - fe).days), fe, be
+
+
+def feed_lag_warning(feed_end=None, bhav_end=None) -> str | None:
+    """A warning text when the feed ends more than FEED_LAG_DAYS before the last bhavcopy, else None."""
+    days, fe, be = feed_lag(feed_end, bhav_end)
+    if days is None:
+        return None if pd.isna(be) else f"WARNING: no corporate-action feed file found; actions after the last download are missing (last bhavcopy {be.date()})."
+    if days > FEED_LAG_DAYS:
+        return (f"WARNING: the corporate-action feed ends {fe.date()}, {days} days before the last bhavcopy ({be.date()}). "
+                "Splits, bonuses and dividends after the feed end are not applied. The feed cannot be downloaded by script: "
+                "download 'Corporate Actions, Equity' from the NSE site in a browser, add it to data/raw/corporate_actions/ and rebuild.")
+    return None

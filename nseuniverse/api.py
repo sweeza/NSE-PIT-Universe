@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import adjust, bhavcopy, caveats as _caveats, indices, membership, paths, pipeline
+from . import actions, adjust, bhavcopy, caveats as _caveats, indices, membership, paths, pipeline
 
 
 class CoverageError(LookupError):
@@ -432,11 +432,12 @@ def caveats(category: str | None = None) -> pd.DataFrame:
     cur = n(lambda: len([s for s, r in _unreliable().items() if not r.startswith("SME")]))
     gaps = n(lambda: adjustment_gaps().query("date >= '2007-01-01'").sec_id.nunique())
     feed = n(lambda: str(ev.ex_date.max().date()))
+    lag = n(lambda: (lambda r: None if r[0] is None else f"feed ends {r[1].date()}, last bhavcopy {r[2].date()} ({r[0]} days)")(actions.feed_lag()))
     cov = n(lambda: int(_coverage()[_coverage().status == "VERIFIED"].index_key.nunique()))
     conf = n(lambda: int(len(pd.read_csv(paths.BUILD / "index_conflicts.csv"))))
     counts = {"SME_ADJUSTED_PRICES": f"{sme} securities", "CURATED_UNRELIABLE_ADJUSTED": f"{cur} securities",
               "DOCUMENTED_ADJUSTMENT_BREAK": f"{gaps} securities", "UNQUANTIFIED_CORPORATE_ACTIONS": f"{unq} events",
-              "DIVIDENDS_FROM_FEED_TEXT": f"{div} records", "FEED_ENDS": f"last ex-date {feed}",
+              "DIVIDENDS_FROM_FEED_TEXT": f"{div} records", "FEED_ENDS": f"last ex-date {feed}", "FEED_LAGS_BHAVCOPY": lag,
               "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled",
               "INDEX_VALUE_CONFLICTS": f"{conf} index-days"}
     c = c.copy()

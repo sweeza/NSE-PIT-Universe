@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import fetch, paths, pipeline, verify
+from . import actions, fetch, paths, pipeline, verify
 
 
 def main(argv=None) -> int:
@@ -43,10 +43,15 @@ def main(argv=None) -> int:
         for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list", "fo_bhav_legacy", "fo_bhav_udiff", "impact_cost"):
             fetch.fetch_range(s)
         print(fetch.fetch_deals_today())
+        w = actions.feed_lag_warning()
+        if w:
+            print(w)
         print(pipeline.build_all())
         res = verify.run()
         fails = [r for r in res if r.status == "FAIL"]
         print(f"\n{len(res) - len(fails)}/{len(res)} checks without FAIL")
+        if w:
+            print(w)
         return 1 if fails else 0
     if a.cmd == "build":
         print(pipeline.build_all())
