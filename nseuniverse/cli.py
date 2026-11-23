@@ -15,7 +15,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="nseuniverse")
     sub = ap.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("fetch", help="download raw files (the only command that uses the network)")
-    f.add_argument("what", choices=["bhavcopy", "indexdaily", "indexhist", "press", "all"])
+    f.add_argument("what", choices=["bhavcopy", "indexdaily", "indexhist", "press", "market", "all"])
     sub.add_parser("build", help="offline: raw/ + curated/ -> build/")
     v = sub.add_parser("verify", help="run integrity checks; exit 1 on any FAIL")
     v.add_argument("--only", nargs="*")
@@ -32,10 +32,17 @@ def main(argv=None) -> int:
             fetch.fetch_index_history()
         if a.what in ("press", "all"):
             fetch.fetch_press_releases()
+        if a.what in ("market", "all"):
+            for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list"):
+                fetch.fetch_range(s)
+            print(fetch.fetch_deals_today())
         return 0
     if a.cmd == "update":
         fetch.fetch_range("bhav_udiff")
         fetch.fetch_range("index_daily")
+        for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list"):
+            fetch.fetch_range(s)
+        print(fetch.fetch_deals_today())
         print(pipeline.build_all())
         res = verify.run()
         fails = [r for r in res if r.status == "FAIL"]

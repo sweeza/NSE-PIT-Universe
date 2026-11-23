@@ -14,6 +14,7 @@ BHAV_RAW = RAW / "bhavcopy"
 INDEX_DAILY_RAW = RAW / "indexdaily"
 INDEX_HIST_RAW = RAW / "indexhist"
 PRESS_RAW = RAW / "pressreleases"
+MARKET_RAW = RAW / "market"      # delivery (MTO), price-band changes, security lists, F&O ban lists, deals
 HELD = RAW / "held"           # inputs obtained before this rebuild (origin not re-verified)
 
 MANIFEST = RAW / "manifest.csv"   # path,url,sha256,bytes,fetched_utc

@@ -14,6 +14,19 @@ instead of estimated.
 | **Official index values** | **238 indices** from two independent NSE publications (daily files from 2012, history API from each index's base date), including price, total return, PE/PB/yield (869,785 index-days). | The sources agree on 99.6% of overlapping days; the 1,061 disagreements are flagged `conflict=True` with the other source's value, never hidden. |
 | **Index membership from 2007-01-01** | **27 indices verified (20 anchored + 7 composite), 40 VERIFIED coverage windows.** `NIFTY50`, `NIFTYNEXT50`, `NIFTY100`, `NIFTYBANK`, `NIFTYPSUBANK` and `NIFTYPHARMA` are each verified `2007-01-02` → `2026-11-19` (4,929 trading days); broad market and sectoral indices (`NIFTY200`, `NIFTY500`, `NIFTYMIDCAP150`, `NIFTYSMALLCAP250`, `NIFTYMIDCAP50`, `NIFTYSMALLCAP100`, `NIFTYSMALLCAP50`, `NIFTYFMCG`, `NIFTYIT`, `NIFTYAUTO`, `NIFTYFINANCIALSERVICES`, `NIFTYMEDIA`, `NIFTYMETAL`, `NIFTYREALTY`, and 7 composite benchmarks) are verified from their respective restructuring / launch dates with **0 contradictions** across the entire dataset. Dual-class shares (`TATAMTRDVR`) are verified through `index_dual_class.csv`; the audit confirmed every one of those rows is load-bearing. Zero-price demerger dummies (Siemens Energy, ITC Hotels, Jio Financial, etc.) are listed in `index_size_exceptions.csv` as documentation only: the build counts real members, and the audit showed dropping any of those rows changes nothing. The remaining 30 indices in `data/curated/index_universe.csv` lack historical workbook sheets and legitimately remain `UNVERIFIED` per strict PIT rules. | Exactly the official number of real members on every trading day, every member traded within ±3 sessions, and the set equals NSE's official list today with 0 subset violations across all 4,929 trading days. |
 
+## Market-activity data (added 2026-11-23)
+
+Daily NSE files fetched into `data/raw/market/` (526 MB, 15,641 files, all in the manifest) and built into `data/build/market/`:
+
+| Table / API | Source | Coverage | Check |
+|---|---|---|---|
+| `api.delivery(symbols, start, end)`: traded and deliverable quantity, delivery % | NSE `MTO` security-wise delivery file | every bhavcopy day, 2004-01-01 to 2026-11-20 (9.2 M rows) | traded quantity equals the bhavcopy volume on 99.93% of rows; deliverable never above traded; percent matches its own quantities |
+| `api.price_band(symbol, date)`: circuit limit | NSE security list (daily, 2020-01 on) and the daily band-change files (2010 on) | exact from 2020; before that the band after the last recorded change, refused if none was recorded | 2 change files with another layout (2017-11-14, 2021-03-30) are skipped and listed |
+| `api.asm_gsm(date)`: ASM/GSM and other surveillance remarks | remarks column of the security list | 2020 on | none beyond parsing |
+| `api.fo_ban(date)`: securities in the F&O ban period | NSE `fo_secban` files | 2010 on; an empty frame means NIL | files without a list are refused |
+
+Not included: F&O eligibility history (derive from NSE's derivatives bhavcopy, about 1.5 GB; not fetched) and bulk/block deal history (NSE keeps only the latest day at a fixed URL: `fetch.fetch_deals_today()` saves each day from now on; earlier years need the owner's download from NSE's report page). Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
+
 ## Read this before relying on it
 
 1. **Adjusted prices before 2007-01-01 are not verified.** The corporate-action feed on hand has

@@ -336,6 +336,10 @@ The unexplained list held no missed parser case; the three glued splits were not
 
 **Methodology and point-in-time membership.** The methodology ranks by six-month average full (Nifty 500, 100, Midcap 150, Smallcap 250) or free-float market capitalisation with buffers, turnover, impact cost and F&O criteria. A rule-based reconstruction would need shares outstanding (and free float) per stock per date; the bhavcopy has none. It would also be a model, not NSE's membership.
 
+## Market-activity data (2026-11-23)
+
+`fetch.py` gained four sources fetched only on days with a bhavcopy (the session calendar): `delivery_mto` (5,685 files), `band_changes` (4,057), `sec_list` (1,707, from 2020-01), `fo_secban` (4,190), plus a daily save of the latest bulk and block deal files (2). 526 MB, all in the manifest (a manifest lock problem on the Drive-synced CSV crashed the first runs; rows are now queued and written in batches, 89 duplicate rows removed, 10 original rows untouched). `market.py` parses them (header variants handled, unknown layouts refused: 2 band-change files) and attaches each row to a security through the bhavcopy row of the same day, symbol and series. New check `market`: deliverable quantity above traded quantity 0, delivery percent differing from its own quantities 0, traded quantity differing from the bhavcopy volume on 6,598 of 9,211,334 rows (0.072%, source disagreements, e.g. EIDPARRY 2004-01-02: 218,026 in MTO against 23,276 in the bhavcopy). Unattached rows: delivery 230, band changes 1,222, security list 167,351 (securities that did not trade that day), F&O ban 0. Full verify 14/14 without FAIL.
+
 ## Stage 5 (2026-11-22): index values
 
 Script: `audit/stage5_index.py`, `audit/stage52_ew.py`.

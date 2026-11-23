@@ -75,6 +75,81 @@ SOURCES = {
 }
 
 
+def _starts(prefix: bytes) -> Callable[[bytes], bool]:
+    return lambda b: b[:len(prefix)] == prefix
+
+
+def _market(kind: str, name: Callable[[dt.date], str]) -> Callable[[dt.date], Path]:
+    return lambda d: paths.MARKET_RAW / kind / f"{d.year}" / name(d)
+
+
+# Market-activity files. They are only fetched for days on which a bhavcopy exists (the session calendar), see
+# session_days(). A missing file on such a day is recorded in absent.csv: for band changes it can simply mean "no
+# change that day".
+SOURCES.update({
+    "delivery_mto": Source(
+        "delivery_mto", dt.date(2004, 1, 1), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/archives/equities/mto/MTO_{d:%d%m%Y}.DAT",
+        _market("delivery", lambda d: f"MTO_{d:%d%m%Y}.DAT"), _starts(b"Security Wise Delivery Position")),
+    "band_changes": Source(
+        "band_changes", dt.date(2010, 1, 1), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/content/equities/eq_band_changes_{d:%d%m%Y}.csv",
+        _market("bandchanges", lambda d: f"eq_band_changes_{d:%d%m%Y}.csv"), _starts(b"Sr. No")),
+    "sec_list": Source(
+        "sec_list", dt.date(2020, 1, 1), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/content/equities/sec_list_{d:%d%m%Y}.csv",
+        _market("seclist", lambda d: f"sec_list_{d:%d%m%Y}.csv"), _starts(b"Symbol,Series")),
+    "fo_secban": Source(
+        "fo_secban", dt.date(2010, 1, 1), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/archives/fo/sec_ban/fo_secban_{d:%d%m%Y}.csv",
+        _market("fosecban", lambda d: f"fo_secban_{d:%d%m%Y}.csv"), _starts(b"Securities in Ban")),
+})
+SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban"}
+
+
+def session_days() -> set[dt.date]:
+    """Days on which NSE published an equity bhavcopy (taken from the raw files held): weekdays and the few
+    weekend special sessions. The calendar is evidence, not an assumption."""
+    out = set()
+    for f in list((paths.BHAV_RAW / "legacy").rglob("cm*bhav.csv.zip")) + list((paths.BHAV_RAW / "udiff").rglob("BhavCopy_NSE_CM_*.zip")):
+        n = f.name
+        try:
+            if n.startswith("cm"):
+                out.add(dt.datetime.strptime(n[2:11], "%d%b%Y").date())
+            else:
+                out.add(dt.datetime.strptime(n[len("BhavCopy_NSE_CM_0_0_0_"):][:8], "%Y%m%d").date())
+        except ValueError:
+            continue
+    return out
+
+
+_queue: dict[str, list] = {"manifest": [], "absent": []}
+
+
+def _queue_row(kind: str, row: list) -> None:
+    with _lock:
+        _queue[kind].append(row)
+
+
+def flush_queue() -> int:
+    """Write queued manifest and absent rows with one append each (a Drive-synced CSV is slow to append to, one row
+    at a time). Rows stay queued if the write fails; reconcile_manifest() repairs a lost manifest tail."""
+    n = 0
+    for kind, path, header in (("manifest", paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"]),
+                               ("absent", paths.ABSENT, ["source", "date", "http", "note", "checked"])):
+        with _lock:
+            rows, _queue[kind] = _queue[kind], []
+        if not rows:
+            continue
+        try:
+            _append_many(path, header, rows)
+            n += len(rows)
+        except RuntimeError:
+            with _lock:
+                _queue[kind] = rows + _queue[kind]
+    return n
+
+
 def _read_absent() -> dict[tuple[str, str], dt.date]:
     out = {}
     if paths.ABSENT.exists():
@@ -85,16 +160,25 @@ def _read_absent() -> dict[tuple[str, str], dt.date]:
 
 
 def _append(path: Path, header: list[str], row: list):
+    _append_many(path, header, [row])
+
+
+def _append_many(path: Path, header: list[str], rows: list[list]):
     """Append one CSV row. Safe across threads and across processes: a lock file serialises
     writers and the row is written with a single write call."""
     path.parent.mkdir(parents=True, exist_ok=True)
     lockfile = path.with_suffix(path.suffix + ".lock")
     with _lock:
-        for _ in range(600):
+        for _ in range(4000):
             try:
                 fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
                 break
             except FileExistsError:
+                try:                       # a lock older than two minutes belongs to a process that died
+                    if time.time() - lockfile.stat().st_mtime > 120:
+                        lockfile.unlink()
+                except OSError:
+                    pass
                 time.sleep(0.05)
         else:
             raise RuntimeError(f"could not lock {path}")
@@ -104,7 +188,7 @@ def _append(path: Path, header: list[str], row: list):
             w = csv.writer(buf, lineterminator=chr(13) + chr(10))
             if new:
                 w.writerow(header)
-            w.writerow(row)
+            w.writerows(rows)
             with open(path, "a", newline="") as f:
                 f.write(buf.getvalue())
         finally:
@@ -145,12 +229,21 @@ def fetch_one(src: Source, d: dt.date, absent: dict) -> str:
         tmp = dest.with_suffix(dest.suffix + ".part")
         tmp.write_bytes(body)
         tmp.replace(dest)
-        _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
-                [dest.relative_to(paths.ROOT).as_posix(), url, hashlib.sha256(body).hexdigest(),
-                 len(body), dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
+        row = [dest.relative_to(paths.ROOT).as_posix(), url, hashlib.sha256(body).hexdigest(),
+               len(body), dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]
+        if src.name in SESSION_ONLY:
+            _queue_row("manifest", row)
+            return "fetched"
+        try:
+            _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"], row)
+        except RuntimeError:           # manifest busy: the file is kept, reconcile_manifest() lists it afterwards
+            return "fetched-unlisted"
         return "fetched"
     note = "html-or-invalid-body" if status == 200 else "not-found"
-    _append(paths.ABSENT, ["source", "date", "http", "note", "checked"], [src.name, d.isoformat(), status, note, today])
+    if src.name in SESSION_ONLY:
+        _queue_row("absent", [src.name, d.isoformat(), status, note, today])
+    else:
+        _append(paths.ABSENT, ["source", "date", "http", "note", "checked"], [src.name, d.isoformat(), status, note, today])
     return "absent"
 
 
@@ -319,6 +412,9 @@ def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None =
     start = max(start or src.first, src.first)
     end = min(end or src.last_fn(), src.last_fn())
     days = [start + dt.timedelta(n) for n in range((end - start).days + 1)]
+    if source in SESSION_ONLY:
+        sd = session_days()
+        days = [d for d in days if d in sd]
     absent = _read_absent()
     counts: dict[str, int] = {}
     done = 0
@@ -331,7 +427,66 @@ def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None =
         for res in ex.map(work, days):
             counts[res] = counts.get(res, 0) + 1
             done += 1
+            if done % 100 == 0:
+                flush_queue()
             if done % log_every == 0:
                 print(f"[{source}] {done}/{len(days)} {counts}", flush=True)
+    flush_queue()
     print(f"[{source}] done {counts}", flush=True)
+    if source in SESSION_ONLY:
+        n = reconcile_manifest()
+        if n:
+            print(f"[{source}] manifest rows added afterwards: {n}", flush=True)
     return counts
+
+
+def reconcile_manifest(root: Path | None = None) -> int:
+    """Add a manifest row for every file under data/raw/market that has none (a fetch whose manifest write timed out).
+    The URL is rebuilt from the source's pattern and fetched_utc is the file's modification time. Returns the count."""
+    root = root or paths.MARKET_RAW
+    listed = set()
+    if paths.MANIFEST.exists():
+        with open(paths.MANIFEST, newline="") as f:
+            listed = {r["path"] for r in csv.DictReader(f)}
+    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban"}
+    n = 0
+    for f in sorted(root.rglob("*")):
+        if not f.is_file() or f.suffix == ".part":
+            continue
+        rel = f.relative_to(paths.ROOT).as_posix()
+        src = by_dir.get(f.relative_to(root).parts[0])
+        if rel in listed or src is None:
+            continue
+        d = None
+        m = __import__("re").search(r"(\d{2})(\d{2})(\d{4})", f.name)
+        if m:
+            d = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        body = f.read_bytes()
+        _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
+                [rel, SOURCES[src].url(d) if d else "", hashlib.sha256(body).hexdigest(), len(body),
+                 dt.datetime.fromtimestamp(f.stat().st_mtime, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
+        n += 1
+    return n
+
+
+def fetch_deals_today() -> dict[str, str]:
+    """NSE keeps only the latest day of bulk and block deals at a fixed URL; save today's copy under today's date.
+    History before the first call has to come from the owner's download (NSE's report page)."""
+    out = {}
+    for kind in ("bulk", "block"):
+        url = f"https://nsearchives.nseindia.com/content/equities/{kind}.csv"
+        status, body = _get(url)
+        if status != 200 or body[:4] == b"<!DO" or b"<html" in body[:200].lower():
+            out[kind] = "absent"
+            continue
+        dest = paths.MARKET_RAW / "deals" / f"{kind}_{dt.date.today():%Y%m%d}.csv"
+        if dest.exists():
+            out[kind] = "have"
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(body)
+        _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
+                [dest.relative_to(paths.ROOT).as_posix(), url, hashlib.sha256(body).hexdigest(), len(body),
+                 dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
+        out[kind] = "fetched"
+    return out

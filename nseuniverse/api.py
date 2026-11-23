@@ -91,7 +91,7 @@ def unreliable_adjusted() -> pd.DataFrame:
 
 
 def clear_cache():
-    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs, _unreliable):
+    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs, _unreliable, _market):
         f.cache_clear()
 
 
@@ -333,3 +333,76 @@ def _with_symbols(sec: pd.DataFrame, sh: pd.DataFrame, sids, t: pd.Timestamp) ->
                 sym_map[sid] = g.sort_values("from_date").iloc[0].symbol
     out["symbol"] = out["sec_id"].map(sym_map)
     return out
+
+
+@functools.lru_cache(maxsize=None)
+def _market(name: str) -> pd.DataFrame:
+    p = paths.BUILD / "market" / f"{name}.parquet"
+    return pd.read_parquet(p) if p.exists() else pd.DataFrame()
+
+
+def _sid_for(symbol: str, at) -> str:
+    return resolve(symbol, pd.Timestamp(at))
+
+
+def delivery(symbols, start, end) -> pd.DataFrame:
+    """NSE's security-wise delivery position (2004-): traded_qty, deliv_qty, deliv_pct per date, series and
+    security. deliv_qty is the deliverable quantity NSE publishes (gross across client level)."""
+    if isinstance(symbols, str):
+        symbols = [symbols]
+    d = _market("delivery")
+    if d.empty:
+        raise CoverageError("no delivery data in this build (python -m nseuniverse.cli fetch market, then build)")
+    sids = set()
+    for s in symbols:
+        try:
+            sids.add(_sid_for(s, end))
+        except CoverageError:            # delisted before `end`: the security that carried the symbol at the start
+            sids.add(_sid_for(s, start))
+    out = d[d.sec_id.isin(sids) & (d.date >= pd.Timestamp(start)) & (d.date <= pd.Timestamp(end))]
+    if out.empty:
+        raise CoverageError(f"no delivery rows for {symbols} between {start} and {end}")
+    return out.reset_index(drop=True)
+
+
+def price_band(symbol: str, as_of) -> dict:
+    """Circuit limit (percent; 'No Band' stays text) of a security on a date, with its source. From 2020 the daily
+    security list gives it for every security; before that only the recorded changes since 2010 do: the band is the
+    last 'To' value on or before the date, and a security with no recorded change yet is refused (the starting band
+    was not published)."""
+    t = pd.Timestamp(as_of)
+    sid = _sid_for(symbol, t)
+    sl = _market("sec_list")
+    if len(sl):
+        x = sl[(sl.sec_id == sid) & (sl.date == t)]
+        if len(x):
+            r = x.iloc[0]
+            return {"band": r.band, "series": r.series, "source": "sec_list", "remarks": r.remarks}
+    bc = _market("band_changes")
+    if len(bc):
+        y = bc[(bc.sec_id == sid) & (bc.date <= t)].sort_values("date")
+        if len(y):
+            r = y.iloc[-1]
+            return {"band": r.band_to, "series": r.series, "source": f"band_changes {r.date.date()}", "remarks": ""}
+    raise CoverageError(f"price band of {symbol!r} on {t.date()} is not known: no security list for that day and no recorded band change since 2010")
+
+
+def asm_gsm(as_of) -> pd.DataFrame:
+    """Securities with a surveillance remark (ASM/GSM stage etc.) in NSE's security list for the day (2020-)."""
+    t = pd.Timestamp(as_of)
+    sl = _market("sec_list")
+    x = sl[(sl.date == t) & (sl.remarks != "")] if len(sl) else sl
+    if sl.empty or not (sl.date == t).any():
+        raise CoverageError(f"no security list for {t.date()} (available from 2020)")
+    return x.reset_index(drop=True)
+
+
+def fo_ban(as_of) -> pd.DataFrame:
+    """Securities in the F&O ban period on a date. An empty frame means NSE's file for that day says NIL; a day
+    without a file raises."""
+    t = pd.Timestamp(as_of)
+    b = _market("fo_ban")
+    days = paths.MARKET_RAW / "fosecban" / f"{t.year}" / f"fo_secban_{t:%d%m%Y}.csv"
+    if not days.exists():
+        raise CoverageError(f"no F&O ban file for {t.date()}")
+    return b[b.date == t].reset_index(drop=True) if len(b) else b

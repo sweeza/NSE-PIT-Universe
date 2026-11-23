@@ -690,9 +690,35 @@ def check_ratchet_baseline() -> Result:
     return Result("ratchet_baseline", "PASS", msg)
 
 
+def check_market() -> Result:
+    """Market-activity tables (delivery, bands, security list, F&O ban) against the bhavcopy.
+    FAIL: delivery quantity above traded quantity, delivery percent off by more than 0.05 from its own quantities,
+    or traded quantity that differs from the bhavcopy volume of the same day, symbol and series on more than 1% of
+    rows. WARN: rows that could not be attached to a security. Missing tables are a WARN (data not fetched)."""
+    mdir = paths.BUILD / "market"
+    if not (mdir / "delivery.parquet").exists():
+        return Result("market", "WARN", "no market tables in this build (fetch market, then build)")
+    d = pd.read_parquet(mdir / "delivery.parquet")
+    t = bhavcopy.load()[["date", "symbol", "series", "volume"]]
+    m = d.merge(t.drop_duplicates(["date", "symbol", "series"]), on=["date", "symbol", "series"], how="inner")
+    bad_q = int((d.deliv_qty > d.traded_qty).sum())
+    pct = (d.deliv_qty / d.traded_qty * 100).where(d.traded_qty > 0)
+    bad_pct = int(((pct - d.deliv_pct).abs() > 0.05).sum())
+    diff = int((m.traded_qty != m.volume).sum())
+    rate = diff / max(len(m), 1)
+    unatt = {n: int(pd.read_parquet(mdir / f"{n}.parquet")["sec_id"].isna().sum()) for n in ("delivery", "band_changes", "sec_list", "fo_ban")
+             if (mdir / f"{n}.parquet").exists() and len(pd.read_parquet(mdir / f"{n}.parquet"))}
+    cov = f"{d.date.min().date()}..{d.date.max().date()}, {d.date.nunique()} days"
+    fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01
+    status = "FAIL" if fail else ("WARN" if any(unatt.values()) else "PASS")
+    return Result("market", status,
+                  f"delivery rows={len(d)} ({cov}); deliverable>traded={bad_q}; percent differs from own quantities={bad_pct}; "
+                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}")
+
+
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,
        check_identity, check_actions, check_adjusted_continuity, check_indices,
-       check_curated_provenance, check_membership, check_coverage_baseline, check_ratchet_baseline]
+       check_curated_provenance, check_membership, check_coverage_baseline, check_ratchet_baseline, check_market]
 
 
 def run(names: list[str] | None = None) -> list[Result]:

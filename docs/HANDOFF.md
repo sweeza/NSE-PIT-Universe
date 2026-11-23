@@ -5,7 +5,7 @@ Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE p
 ## State
 - Data start is **2007-01-01** (owner decision); the API refuses unverified index/date. 27 indices have verified membership; start dates per index are in `data/build/membership/coverage.parquet` (Nifty 50/Next 50/100 from 2007-01-02, Nifty 200 from 2010-11-01, Nifty 500 from 2013-08-26, 2016-09-30 for LargeMidcap 250/Midcap 150/Smallcap 250, later for sector indices).
 - Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-23, after the Stage 4 parser fixes; ratchet baseline regenerated: rejected actions 15 to 6).
-- 122 tests pass. Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
+- 130 tests pass; 14 checks in `verify` (new: `market`). Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
 - `data/raw/` now holds 13,548 manifest files, including `constituents_archive/` (250 archived NSE constituent lists from the Internet Archive).
 
 ## Working rules (owner)

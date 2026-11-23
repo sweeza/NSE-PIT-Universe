@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import actions, adjust, bhavcopy, identity, indices, membership, paths
+from . import actions, adjust, bhavcopy, identity, indices, market, membership, paths
 
 from .series import EQUITY_SERIES, PRIMARY_SERIES  # noqa: E402
 
@@ -41,6 +41,7 @@ def build_all(out: Path | None = None, with_indices: bool = True) -> dict:
     info["securities"] = len(sec)
 
     info.update(build_actions(out, t, seg_map, sh, sec))
+    info["market"] = market.build(out / "market", t[["date", "symbol", "series", "sec_id", "volume"]])
 
     if with_indices:
         info["indices"] = indices.build(out / "indices")
