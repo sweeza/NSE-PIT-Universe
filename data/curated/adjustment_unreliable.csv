@@ -1,0 +1,10 @@
+symbol,reason,source
+SETFGOLD,"ETF unit change on 2022-01-06 (adjusted ratio 0.0099, NSE prev_close/open 1.0): not a round split, not applied",data/raw/bhavcopy/legacy/2022/cm06JAN2022bhav.csv.zip
+AXISNIFTY,"ETF unit change on 2020-07-23 (NSE prev_close/open 8.58, prev_close/close 8.33): not a round ratio, not applied",data/raw/bhavcopy/legacy/2020/cm23JUL2020bhav.csv.zip
+UTINEXT50,"ETF unit change on 2021-03-25 (ratios 9.47 and 9.43): not a round ratio, not applied",data/raw/bhavcopy/legacy/2021/cm25MAR2021bhav.csv.zip
+UTISXN50,"ETF unit change on 2021-02-17 (ratios 8.73 and 8.33): not a round ratio, not applied",data/raw/bhavcopy/legacy/2021/cm17FEB2021bhav.csv.zip
+UTIBANKETF,"ETF unit change on 2021-02-17 (ratios 8.87 and 9.44): not a round ratio, not applied",data/raw/bhavcopy/legacy/2021/cm17FEB2021bhav.csv.zip
+GULFPETRO,"bonus 23:19 on 2013-07-09 is real (Yahoo split 42:19) but was rejected by the one-day price test; adjusted history before it is wrong by 2.21",data/raw/bhavcopy/legacy/2013/cm09JUL2013bhav.csv.zip
+AHLEAST,"bonus 1:2 on 2022-10-06 is real (Yahoo split 3:2) but was rejected by the price test (same-day demerger); adjusted history before it is wrong by 1.5",data/raw/bhavcopy/legacy/2022/cm06OCT2022bhav.csv.zip
+SUNTV,"bonus 1:1 plus a split of unstated size on 2007-07-23; the action was rejected; adjusted history before it is wrong by about 4",data/raw/bhavcopy/legacy/2007/cm23JUL2007bhav.csv.zip
+CCAVENUE,"10:1 consolidation on 2026-10-19 is in no NSE feed; adjusted history before it is wrong by 10",data/raw/bhavcopy/udiff/2026/BhavCopy_NSE_CM_0_0_0_20261019_F_0000.csv.zip

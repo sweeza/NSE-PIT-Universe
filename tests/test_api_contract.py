@@ -203,8 +203,20 @@ def test_sme_securities_are_marked_unreliable_for_adjusted_prices(tiny_build):
     f = paths.BUILD / "bhavcopy" / "bhavcopy_2007.parquet"
     t = pd.read_parquet(f); t["series"] = "SM"; t.to_parquet(f)
     api.clear_cache()
-    with pytest.warns(api.DataQualityWarning, match="SME-platform"):
+    with pytest.warns(api.DataQualityWarning, match="unreliable adjusted prices"):
         q = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
     assert not q.adj_reliable.any() and api.sme_securities().sec_id.tolist() == ["S00001"]
     raw = api.prices("AAA", "2007-01-01", "2007-01-08", None)    # raw prices are exact: no flag, no warning
     assert "adj_reliable" not in raw.columns
+
+
+def test_curated_unreliable_list_marks_a_main_board_security_too(tiny_build, tmp_path, monkeypatch):
+    cur = tmp_path / "curated"; cur.mkdir()
+    (cur / "adjustment_unreliable.csv").write_text("symbol,reason,source" + chr(10) + "AAA,ETF unit change not applied,x" + chr(10), encoding="utf-8")
+    monkeypatch.setattr(paths, "CURATED", cur)
+    api.clear_cache()
+    with pytest.warns(api.DataQualityWarning, match="ETF unit change"):
+        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert not p.adj_reliable.any()
+    u = api.unreliable_adjusted()
+    assert u.symbol.tolist() == ["AAA"] and "ETF unit change" in u.reason.iloc[0]

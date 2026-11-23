@@ -67,8 +67,31 @@ def sme_securities() -> pd.DataFrame:
     return sec[sec.sec_id.isin(_sme_secs())].reset_index(drop=True)
 
 
+@functools.lru_cache(maxsize=None)
+def _unreliable() -> dict:
+    """sec_id -> reason, from SME status and data/curated/adjustment_unreliable.csv (known wrong adjusted history)."""
+    out = {s: "SME platform: the NSE feed has no corporate actions for SME securities" for s in _sme_secs()}
+    p = paths.CURATED / "adjustment_unreliable.csv"
+    if p.exists():
+        _, sh = _identity()
+        for r in pd.read_csv(p, dtype=str).fillna("").itertuples():
+            for sid in sh.loc[sh.symbol == r.symbol, "sec_id"].unique():
+                out[sid] = r.reason
+    return out
+
+
+def unreliable_adjusted() -> pd.DataFrame:
+    """Securities whose adjusted prices are known to be wrong or incomplete (SME platform, plus the curated list
+    data/curated/adjustment_unreliable.csv): sec_id, symbol (last), reason. prices() marks them adj_reliable=False."""
+    sec, _ = _identity()
+    u = _unreliable()
+    out = sec[sec.sec_id.isin(u)][["sec_id", "last_symbol"]].rename(columns={"last_symbol": "symbol"}).reset_index(drop=True)
+    out["reason"] = out.sec_id.map(u)
+    return out
+
+
 def clear_cache():
-    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs):
+    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs, _unreliable):
         f.cache_clear()
 
 
@@ -178,11 +201,12 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         raise ValueError("mask_gaps needs an adjust_mode")
     p = p[(p.date >= start_t) & (p.date <= end_t)]
     if adjust_mode is not None:
-        p["adj_reliable"] = ~p.sec_id.isin(_sme_secs())
+        p["adj_reliable"] = ~p.sec_id.isin(_unreliable())
         if not p.adj_reliable.all():
-            warnings.warn("SME-platform securities in the result (adj_reliable=False): the NSE feed has no corporate actions "
-                          "for SME securities, so their adjusted prices carry unadjusted splits and bonuses. Use raw "
-                          "prices or leave them out. See sme_securities().", DataQualityWarning, stacklevel=2)
+            why = sorted({_unreliable()[s] for s in p.loc[~p.adj_reliable, "sec_id"].unique()})
+            warnings.warn("securities with unreliable adjusted prices in the result (adj_reliable=False): "
+                          + "; ".join(w[:90] for w in why[:4]) + ". Use raw prices or leave them out. See unreliable_adjusted().",
+                          DataQualityWarning, stacklevel=2)
         fl = p.loc[p.adj_gap, ["sec_id", "date", "adj_gap_class"]].rename(columns={"adj_gap_class": "class"})
         fl = fl.merge(p[["sec_id", "symbol"]].drop_duplicates("sec_id"), on="sec_id", how="left") if "symbol" in p else fl
         p.attrs["flagged"] = fl.reset_index(drop=True)
