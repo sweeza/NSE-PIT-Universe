@@ -116,3 +116,7 @@ Source page: `https://www.nseindia.com/all-reports` (Capital Market → Equities
 ## 9. Manifest download times that are estimates
 
 Four rows in `data/raw/manifest.csv` carry a `fetched_utc` that is an estimate (the time the owner saved the file, not a recorded download time): `data/raw/constituents/2026-11-15/ind_niftynext50list.csv`, `data/raw/pressreleases/pdf/ind_prs17022023_1.pdf`, `ind_prs25062025_2.pdf` and `ind_prs24022022_1.pdf`. Their hashes and sizes are real (computed from the held files). (Added 2026-11-23, issue A4.)
+
+## 10. NSE MII security master (shares outstanding) — HELD (2026-11-23)
+
+`https://nsearchives.nseindia.com/content/cm/NSE_CM_security_{DDMMYYYY}.csv.gz`, one gzip CSV per trading day, 2024-02-05 to 2026-11-20 (694 files, 691 MB) in `data/raw/market/mii/`. Key columns: `TckrSymb`, `SctySrs`, `ISIN`, `ParVal`, `IssdCptl` (issued share count), `ListgDt`, `RmvlDt`. `FreeFltCptl` is empty for every EQ row (no free float). Not yet parsed by the build.
