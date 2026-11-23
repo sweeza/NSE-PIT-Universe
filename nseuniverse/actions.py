@@ -35,6 +35,9 @@ _NOEFFECT = re.compile(
 _SCHEME = re.compile(r"demerger|de-merger|arrangement|amalgam|merger|\bspin|reduction|buy ?-?back|"
                      r"reorgani[sz]ation", re.I)
 _DIV = re.compile(r"\bdi?v(?:idend)?\w*|\bintdiv\b|\bdistribution\b|dividnd|dvdnd", re.I)
+# "Bonus Debentures 6:1", "Bonus Ncrps 4:1", "Bonus Preference Shares 21:1": a bonus of another instrument, not of
+# equity shares; it does not split the share count, so it must never get a share factor
+_BONUS_OTHER = re.compile(r"\b(?:deb\w*|ncrps?|ncprs?|nc?cps?|cprs?|rps|prefer\w*|pref|ncd|ncds)(?=\W|\d|$)", re.I)
 _INSTR = re.compile(r"\b(?:ncd|ccps?|pcd|fcds?|bond|warrants?|debenture)", re.I)
 
 
@@ -45,8 +48,13 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
     low = re.sub(r"\b(?:rights?|rghts?|rhgts?|rhts?|rhs|rgts?|rht|rght|rigths?)(?=[\s:/@.\-0-9]|$)", "rights", low)
     low = re.sub(r"\bfv\s*spl(?:t|it)?\b|\bsplt\b", "split", low)
     low = re.sub(r"\bfrm\b", "from", low)
-    # "Spl-Rs10 To Rs2", "Spl-Rs 5/ To 2/": a face-value split, not a special dividend
-    low = re.sub(r"\bspl\b[\s.-]*(?=(?:rs|re)\.?\s*\d+(?:\.\d+)?\s*/?-?\s*to\b)", "split ", low)
+    # "Rs10tors5", "Rs10to2", "Rs10to 4": the word "to" glued to the figures
+    low = re.sub(r"(?<=\d)to(?=\s*(?:rs|re)?\.?\s*\d)", " to ", low)
+    # "Fv Rs10 To Rs5", "Fv Sp Rs10 To 4": a face-value change written without the word split
+    low = re.sub(r"\bfv\s*(?:sp\b)?\s*(?=(?:rs|re)\.?\s*\d+(?:\.\d+)?\s*/?-?\s*to\b)", "split ", low)
+    # "Spl-Rs10 To Rs2", "Spl-Rs 5/ To 2/", "Spl Rs10-Rs2": a face-value split, not a special dividend
+    low = re.sub(r"\bspl\b[\s.-]*(?=(?:rs|re)\.?\s*\d+(?:\.\d+)?\s*(?:/?-?\s*to\b|-\s*(?:rs|re)\.?\s*\d))",
+                 "split ", low)
     comps: list[dict] = []
     if re.search(r"\bnil\b", low) and not re.search(r"bonus|split|rights", low):
         return [{"kind": "NOEFFECT", "detail": "nil"}]
@@ -56,7 +64,9 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
         re.search(r"\bbon(?:us)?" + _NUM + r"\s*:\s*" + _NUM, low)
     if mb:
         a, b = float(mb.group(1)), float(mb.group(2))
-        if a > 0 and b > 0:
+        if _BONUS_OTHER.search(mb.group(0)):
+            comps.append({"kind": "SCHEME", "detail": "bonus of a non-equity instrument: " + s[:60]})
+        elif a > 0 and b > 0:
             comps.append({"kind": "BONUS", "share_factor": (a + b) / b, "detail": f"{mb.group(1)}:{mb.group(2)}"})
         else:
             comps.append({"kind": "UNPARSED", "detail": "bonus ratio"})
@@ -113,7 +123,14 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
 
     # dividends. Rupee amounts win over percentages (a subject often gives both for one
     # payment). Several labelled parts (final + special) are summed; "inclusive of" keeps the first.
-    if _DIV.search(low) and not _SCHEME.search(low) and not ms:
+    # A dividend written next to a face-value change ("Fv Spl-Rs10to2/Div-Rs2.50"): cut the keyword and its two
+    # figures out first, so the face values are not read as dividend rupees. Only when both figures follow
+    # the keyword; otherwise the split text stays and the dividend is not read (as before).
+    dlow = low
+    if ms and re.search(ms.group(1) + r"[^\d]*" + _NUM + r"[^\d]*" + _NUM, low[ms.start():]):
+        dlow = low[:ms.start()] + " " + re.sub(ms.group(1) + r"[^\d]*" + _NUM + r"[^\d]*" + _NUM, " ", low[ms.start():], count=1)
+    if _DIV.search(dlow) and not _SCHEME.search(low) and (not ms or dlow != low):
+        low = dlow
         body = re.sub(r"\(\s*pur[^)]*\)", "", low)
         # a rights issue in the same subject carries its own rupee figures (premium, issue price):
         # they are not dividend amounts. Cut from the rights keyword to the next "/" (or the end).
@@ -121,9 +138,13 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
         body = re.sub(r"\bprm\b[^/]*", " ", body)
         # "Rs. 1.50/- Per Equity Share Of Rs. 10/- Each": the second figure is the face value
         body = re.sub(r"\bof\s*(?:rs|re)\b\.?\s*\d+(?:\.\d+)?\s*/?-?\s*each", " ", body)
-        rs = re.findall(r"\b(?:rs|re)(?![a-z])\.?\s*-?\s*" + _NUM, body)
+        rs = re.findall(r"\b(?:rs|re)(?![a-z])\.?\s*:?\s*-?\s*" + _NUM, body)   # "Rs.5", "Rs -3.60", "Rs:- 5.50"
         if not rs:
-            rs = re.findall(r"\bdi?v(?:idend)?\w*[\s.-]*" + _NUM + r"(?![\d.]*\s*%)(?![\d.]*\s*:)", body)
+            rs = re.findall(r"\bdi?v(?:idend)?\w*[\s.@-]*" + _NUM + r"(?![\d.]*\s*%)(?![\d.]*\s*:)", body)
+        # "Rs.0125": a figure of 3+ digits with a leading zero and no point is a typing error of unknown size (0.125 or
+        # 1.25); it is reported, not read as 125
+        if any(re.fullmatch(r"0\d{2,}", x) for x in rs):
+            return comps + [{"kind": "UNPARSED", "detail": "dividend amount ambiguous: " + s[:60]}]
         pct = re.findall(_NUM + r"\s*%", body)
         if low.startswith("distribution") or " distribution" in low[:20]:
             # trust/REIT distribution. A headline total ("Distribution - Rs 2 Per Unit Consisting Of ...")
@@ -142,6 +163,8 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
             vals = [float(x) for x in rs]
             amt = vals[0] if re.search(r"inclusive|including", body) else sum(vals)
             comps.append({"kind": "DIVIDEND", "amount": amt, "detail": "rs " + "+".join(rs)})
+        elif pct and ms:
+            pass   # a percentage next to a face-value change: of the old or the new face value? Not read (as before).
         elif pct and face_value:
             amt = sum(float(x) for x in pct) * face_value / 100.0
             comps.append({"kind": "DIVIDEND", "amount": amt, "detail": f"{'+'.join(pct)}% of fv {face_value:g}"})

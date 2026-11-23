@@ -132,3 +132,66 @@ def test_rights_abbreviations():
     r = [x for x in c if x["kind"] == "RIGHTS"][0]
     assert r["issue_price"] == pytest.approx(96.0) and r["rights_new"] == 3 and r["rights_held"] == 7
     assert [x for x in c if x["kind"] == "DIVIDEND"][0]["amount"] == pytest.approx(1.85)
+
+
+@pytest.mark.parametrize("subject,fv,factor", [
+    ("Agm/Div-Rs.2/Fv Rs10tors5", 5.0, 2.0),                  # BHARTIARTL 2009: "to" glued to the figures
+    ("Agm/Div-20%/Fv Rs10tors2 Purpose Revised", 2.0, 5.0),   # ERAINFRA 2008
+    ("Agm/Div-5%/Spl-Rs10tors2 Purpose Revised", 2.0, 5.0),   # COREEDUTEC 2007
+    ("Agm/Div-7%/Fv Sp Rs10to 4purpose Revised", 4.0, 2.5),   # SHREEKRPET 2000
+    ("Agm/Div-20%/Spl Rs10-Rs2", 2.0, 5.0),                   # CASTEXTECH 2005: hyphen instead of "to"
+])
+def test_glued_face_value_split_is_a_split_not_a_dividend(subject, fv, factor):
+    comps = classify(subject, fv)
+    sp = [c for c in comps if c["kind"] == "SPLIT"]
+    assert len(sp) == 1 and sp[0]["share_factor"] == pytest.approx(factor)
+    # the face value (10) must not be read as a dividend of Rs 10
+    assert all(c.get("amount", 0) < 10 for c in comps if c["kind"] == "DIVIDEND")
+
+
+def test_special_dividend_after_spl_is_still_a_dividend():
+    c = classify("Div-Int.Rs.5+Spl Rs2.50", 10.0)
+    assert [x["kind"] for x in c] == ["DIVIDEND"] and c[0]["amount"] == pytest.approx(7.5)
+
+
+def test_rupee_dividend_next_to_a_split_is_kept_and_percentage_is_not_read():
+    c = classify("Fv Spl-Rs10to2/Div-Rs2.50", 2.0)
+    assert [x["kind"] for x in c] == ["SPLIT", "DIVIDEND"]
+    assert c[0]["share_factor"] == pytest.approx(5.0) and c[1]["amount"] == pytest.approx(2.5)
+    c = classify("Interim Dividend Rs.3/- Per Share And Face Value Split From Rs.5/- To Rs.2/-", 2.0)
+    assert [x["kind"] for x in c] == ["SPLIT", "DIVIDEND"] and c[1]["amount"] == pytest.approx(3.0)
+    # a percentage next to a split: of the old or the new face value? not read
+    assert [x["kind"] for x in classify("Agm/Div-5%/Spl-Rs10tors2", 2.0)] == ["SPLIT"]
+    # a plain sub-division text must not produce a dividend component
+    assert [x["kind"] for x in classify("Face Value Split (Sub-Division) - From Rs 10/- Per Share To Rs 2/- Per Share", 2.0)] == ["SPLIT"]
+
+
+def test_dividend_with_colon_dash_or_at_sign():
+    assert classify("Annual General Meeting/Dividend Rs:- 5.50 Per Share", 10.0)[0]["amount"] == pytest.approx(5.5)
+    assert classify("Annual General Meeting/Dividend Rs:- 2/- Per Share", 10.0)[0]["amount"] == pytest.approx(2.0)
+    assert classify("Annual General Meeting/Div.@1.20 Per Share", 10.0)[0]["amount"] == pytest.approx(1.2)
+    # "Dvr : 10 Eq" (a bonus of DVR shares) is not a dividend of Rs 10
+    assert classify("Bonus 1 Dvr : 10 Eq Share", 10.0)[0]["kind"] == "UNPARSED"
+
+
+def test_leading_zero_dividend_without_point_is_reported_not_read():
+    c = classify("Annual General Meeting/Dividend - Rs.0125 Per Share", 5.0)   # GENESYS 2019: 0.125 or 1.25
+    assert [x["kind"] for x in c] == ["UNPARSED"]
+    # a two-digit "Rs 09" is a plain nine rupees (TORNTPOWER 2023)
+    c = classify("Interim Dividend - Rs 09 Per Share / Special Dividend - Rs 13 Per Share", 10.0)
+    assert c[0]["kind"] == "DIVIDEND" and c[0]["amount"] == pytest.approx(22.0)
+
+
+@pytest.mark.parametrize("subject", [
+    "Sch Of Agmt- Bonus Deb1:1", "Scheme Of Arrangement - Bonus Debentures 6:1", "Bonus Preference Shares 21:1",
+    "Scheme Of Arrangement - Bonus Ncrps 1:10", "Bonus Ncrps 1:116", "Scheme Of Arrangement - Bonus Ncrps 46:1",
+])
+def test_bonus_of_another_instrument_gets_no_share_factor(subject):
+    c = classify(subject, 10.0)
+    assert [x["kind"] for x in c] == ["SCHEME"] and "share_factor" not in c[0]
+
+
+def test_equity_bonus_still_a_bonus_next_to_other_text():
+    c = classify("Annual General Meeting/Dividend Rs.3/- Per Share/Bonus 1:1", 10.0)
+    assert [x["kind"] for x in c] == ["BONUS", "DIVIDEND"] and c[0]["share_factor"] == pytest.approx(2.0)
+    assert classify("Bonus 1 Dvr : 10 Eq Share", 10.0)[0]["kind"] == "UNPARSED"

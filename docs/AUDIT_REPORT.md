@@ -258,9 +258,65 @@ Scripts: `audit/stage4_factors.py`, `audit/stage4_missed.py`, `audit/stage4_divi
 | S2-4e | S2 | `Of Rs. 10/- Each` face value added to the dividend (TULSYAN 2012). | Phrase removed. |
 | S2-4f | S2 | A dividend was placed on the first day the security traded in an equity series, even years later: about 80 rows more than 7 days after the ex-date (InvIT/REIT units: IRBINVIT 2017-2019 on 2026-09-30, EMBASSY, INDIGRID, NXST...). | Not applied if the first trading day is more than 7 days after the ex-date; status `NO_TRADING_NEAR`. |
 
-Remaining differences between the two parsers (about 269 amount differences) are 248 InvIT/REIT rows where the auditor's parser summed the components of a stated headline total (project correct) plus unreviewed rows. Ex-day check: of 2,168 dividends with yield above 3% and no share action that day, 92% moved within 5 points of the expected drop (median excess return +0.15%). Unresolved: GENESYS 2019 `Rs.0125` (kept out, dividend above price), SBT 2009 130% (dropped, above price), 13 yields above 25% reviewed by hand (AURUM Rs 974 explains the 985 to 12 price drop; the others are special dividends in the subject text).
+Remaining differences between the two parsers (about 269 amount differences; reviewed in Stage 4 remainder below) are 248 InvIT/REIT rows where the auditor's parser summed the components of a stated headline total (project correct) plus unreviewed rows. Ex-day check: of 2,168 dividends with yield above 3% and no share action that day, 92% moved within 5 points of the expected drop (median excess return +0.15%). Unresolved: GENESYS 2019 `Rs.0125` (kept out, dividend above price), SBT 2009 130% (dropped, above price), 13 yields above 25% reviewed by hand (AURUM Rs 974 explains the 985 to 12 price drop; the others are special dividends in the subject text).
 
 Effect of the rebuild: 26,914 to 26,993 adjustment rows (+77 dividends, +2 rights), 16 multipliers changed. 6 new unit tests; 96 tests pass.
+
+## Stage 4 remainder (2026-11-23, session 4): third-party prices, the exception lists, dividend differences
+
+Scripts: the Yahoo downloads and comparisons were run from the scratchpad (not added to `audit/`); the review table is `audit/stage43_review.csv` (225 rows: the 15 rejected actions plus 2 wrongly applied ones, 31 waivers, all 177 unexplained moves). Source: Yahoo public chart endpoint (`query1.finance.yahoo.com/v8/finance/chart/<SYM>.NS`), plain GETs 3 s apart, 83 JSON files kept in the scratchpad, nothing written to `data/raw`.
+
+**4.2 Adjusted prices against a second source (30 stocks, every common day 2007-01-02..2026-11-19, tolerance 0.5%).** `api.prices(adjust_mode="splits")` `adj_close` against Yahoo's split-adjusted close, 4,858 common days per stock (Nestle 4,120, Bajaj Auto 4,513: the demerged entity trades from 2008). Infosys (bonus 2014, 2015, 2018), HDFC Bank (split 2019, bonus 2025), Reliance bonus 2017, TCS, Wipro, HCL, Asian Paints, SBI, Titan, Bajaj Finance and others: **after the BHARTIARTL fix below, 26 of 30 stocks have 1 to 16 days outside 0.5% and no stretch longer than 7 days; the other four have one long stretch each, explained below.** Every miss is one of:
+
+| Miss | Days | Cause |
+|---|---|---|
+| One-day differences on 2025-03-18 in 28 of 30 stocks (-0.5% to -3.1%) | 28 | Yahoo's bar for that day differs from NSE's close in every stock at once, then reverts. Not an adjustment break; cause not determined (NSE's own next-day `prev_close` equals the held close) |
+| One-day differences on 2007-12-18, 2008-01-18/30, 2008-03-12, 2008-11-20 and a few more (0.5% to 7.7%) | 67 | Revert the next day, no corporate action: closing-price definition on volatile days. Not an adjustment break |
+| DABUR 2007-01-25 (-50%) | 1 | Bonus ex-date: Yahoo steps one day away from NSE's ex-date. Single day |
+| **BHARTIARTL 2007-01-02..2009-07-23, -50%** | 627 | **Project error, fixed.** The feed text `Agm/Div-Rs.2/Fv Rs10tors5` is a face-value split 10 to 5 with the word "to" glued to the figures; the parser read it as a dividend of Rs 12 |
+| RELIANCE 2007-01-02..2023-07-19 (-7.7%), ITC 2007-01-02..2025-01-03 (-3.7%), SUNPHARMA 2007-01-02..2007-04-20 (-7.1%) | 4,076 / 4,435 / 74 | Demergers (Jio Financial 2023-07-20, ITC Hotels 2025-01-06, the 2007-04-23 scheme). Yahoo adjusts for them; the feed gives no ratio and the project does not estimate one: documented break (waiver), as designed |
+| TATASTEEL 2007-01-02..2007-10-26 (-21.7%) | 205 | The 2007 rights issue `Right-Eq1:5 & 9ccps:10eq` has no issue price and a CCPS leg: UNPARSED, not applied. Documented gap |
+
+Corporate-action factors against Yahoo's split events (50 dates in these 30 stocks since 2007): **47 match exactly**. The other three are same-day bonus-plus-split combinations (Bajaj Finance 2016 and 2025, Titan 2011: the project's 10, 10 and 20 equal bonus x split, Yahoo lists one leg; the close comparison agrees with the project on every day). BHARTIARTL 2009 was the fourth difference before the fix. Bajaj Auto 2008: the demerger created a new security (new ISIN), so there is no pre-demerger series to adjust, and both sources start on the same day.
+
+**Parser defects found (all fixed; 19 new tests, 116 pass):**
+
+| ID | Sev | Finding | Fix |
+|---|---|---|---|
+| S1-4g | S1 | Face-value splits with "to" glued to the figures (`Fv Rs10tors5`, `Spl-Rs10tors2`, `Fv Rs10tors2`, `Fv Sp Rs10to 4`, `Spl Rs10-Rs2`) were read as a dividend of the face value: BHARTIARTL 2009, ERAINFRA 2008, COREEDUTEC 2007 (SHREEKRPET 2000 and CASTEXTECH 2005 are before the data start). The 2x to 5x price step stayed in the adjusted series and a fake Rs 10 to 12 dividend lowered `total_return`. | Glued `to`, `fv sp` and the hyphen form recognised; 3 splits added (gate: kept); 3 false dividends gone |
+| S2-4h | S2 | **A bonus of debentures, NCRPS or preference shares was typed as a share bonus** (`Bonus Deb1:1`, `Bonus Ncrps 1:10`, `Bonus Preference Shares 21:1`). 9 were rejected by the price gate (ASTRAZEN, BRITANNIA, DRREDDY, COROMANDEL, ZEEL, NTPC, TVSMOTOR, SIYSIL, TVSHLTD 2026). **2 were too small for the gate and were applied: RADIOCITY 2023-01-13 factor 1.10 and TVSHLTD 2023-03-24 factor 1.0086**, shifting every earlier adjusted price of those two stocks by 10% and 0.9%. | Recorded as SCHEME (not quantified, no share factor); rejected 15 to 6; 2 wrong factors removed |
+| S3-4i | S3 | A dividend written next to a face-value split (`Fv Spl-Rs10to2/Div-Rs2.50`) was dropped (12 records: EMAMILTD, KCP, UNICHEMLAB, ALLCARGO, KRBL and others). A percentage dividend next to a split is still not read (of the old or the new face value?). | Rupee dividends read after cutting the split phrase out; +12 dividends |
+| S3-4j | S3 | `Dividend Rs:- 5.50 Per Share` (AARTIDRUGS, DEEPAKFERT, SINTEX, BRIGADE, ALKYLAMINE 2014) and `Div.@1.20` (ELNET 2011) were UNPARSED. | Parsed; +6 dividends |
+| S3-4k | S3 | `Rs.0125` (GENESYS 2019) was read as Rs 125 and then dropped as above the price. | A figure of 3 or more digits with a leading zero and no point is UNPARSED (0.125 or 1.25 cannot be known from the text) |
+
+Effect of the rebuild: adjustment rows 26,993 to 27,010; gate 1,281 kept / 112 untestable / 6 rejected (was 1,277 / 114 / 15); ON_ACTION_DAY breaks 76 to 73; full `verify` 13/13 without FAIL, with `ratchet_baseline` WARN (rejected 15 to 6: a deliberate improvement) and PASS after the baseline was regenerated.
+
+**4.3 Review of the exception lists (225 rows in `audit/stage43_review.csv`).**
+
+*The 15 rejected share actions (all reviewed).* 9 are not share actions (debentures, NCRPS, preference shares): fixed above. 6 stay rejected:
+- GULFPETRO 2013-07-09 (bonus 23:19) and AHLEAST 2022-10-06 (bonus 1:2) are **real actions**: Yahoo's split on the same day equals the feed (42:19 and 3:2). The gate looks at one day: GULFPETRO fell only 17.9% on the ex-date (price band) and the rest of the 2.2x over the following sessions; the AHLEAST day also carries a waived demerger (observed 1.89 = 1.5 x 1.26). Their adjusted series keep a flagged break. Not applied; decision A18.
+- SUNTV 2007-07-23: the feed `Agm/Spl/Bon-1:1/Div-20%` is a bonus 1:1 plus a split whose figure is not stated; observed 3.82 is about 2 x 2 (Yahoo lists one 2:1). Documented gap.
+- LAKSHVILAS 2006 (bonus plus rights, before 2007), DVL 2021 (observed 0.99, no price effect, no Yahoo split, instrument not named), KWALITY 2010 (-14.9% on 5x volume, factor 1.714 unconfirmed, no Yahoo data): documented gaps, cause not proven.
+No rejected action is a WIPRO-style bonus hidden inside the continuity band: the gate accepts +-25% of the stated factor, and every action of factor 1.5 or more that fails it is in this list.
+
+*The 108 waivers (31 reviewed against a second source).* All 108 are `UNQUANTIFIED_SCHEME` (101) or `UNQUANTIFIED_TEXT` (7), each with the feed text and the observed ratio. Of the 31 whose stocks Yahoo covers (after 2007-02): **15 are adjusted by Yahoo** (ADANIENT 2018, ARVIND 2018, DCM 2019, GFLLIMITED 2019 and 2021, KESORAMIND 2025, SIEMENS 2025, TATACHEM 2020, THOMASCOOK 2019, TATACOMM 2019, IIFL 2019, TRIVENI 2011, EDELWEISS 2023, NMDC 2022, AHLEAST 2022): an independent sign that a corporate event happened, with a size the project does not adopt. 16 show the same drop in Yahoo (SANOFI, MASTEK, RAYMOND twice, SCI, VEDL, SKFINDIA, STAR, STLTECH, TMPV, NIITLTD, TRIVENI 2026, ALLCARGO twice, ABFRL, QUESS): the event rests on the feed text and the drop is real in both sources. No waiver contradicts its evidence.
+
+*The 177 unexplained overnight moves (all classified).*
+
+| Class | Count | Evidence |
+|---|---|---|
+| SME platform (series SM/ST), ratios 0.21 to 0.53 | 97 | The held feed has **0 records for SM/ST securities**, so no SME split or bonus can appear. Yahoo confirms 11 of 11 checked (AILIMITED, KSOLVES x2, MCL x3, REMUS x2, PRITI, DUGLOBAL x2: splits 2:1 to 5:1 on the same day, matching the ratio) |
+| ETF and index-fund unit splits, ratios 0.010 to 0.12 | 60 | No feed record; NSE's own open and prev_close give the unit ratio (NIFTYBEES 0.101, BANKBEES 0.100, GOLDBEES 0.010). Yahoo confirms NIFTYBEES 10:1, BANKBEES 10:1 and GOLDBEES 100:1 on 2019-12-19 |
+| Real price moves, no corporate action | 12 | 63MOONS 2013, CCAVENUE 2018 (-71%), COREEDUTEC x3, GTL 2011, HUBTOWN 2009, JETAIRWAYS 2019 (+90%), PURVA and UNITECH 2008-10-24, SATYAMCOMP 2009-01-07, YESBANK 2020-03-06: volume 3x to 2,000x and no feed record; the cause is not in the held data |
+| After the feed ends (2026-10-16) | 8 | CCAVENUE 2026-10-19 is a 10:1 consolidation (prev_close 138.30 against a close of 13.83 on 10-12; adjusted ratio 9.4), AZADIND 2026-10-23, KMEW 2026-11-06, PASHUPATI 2026-11-13, CONCORDBIO 2026-11-04 and three more: actions after the feed snapshot. A feed refresh (owner download) closes them |
+
+The unexplained list held no missed parser case; the three glued splits were not in it because each sat on a day with a dividend (class ON_ACTION_DAY).
+
+**4.3c Dividend differences between the auditor's parser and the project (reviewed).** Of 269 amount differences, 255 are the project being right (InvIT and REIT headline totals; `Int + Spl` sums such as NESTLEIND 2019 Rs 23 + Rs 180, GESHIP, VISAKAIND, SUDARSCHEM; `Of Rs 10/- Each` face values; TRENT and HINDOILEXP fixed in A15). The other 14 were the glued splits above (project wrong, fixed). 49 records exist only in the project: a dividend printed next to a bonus, which the auditor's script skipped (TCS 2009 and 2018, INFY 2015, ICICIBANK 2017 are right). 205 exist only in the auditor's: most have no amount in the text (`Interim Dividend`, STAN, NOT_EQUITY); the others were fixed above. Left unparsed on purpose: `Rs .50` (ELGIEQUIP, unit unclear), `R.5/-` (SHREECEM), `Fin 1.40+Spl 0.40` with no currency sign (RATNAMANI, RENUKA), `S 5/-` (DECCANCE), `R E 1` (TBZ), `Rs Per 0.50 Share` (AGIIL).
+- **GENESYS 2019 `Rs.0125`: decided, left out** (now UNPARSED). The previous year reads `Rs.0.125`, so 0.125 is likely but 1.25 cannot be excluded and no source says which; the effect is under 1% of the price either way.
+- **SBT 2009 `130%`: decided, correct to drop.** State Bank of Travancore's first trading day was 2009-04-24 (series BT), two days after the ex-date 2009-04-22: there is no earlier close to adjust. The 2007 and 2008 dividends precede the listing (NO_SECURITY).
+
+**A5.** `membership.build_anchored` has three synthetic tests (healthy index: one VERIFIED row and no PARTIAL; an index that held one security too many for five days: PARTIAL with the right day count; a member that never traded within the window: PARTIAL by the trading rule). No refactor was needed: `root` and `paths.CURATED` are injectable.
 
 ## Stage 5 (2026-11-22): index values
 

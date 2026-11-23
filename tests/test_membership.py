@@ -330,3 +330,56 @@ def test_difference_composite_drops_the_dual_class_dvr_of_its_parent(tmp_path, m
     assert m.members(iv, "C_DIFF", days[0]) == {"S2", "S3"}           # S4 (the DVR) is not carried
     ok = [c for c in cov if c[0] == "C_DIFF" and c[3] == "VERIFIED"]
     assert len(ok) == 1 and ok[0][1] == days[0] and ok[0][2] == days[-1]
+
+
+def _anchored_fixture(tmp_path, monkeypatch, n_members, syms):
+    """Synthetic index X: 10 trading days, anchor list written for the last day, no press file, no composites."""
+    cur_dir = tmp_path / "curated"
+    cur_dir.mkdir()
+    monkeypatch.setattr(m.paths, "CURATED", cur_dir)
+    days = pd.bdate_range("2026-01-05", periods=10)
+    seg = pd.DataFrame([{"sec_id": f"S{s}", "symbol": s, "start": pd.Timestamp("2000-01-01"), "end": pd.Timestamp("2030-01-01")}
+                        for s in syms])
+    anchor_dir = tmp_path / days[-1].strftime("%Y-%m-%d")
+    anchor_dir.mkdir()
+    (anchor_dir / "a.csv").write_text("Symbol\n" + "\n".join(syms[:n_members]) + "\n", encoding="utf-8")
+    monkeypatch.setattr(m, "ANCHORED", {"X": (n_members, f"{days[-1].strftime('%Y-%m-%d')}/a.csv")})
+    monkeypatch.setattr(m, "FLOORS", {})
+    monkeypatch.setattr(m, "COMPOSITE_ANCHORS", {})
+    return days, seg
+
+
+def _trades(days, sids):
+    return pd.DataFrame([{"sec_id": s, "series": "EQ", "date": d} for s in sids for d in days])
+
+
+def test_build_anchored_healthy_index_has_one_verified_row_and_no_partial_row(tmp_path, monkeypatch):
+    days, seg = _anchored_fixture(tmp_path, monkeypatch, 2, ["A", "B"])
+    ev_res = pd.DataFrame(columns=["index_key", "resolution", "date", "sec_id", "action"])
+    iv, cov = m.build_anchored(ev_res, seg, _trades(days, ["SA", "SB"]), tmp_path)
+    assert list(cov.status) == ["VERIFIED"]
+    assert cov.from_date.iloc[0] == days[0] and cov.to_date.iloc[0] == days[-1]
+    assert len(iv) == 2
+
+
+def test_build_anchored_emits_partial_row_only_for_days_that_fail_the_size_check(tmp_path, monkeypatch):
+    # C left the index on days[5]: before that the index held 3 securities, not 2, so 5 days fail
+    days, seg = _anchored_fixture(tmp_path, monkeypatch, 2, ["A", "B", "C"])
+    ev_res = pd.DataFrame([{"index_key": "X", "resolution": "OK", "date": days[5], "sec_id": "SC", "action": "OUT"}])
+    iv, cov = m.build_anchored(ev_res, seg, _trades(days, ["SA", "SB", "SC"]), tmp_path)
+    assert list(cov.status) == ["VERIFIED", "PARTIAL"]
+    ver, part = cov.iloc[0], cov.iloc[1]
+    assert ver.from_date == days[5] and ver.to_date == days[-1]
+    assert "5 of 10 trading days fail" in part.reason
+
+
+def test_build_anchored_member_that_never_traded_near_a_day_fails_that_day(tmp_path, monkeypatch):
+    # B trades only on the last day; every day more than TRADE_WINDOW (3) sessions before it fails the trading check
+    days, seg = _anchored_fixture(tmp_path, monkeypatch, 2, ["A", "B"])
+    ev_res = pd.DataFrame(columns=["index_key", "resolution", "date", "sec_id", "action"])
+    t = pd.concat([_trades(days, ["SA"]), _trades(days[-1:], ["SB"])], ignore_index=True)
+    iv, cov = m.build_anchored(ev_res, seg, t, tmp_path)
+    failing = 10 - (m.TRADE_WINDOW + 1)
+    assert list(cov.status) == ["VERIFIED", "PARTIAL"]
+    assert cov.iloc[0].from_date == days[failing]
+    assert f"{failing} of 10 trading days fail" in cov.iloc[1].reason
