@@ -21,7 +21,7 @@ CATALOGUE = [
      "Filter on adj_reliable, or drop api.sme_securities() from the universe, or use raw prices (exact).",
      "prices().adj_reliable=False; api.sme_securities(); DataQualityWarning"),
     ("CURATED_UNRELIABLE_ADJUSTED", "PRICES", "HIGH",
-     "Known wrong adjusted history on named securities: ETFs with non-round unit ratios, real bonuses the price test rejected (GULFPETRO, AHLEAST, SUNTV), CCAVENUE's unrecorded 10:1 consolidation.",
+     "Known wrong adjusted history on named securities: ETFs with non-round unit ratios, a real bonus the price test rejected (SUNTV), CCAVENUE's unrecorded 10:1 consolidation.",
      "Same as SME: a fake jump or crash on the day, and every earlier adjusted price is off by the missing factor.",
      "Filter on adj_reliable or exclude api.unreliable_adjusted().sec_id.",
      "prices().adj_reliable=False; api.unreliable_adjusted(); data/curated/adjustment_unreliable.csv"),

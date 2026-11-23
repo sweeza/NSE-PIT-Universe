@@ -56,7 +56,7 @@ Not included: market cap, free float. Fetch with `python -m nseuniverse.cli fetc
    records for them, so none of their splits or bonuses is applied (97 flagged overnight breaks, and an unknown number
    of unflagged ones). `api.prices(..., adjust_mode=...)` marks them `adj_reliable=False` and warns; `api.sme_securities()`
    lists them; `api.unreliable_adjusted()` lists them plus 9 curated names with known wrong adjusted history
-   (`data/curated/adjustment_unreliable.csv`: 5 ETFs with non-round unit ratios, GULFPETRO, AHLEAST, SUNTV, CCAVENUE), all
+   (`data/curated/adjustment_unreliable.csv`: 5 ETFs with non-round unit ratios, SETFGOLD, SUNTV, CCAVENUE), all
    marked `adj_reliable=False` with a warning. Use raw prices or leave them out. ETF unit splits (55 added from NSE's own prices, `data/curated/actions_price_evidenced.csv`)
    are applied; 5 UTI/Axis/Nippon ETFs with non-round ratios and SETFGOLD are not.
 3c. **Backfill is opt-in and not membership.** `api.index_members(idx, date, backfill=True)` returns, for dates from 2007-01-01

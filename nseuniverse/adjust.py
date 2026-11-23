@@ -152,7 +152,7 @@ def apply(prices: pd.DataFrame, adj: pd.DataFrame, mode: str = "splits", as_of=N
 
 
 def gate(adj: pd.DataFrame, pc: pd.DataFrame, tol: float = 0.25, near_tol: float = 0.12, k: int = 5,
-         min_move: float = 1.5):
+         min_move: float = 1.5, override: frozenset = frozenset()):
     """Evidence gate for share-structure actions.
 
     A day's combined share factor S is tested against the move NSE actually printed (previous
@@ -162,6 +162,8 @@ def gate(adj: pd.DataFrame, pc: pd.DataFrame, tol: float = 0.25, near_tol: float
       SHIFTED   if not, but exactly one trading day within +-k sessions matches within near_tol
                 (the feed's ex-date was off); the action moves to that day;
       REJECTED  otherwise: the feed claims an action the prices do not show; it is not applied.
+    override: (sec_id, effective day) pairs from data/curated/gate_overrides.csv, actions kept although the one-day price
+    test fails (price band, a same-day scheme), each with a cited second source; logged as OVERRIDDEN.
     Rights and dividends are not gated. Returns (adjustments, gate_log)."""
     pcs = {sid: g.sort_values("date").reset_index(drop=True) for sid, g in pc.groupby("sec_id")}
     share_kinds = ("SPLIT", "BONUS", "CONSOLIDATION")
@@ -189,6 +191,8 @@ def gate(adj: pd.DataFrame, pc: pd.DataFrame, tol: float = 0.25, near_tol: float
             log.append((sid, d, d, "UNTESTABLE", S, obs)); continue
         if ok:
             log.append((sid, d, d, "KEPT", S, obs)); continue
+        if (sid, d) in override:
+            log.append((sid, d, d, "OVERRIDDEN", S, obs)); continue
         hits = []
         for j in range(max(1, row - k), min(len(gg), row + k + 1)):
             po, o = gg["prev_close_obs"].iloc[j], gg["open"].iloc[j]
@@ -213,3 +217,18 @@ def gate(adj: pd.DataFrame, pc: pd.DataFrame, tol: float = 0.25, near_tol: float
     res = pd.DataFrame(out, columns=adj.columns)
     res = res.sort_values(["sec_id", "eff_date", "kind", "rec_id"], kind="mergesort").reset_index(drop=True)
     return res, gl
+
+
+def gate_override_keys(ev: pd.DataFrame, path=None) -> frozenset:
+    """(sec_id, eff_date) of share actions listed in data/curated/gate_overrides.csv (symbol, ex_date, share_factor,
+    reason, source). A row applies only to a feed event of the same symbol and ex-date whose share factor equals the
+    listed one, so a changed or different feed record never inherits an override."""
+    from . import paths
+    p = path or (paths.CURATED / "gate_overrides.csv")
+    if not p.exists():
+        return frozenset()
+    o = pd.read_csv(p, dtype=str)
+    o["ex_date"] = pd.to_datetime(o["ex_date"]); o["share_factor"] = o["share_factor"].astype(float)
+    x = ev[ev.kind.isin(SHARE_KINDS) & (ev.status == "OK")].merge(o, on=["symbol", "ex_date"], suffixes=("", "_o"))
+    x = x[(x.share_factor - x.share_factor_o).abs() < 1e-6]
+    return frozenset(zip(x.sec_id, x.eff_date))

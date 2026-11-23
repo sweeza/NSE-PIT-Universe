@@ -1,0 +1,3 @@
+symbol,ex_date,share_factor,reason,source
+GULFPETRO,2013-07-09,2.2105263157894735,"bonus 23:19 stated in the NSE feed; the ex-date fall was held to -17.9% by the price band (then -4.8%, -5% on later days) so the one-day price test failed; Yahoo split 42:19 on the same day (scratch, not held); owner decision 2026-11-23",data/raw/bhavcopy/legacy/2013/cm09JUL2013bhav.csv.zip
+AHLEAST,2022-10-06,1.5,"bonus 1:2 stated in the NSE feed; the same day carries a demerger (waived) so the observed move is bonus x demerger; Yahoo split 3:2 on the same day (scratch, not held); owner decision 2026-11-23",data/raw/bhavcopy/legacy/2022/cm06OCT2022bhav.csv.zip

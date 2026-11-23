@@ -107,3 +107,28 @@ def test_dividend_far_from_its_ex_date_is_not_placed():
     assert out.loc[2, "status"] == "NO_TRADING_NEAR"   # next trade is 42 days later
     ev2 = pd.DataFrame({"symbol": ["AAA"], "ex_date": pd.to_datetime(["2020-01-20"]), "kind": ["BONUS"]})
     assert adjust.attach_events(ev2, seg, days).loc[0, "status"] == "OK"   # share events are gated elsewhere
+
+
+def test_gate_keeps_an_overridden_action_the_price_test_would_reject_and_logs_it():
+    import numpy as np
+    d = pd.bdate_range("2013-07-01", periods=6)
+    pcg = pd.DataFrame({"sec_id": "S1", "date": d, "open": [24.0, 24.0, 18.85, 18.0, 17.0, 16.0],
+                        "close": [24.0, 24.0, 18.85, 18.0, 17.0, 16.0]})
+    pcg["prev_close_obs"] = pcg.close.shift(1)
+    adj = pd.DataFrame({"sec_id": ["S1"], "eff_date": [d[2]], "kind": ["BONUS"], "price_mult": [19 / 42], "vol_mult": [42 / 19],
+                        "detail": ["23:19"], "rec_id": [0]})
+    out, log = adjust.gate(adj, pcg)                                   # price fell 21%, a 2.2x bonus expects 55%
+    assert out.empty and log.decision.tolist() == ["REJECTED"]
+    out, log = adjust.gate(adj, pcg, override=frozenset({("S1", d[2])}))
+    assert len(out) == 1 and log.decision.tolist() == ["OVERRIDDEN"]
+
+
+def test_gate_override_keys_need_the_same_symbol_date_and_factor(tmp_path):
+    ev = pd.DataFrame({"symbol": ["AAA", "AAA", "BBB"], "ex_date": pd.to_datetime(["2013-07-09"] * 3), "kind": "BONUS",
+                       "status": "OK", "sec_id": ["S1", "S2", "S3"], "eff_date": pd.to_datetime(["2013-07-09"] * 3),
+                       "share_factor": [2.0, 3.0, 2.0]})
+    f = tmp_path / "o.csv"
+    f.write_text("symbol,ex_date,share_factor,reason,source" + chr(10) + "AAA,2013-07-09,2.0,why,data/raw/x" + chr(10), encoding="utf-8")
+    keys = adjust.gate_override_keys(ev, f)
+    assert keys == frozenset({("S1", pd.Timestamp("2013-07-09"))})     # not the factor-3 record, not another symbol
+    assert adjust.gate_override_keys(ev, tmp_path / "none.csv") == frozenset()

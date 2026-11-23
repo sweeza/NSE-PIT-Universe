@@ -346,6 +346,10 @@ Added 2026-11-23: bulk deals (2004-01-04..2026-11-20, 23 annual windows, 245,962
 
 Added 2026-11-23: monthly NSE Clearing Security Category & Impact Cost (`C_CATG_<MMM><YYYY>.T01` on `nsearchives.nseindia.com/content/nsccl/`; NSE does not publish a daily per-security impact-cost file). 47 monthly files fetched (16.12 MB; continuous 2023-10..2026-11 plus 2019-03, 2021-01..06, 2023-05..06; 34,985 manifest files total) and built into `data/build/market/impact_cost.parquet` (532,386 rows, 172,282 with numeric 6-month rolling mean impact cost % for ₹1 lakh order, 250,587 unattached mostly non-trading debt/SG series, 0 negative, 0 >100%, range 0.00%–32.01%). Extended `check_market`, added `api.impact_cost()`, updated `caveats.py` (`IMPACT_COST` added, `DATA_NOT_IN_THE_BUILD` updated). Full verify 14/14 without FAIL; 140 tests pass.
 
+## Gate overrides (2026-11-23)
+
+`data/curated/gate_overrides.csv` (symbol, ex-date, share factor, reason, source) keeps a share action the one-day price test rejects, only when the feed states the ratio and a second source agrees; it applies to a feed event of the same symbol, ex-date and factor only. Two rows: GULFPETRO 2013-07-09 (23:19) and AHLEAST 2022-10-06 (1:2). Gate: 1,343 kept, 112 untestable, 4 rejected, 2 overridden. Both stay logged and counted in `verify` (`kept by a curated override=1`; AHLEAST's day is also covered by its demerger waiver). Yahoo check after the change: GULFPETRO median difference to Yahoo 0.0% on both sides of the event (was a factor 2.21 off before it); AHLEAST 0.0% after, and -26% before, which is the same-day demerger the feed gives no ratio for.
+
 ## Stage 5 (2026-11-22): index values
 
 Script: `audit/stage5_index.py`, `audit/stage52_ew.py`.

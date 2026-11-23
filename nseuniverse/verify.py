@@ -266,6 +266,8 @@ def check_actions() -> Result:
     wv = _waivers()
     wkeys = set(wv[wv.check == "action"]["key"]) if len(wv) else set()
     ev = ev[ev.status != "NOT_EQUITY"]
+    _gl = pd.read_parquet(paths.BUILD / "actions" / "gate_log.parquet")
+    ovr = {(r.sec_id, r.eff_date) for r in _gl[_gl.decision == "OVERRIDDEN"].itertuples()}   # curated, each with a cited second source
 
     share = adj[adj.kind.isin(["SPLIT", "BONUS", "CONSOLIDATION"])].groupby(["sec_id", "eff_date"]).agg(
         S=("vol_mult", "prod"), what=("detail", lambda x: "+".join(x))).reset_index()
@@ -310,6 +312,8 @@ def check_actions() -> Result:
         elif parsed and not share_only:
             counts["rights_vs_price"] = counts.get("rights_vs_price", 0) + 1     # rights: theoretical (TERP) vs market
             rights_notes.append((key, round(expected, 4), round(obs[0], 4) if obs else None))
+        elif parsed and (r.sec_id, r.eff_date) in ovr:
+            counts["overridden"] = counts.get("overridden", 0) + 1
         elif parsed:
             if key not in wkeys:
                 counts["contradicted"] += 1
@@ -334,7 +338,7 @@ def check_actions() -> Result:
     status = "FAIL" if nbad else ("WARN" if (gc.get("REJECTED", 0) or waived) else "PASS")
     return Result("corporate_actions_vs_prices", status,
                   f"ex-date days where parsed action(s) match the observed price move={counts['explained']}; "
-                  f"parsed actions contradicted by the price move={counts['contradicted']}; "
+                  f"parsed actions contradicted by the price move={counts['contradicted']}; kept by a curated override (gate_overrides.csv)={counts.get('overridden', 0)}; "
                   f"unquantified/unparsed events with an unexplained price jump={counts['unresolved_jump']}; "
                   f"rights days where the theoretical (TERP) adjustment differs from the market move by >25% (informational, build/rights_vs_price.csv)={counts.get('rights_vs_price', 0)}; "
                   f"unquantified events with no price effect (nothing to adjust)={counts['unresolved_nojump']}; "
@@ -423,7 +427,7 @@ def check_indices() -> Result:
 def check_curated_provenance() -> Result:
     """Every data/raw/... reference in data/curated/*.csv must exist on disk."""
     files = ["index_events_press.csv", "index_dual_class.csv", "index_size_exceptions.csv",
-             "identity_links.csv", "name_aliases.csv", "actions_price_evidenced.csv", "adjustment_unreliable.csv"]
+             "identity_links.csv", "name_aliases.csv", "actions_price_evidenced.csv", "adjustment_unreliable.csv", "gate_overrides.csv"]
     checked = 0
     n_files = 0
     missing = []
