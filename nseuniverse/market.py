@@ -85,6 +85,28 @@ def parse_secban(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:
     return pd.DataFrame({"date": date, "symbol": sorted(set(syms))})
 
 
+def parse_fo_bhav(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:
+    """Derivatives bhavcopy (zip, legacy or UDiFF) -> one row per stock with contracts that day:
+    date, symbol, fut (has stock futures), opt (has stock options). Index contracts are ignored."""
+    import zipfile
+    z = zipfile.ZipFile(io.BytesIO(raw))
+    name = [n for n in z.namelist() if n.lower().endswith(".csv")][0]
+    df = pd.read_csv(z.open(name), dtype=str, encoding="latin-1", index_col=False).fillna("")
+    df.columns = [c.strip() for c in df.columns]
+    if {"INSTRUMENT", "SYMBOL"} <= set(df.columns):
+        kind, sym = df["INSTRUMENT"].str.strip(), df["SYMBOL"].str.strip()
+        fut, opt = kind == "FUTSTK", kind == "OPTSTK"
+    elif {"FinInstrmTp", "TckrSymb"} <= set(df.columns):
+        kind, sym = df["FinInstrmTp"].str.strip(), df["TckrSymb"].str.strip()
+        fut, opt = kind == "STF", kind == "STO"
+    else:
+        raise UnknownLayout(f"columns {list(df.columns)}")
+    x = pd.DataFrame({"symbol": sym, "fut": fut, "opt": opt})
+    x = x[x.fut | x.opt].groupby("symbol", as_index=False).agg(fut=("fut", "max"), opt=("opt", "max"))
+    x.insert(0, "date", date)
+    return x
+
+
 SKIPPED: list[str] = []          # files refused for an unknown layout in the last build()
 
 
@@ -99,6 +121,25 @@ def _read_dir(kind: str, pattern: str, parser) -> pd.DataFrame:
         if len(d):
             frames.append(d)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def _read_fo() -> pd.DataFrame:
+    frames = []
+    root = paths.MARKET_RAW / "fobhav"
+    for f in sorted(root.rglob("*.zip")) if root.exists() else []:
+        m = re.search(r"_(\d{8})_F_", f.name)
+        d = pd.Timestamp(m.group(1)) if m else pd.Timestamp(dt.datetime.strptime(f.name[2:11], "%d%b%Y"))
+        try:
+            x = parse_fo_bhav(f.read_bytes(), d)
+        except Exception:                 # a damaged zip or an unknown layout is listed, not guessed
+            SKIPPED.append(f.name)
+            continue
+        if len(x):
+            frames.append(x)
+    if not frames:
+        return pd.DataFrame()
+    out = pd.concat(frames, ignore_index=True)       # 2024-07-05 exists in both formats: one row per date and symbol
+    return out.groupby(["date", "symbol"], as_index=False).agg(fut=("fut", "max"), opt=("opt", "max"))
 
 
 def _attach(df: pd.DataFrame, t: pd.DataFrame) -> pd.DataFrame:
@@ -131,6 +172,7 @@ def build(out: Path, t: pd.DataFrame) -> dict:
         "band_changes": _read_dir("bandchanges", "eq_band_changes_*.csv", parse_band_changes),
         "sec_list": _read_dir("seclist", "sec_list_*.csv", parse_sec_list),
         "fo_ban": _read_dir("fosecban", "fo_secban_*.csv", parse_secban),
+        "fo_stocks": _read_fo(),
     }
     for name, df in tabs.items():
         df = _attach(df, t)

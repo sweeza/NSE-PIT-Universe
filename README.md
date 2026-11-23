@@ -25,7 +25,7 @@ conflicts, a stale corporate-action feed). Run it before trusting a backtest. Th
 
 ## Market-activity data (added 2026-11-23)
 
-Daily NSE files fetched into `data/raw/market/` (526 MB, 15,641 files, all in the manifest) and built into `data/build/market/`:
+Daily NSE files fetched into `data/raw/market/` (2.9 GB, 34,874 files in the manifest, not committed to git) and built into `data/build/market/`:
 
 | Table / API | Source | Coverage | Check |
 |---|---|---|---|
@@ -34,7 +34,9 @@ Daily NSE files fetched into `data/raw/market/` (526 MB, 15,641 files, all in th
 | `api.asm_gsm(date)`: ASM/GSM and other surveillance remarks | remarks column of the security list | 2020 on | none beyond parsing |
 | `api.fo_ban(date)`: securities in the F&O ban period | NSE `fo_secban` files | 2010 on; an empty frame means NIL | files without a list are refused |
 
-Not included: F&O eligibility history (derive from NSE's derivatives bhavcopy, about 1.5 GB; not fetched) and bulk/block deal history (NSE keeps only the latest day at a fixed URL: `fetch.fetch_deals_today()` saves each day from now on; earlier years need the owner's download from NSE's report page). Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
+| `api.fo_eligible(date)`: stocks with futures and/or options contracts that day | NSE derivatives bhavcopy (legacy and UDiFF) | 5,681 days, 2004 to 2026-11-20 (50 to 267 stocks a day) | derived from contracts present, not NSE's official eligible list |
+
+Not included: bulk/block/short-selling deal history (NSE keeps only the latest day at a fixed URL: `fetch.fetch_deals_today()` saves each day from now on; earlier years need the owner's download from NSE's report page), market cap, free float, impact cost. Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
 
 ## Read this before relying on it
 

@@ -709,11 +709,17 @@ def check_market() -> Result:
     unatt = {n: int(pd.read_parquet(mdir / f"{n}.parquet")["sec_id"].isna().sum()) for n in ("delivery", "band_changes", "sec_list", "fo_ban")
              if (mdir / f"{n}.parquet").exists() and len(pd.read_parquet(mdir / f"{n}.parquet"))}
     cov = f"{d.date.min().date()}..{d.date.max().date()}, {d.date.nunique()} days"
+    fo = ""
+    if (mdir / "fo_stocks.parquet").exists():
+        f = pd.read_parquet(mdir / "fo_stocks.parquet")
+        if len(f):
+            per = f.groupby("date").size()
+            fo = f"; F&O stocks: {f.date.nunique()} days, {int(per.min())}..{int(per.max())} stocks a day, unattached={int(f.sec_id.isna().sum())}"
     fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01
     status = "FAIL" if fail else ("WARN" if any(unatt.values()) else "PASS")
     return Result("market", status,
                   f"delivery rows={len(d)} ({cov}); deliverable>traded={bad_q}; percent differs from own quantities={bad_pct}; "
-                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}")
+                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}{fo}")
 
 
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,

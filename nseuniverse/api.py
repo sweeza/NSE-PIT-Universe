@@ -520,3 +520,13 @@ def explain(symbols=None, start=None, end=None, index: str | None = None) -> pd.
     out = pd.DataFrame(rows, columns=["id", "category", "severity", "applies_to", "backtest_impact", "handling"])
     order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
     return out.sort_values(["severity", "category", "id"], key=lambda s: s.map(order) if s.name == "severity" else s, kind="mergesort").reset_index(drop=True)
+
+
+def fo_eligible(as_of) -> pd.DataFrame:
+    """Stocks with futures and/or options contracts in NSE's derivatives bhavcopy on a date (2004-): the F&O segment
+    for that day. `fut` and `opt` say which. A date with no derivatives file raises."""
+    t = pd.Timestamp(as_of)
+    f = _market("fo_stocks")
+    if f.empty or not (f.date == t).any():
+        raise CoverageError(f"no derivatives bhavcopy for {t.date()} in this build")
+    return f[f.date == t].reset_index(drop=True)

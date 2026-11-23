@@ -112,3 +112,30 @@ def test_reconcile_manifest_lists_market_files_whose_manifest_write_failed(tmp_p
     assert fetch.flush_queue() == 0 and len(fetch._queue["manifest"]) == 1   # a failed write keeps the rows
     monkeypatch.setattr(fetch, "_append_many", real)
     assert fetch.flush_queue() == 1 and "MTO_06012020" in paths.MANIFEST.read_text()
+
+
+def test_derivatives_bhavcopy_sources_split_at_2024_07_05_and_reconcile_reads_their_dates(tmp_path, monkeypatch):
+    import datetime as dt
+    from nseuniverse import fetch, paths
+    s_old, s_new = fetch.SOURCES["fo_bhav_legacy"], fetch.SOURCES["fo_bhav_udiff"]
+    assert s_old.last_fn() == dt.date(2024, 7, 5) and s_new.first == dt.date(2024, 7, 5)
+    assert s_old.url(dt.date(2015, 10, 20)).endswith("/DERIVATIVES/2015/OCT/fo20OCT2015bhav.csv.zip")
+    assert s_new.url(dt.date(2025, 11, 20)).endswith("BhavCopy_NSE_FO_0_0_0_20251120_F_0000.csv.zip")
+    monkeypatch.setattr(paths, "ROOT", tmp_path); monkeypatch.setattr(paths, "RAW", tmp_path / "raw")
+    monkeypatch.setattr(paths, "MARKET_RAW", tmp_path / "raw" / "market"); monkeypatch.setattr(paths, "MANIFEST", tmp_path / "raw" / "manifest.csv")
+    for sub, name in (("legacy", "fo20OCT2015bhav.csv.zip"), ("udiff", "BhavCopy_NSE_FO_0_0_0_20251120_F_0000.csv.zip")):
+        f = paths.MARKET_RAW / "fobhav" / sub / "2015" / name; f.parent.mkdir(parents=True, exist_ok=True); f.write_bytes(b"PK")
+    assert fetch.reconcile_manifest() == 2
+    text = paths.MANIFEST.read_text()
+    assert "/DERIVATIVES/2015/OCT/fo20OCT2015bhav.csv.zip" in text and "BhavCopy_NSE_FO_0_0_0_20251120_F_0000.csv.zip" in text
+
+
+def test_dedupe_manifest_keeps_the_first_row_and_every_other_line_untouched(tmp_path, monkeypatch):
+    from nseuniverse import fetch, paths
+    monkeypatch.setattr(paths, "MANIFEST", tmp_path / "manifest.csv")
+    head = b"path,url,sha256,bytes,fetched_utc" + bytes([13, 10])
+    odd = "a,u,h,1,2026 \x96 estimate".encode("latin-1") + bytes([13, 10])        # a non-UTF-8 byte must survive
+    paths.MANIFEST.write_bytes(head + odd + b"b,u,h,2,t" + bytes([13, 10]) + b"a,u,h,1,later" + bytes([13, 10]) + b"b,u,h,2,t" + bytes([13, 10]))
+    assert fetch.dedupe_manifest() == 2
+    assert paths.MANIFEST.read_bytes() == head + odd + b"b,u,h,2,t" + bytes([13, 10])
+    assert fetch.dedupe_manifest() == 0

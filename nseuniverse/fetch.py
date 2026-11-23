@@ -103,8 +103,18 @@ SOURCES.update({
         "fo_secban", dt.date(2010, 1, 1), dt.date.today,
         lambda d: f"https://nsearchives.nseindia.com/archives/fo/sec_ban/fo_secban_{d:%d%m%Y}.csv",
         _market("fosecban", lambda d: f"fo_secban_{d:%d%m%Y}.csv"), _starts(b"Securities in Ban")),
+    # Derivatives bhavcopy: F&O eligibility on a day = the stock has futures contracts that day.
+    "fo_bhav_legacy": Source(
+        "fo_bhav_legacy", dt.date(2004, 1, 1), lambda: min(dt.date(2024, 7, 5), dt.date.today()),
+        lambda d: (f"https://nsearchives.nseindia.com/content/historical/DERIVATIVES/{d.year}/"
+                   f"{_MON[d.month-1]}/fo{d.day:02d}{_MON[d.month-1]}{d.year}bhav.csv.zip"),
+        _market("fobhav/legacy", lambda d: f"fo{d.day:02d}{_MON[d.month-1]}{d.year}bhav.csv.zip"), _is_zip),
+    "fo_bhav_udiff": Source(
+        "fo_bhav_udiff", dt.date(2024, 7, 5), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip",
+        _market("fobhav/udiff", lambda d: f"BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip"), _is_zip),
 })
-SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban"}
+SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban", "fo_bhav_legacy", "fo_bhav_udiff"}
 
 
 def session_days() -> set[dt.date]:
@@ -440,6 +450,25 @@ def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None =
     return counts
 
 
+def dedupe_manifest() -> int:
+    """Remove repeated manifest rows (same path); the first row stays, every other line is kept byte for byte.
+    A queued row and a reconcile can both list a file. Returns the number of rows removed."""
+    raw = paths.MANIFEST.read_bytes()
+    lines = raw.decode("latin-1").splitlines(keepends=True)
+    seen, keep, dropped = set(), [], 0
+    for i, line in enumerate(lines):
+        key = next(csv.reader([line]))[0] if i else None
+        if key is not None and key in seen:
+            dropped += 1
+            continue
+        if key is not None:
+            seen.add(key)
+        keep.append(line)
+    if dropped:
+        paths.MANIFEST.write_bytes("".join(keep).encode("latin-1"))
+    return dropped
+
+
 def reconcile_manifest(root: Path | None = None) -> int:
     """Add a manifest row for every file under data/raw/market that has none (a fetch whose manifest write timed out).
     The URL is rebuilt from the source's pattern and fetched_utc is the file's modification time. Returns the count."""
@@ -454,18 +483,24 @@ def reconcile_manifest(root: Path | None = None) -> int:
         if not f.is_file() or f.suffix == ".part":
             continue
         rel = f.relative_to(paths.ROOT).as_posix()
-        src = by_dir.get(f.relative_to(root).parts[0])
+        top = f.relative_to(root).parts[0]
+        src = by_dir.get(top) or (("fo_bhav_legacy" if f.name.startswith("fo") else "fo_bhav_udiff") if top == "fobhav" else None)
         if rel in listed or src is None:
             continue
         d = None
         m = __import__("re").search(r"(\d{2})(\d{2})(\d{4})", f.name)
-        if m:
+        if f.name.startswith("fo") and f.name.endswith("bhav.csv.zip"):
+            d = dt.datetime.strptime(f.name[2:11], "%d%b%Y").date()
+        elif m and not f.name.startswith("BhavCopy"):
             d = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        elif f.name.startswith("BhavCopy"):
+            d = dt.datetime.strptime(f.name.split("_")[6], "%Y%m%d").date()
         body = f.read_bytes()
         _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
                 [rel, SOURCES[src].url(d) if d else "", hashlib.sha256(body).hexdigest(), len(body),
                  dt.datetime.fromtimestamp(f.stat().st_mtime, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
         n += 1
+    dedupe_manifest()
     return n
 
 

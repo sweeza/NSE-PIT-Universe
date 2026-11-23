@@ -93,3 +93,40 @@ def test_header_variants_are_read_and_unknown_layouts_are_refused_not_guessed():
         market.parse_band_changes(b"Sr. No,Symbol,Series,Min Band or no band,Max Band or no band" + nl + b"1,AAA,EQ,5,10" + nl, D)
     extra = market.parse_sec_list(b"Symbol,Series,Security Name,Band,Remarks,,Check" + nl + b"AAA,EQ,A,5,-,," + nl, D)
     assert extra.band.tolist() == ["5"] and extra.remarks.tolist() == [""]
+
+
+def _zip(name: str, body: bytes) -> bytes:
+    import io, zipfile
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w") as z:
+        z.writestr(name, body)
+    return b.getvalue()
+
+
+def test_parse_fo_bhav_both_layouts_keep_stock_contracts_only():
+    nl = bytes([10])
+    legacy = _zip("fo.csv", b"INSTRUMENT,SYMBOL,EXPIRY_DT,STRIKE_PR,OPTION_TYP,OPEN" + nl + b"FUTIDX,NIFTY,28-JAN-2020,0,XX,1" + nl +
+                  b"FUTSTK,AAA,28-JAN-2020,0,XX,1" + nl + b"OPTSTK,BBB,28-JAN-2020,10,CE,1" + nl + b"FUTSTK,BBB,28-JAN-2020,0,XX,1" + nl)
+    x = market.parse_fo_bhav(legacy, D)
+    assert x.symbol.tolist() == ["AAA", "BBB"] and x.fut.tolist() == [True, True] and x.opt.tolist() == [False, True]
+    udiff = _zip("u.csv", b"FinInstrmTp,TckrSymb,XpryDt" + nl + b"IDF,BANKNIFTY,x" + nl + b"STO,CCC,x" + nl)
+    y = market.parse_fo_bhav(udiff, D)
+    assert y.symbol.tolist() == ["CCC"] and y.opt.tolist() == [True] and y.fut.tolist() == [False]
+    with pytest.raises(market.UnknownLayout):
+        market.parse_fo_bhav(_zip("z.csv", b"A,B" + nl + b"1,2" + nl), D)
+
+
+def test_fo_eligible_api_and_build_merge_the_overlap_day(market_build, tmp_path):
+    nl = bytes([10])
+    root = paths.MARKET_RAW / "fobhav"
+    for sub, name, body in [("legacy", "fo20OCT2020bhav.csv.zip", _zip("a.csv", b"INSTRUMENT,SYMBOL" + nl + b"FUTSTK,AAA" + nl)),
+                            ("udiff", "BhavCopy_NSE_FO_0_0_0_20201020_F_0000.csv.zip", _zip("b.csv", b"FinInstrmTp,TckrSymb" + nl + b"STO,AAA" + nl))]:
+        (root / sub / "2020").mkdir(parents=True, exist_ok=True); (root / sub / "2020" / name).write_bytes(body)
+    t = pd.DataFrame([(D, "AAA", "EQ", "S1", 1000.0)], columns=["date", "symbol", "series", "sec_id", "volume"])
+    info = market.build(paths.BUILD / "market", t)
+    assert info["fo_stocks"] == {"rows": 1, "unattached": 0}                      # one row per date and symbol
+    api.clear_cache()
+    e = api.fo_eligible("2020-10-20")
+    assert e.symbol.tolist() == ["AAA"] and e.fut.tolist() == [True] and e.opt.tolist() == [True]
+    with pytest.raises(api.CoverageError):
+        api.fo_eligible("2020-10-21")
