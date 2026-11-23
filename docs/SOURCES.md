@@ -112,3 +112,7 @@ Source page: `https://www.nseindia.com/all-reports` (Capital Market → Equities
   - `impact_cost_pct`: 6-month rolling mean impact cost (%) for a standard **₹1,00,000 (₹1 lakh)** order size per NSE Clearing methodology (no order-size column in the file). Range across all 47 files: 0.00% to 32.01%.
   - Series covered: all CM series (`EQ`, `BE`, `SM`, `ST`, `BZ`, `SG`, `N0`–`N9`, `GS`, `GB`, `MF`, etc.); impact cost is blank for Group 3, debt, and illiquid series (never filled).
   - Quirk: 1 row in `C_CATG_APR2026.T01` (`KRISHPP`, `E1`) is wrapped in outer double quotes with a trailing tab; stripped cleanly by `market.parse_impact_cost`.
+
+## 9. Manifest download times that are estimates
+
+Four rows in `data/raw/manifest.csv` carry a `fetched_utc` that is an estimate (the time the owner saved the file, not a recorded download time): `data/raw/constituents/2026-11-15/ind_niftynext50list.csv`, `data/raw/pressreleases/pdf/ind_prs17022023_1.pdf`, `ind_prs25062025_2.pdf` and `ind_prs24022022_1.pdf`. Their hashes and sizes are real (computed from the held files). (Added 2026-11-23, issue A4.)
