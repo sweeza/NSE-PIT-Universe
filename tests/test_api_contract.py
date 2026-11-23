@@ -155,3 +155,56 @@ def test_range_with_no_trading_day_is_an_error_not_an_empty_frame(tiny_build):
         api.prices("AAA", "2007-01-06", "2007-01-07", None)
     with pytest.raises(api.CoverageError):
         api.prices("AAA", "2007-01-06", "2007-01-07", "splits")
+
+
+def _verified_from_third_day(d):
+    b = paths.BUILD
+    sec = pd.read_parquet(b / "identity" / "securities.parquet")
+    sec = pd.concat([sec, pd.DataFrame({"sec_id": ["S00002"], "first_symbol": "BBB", "last_symbol": "BBB", "first_date": d[4],
+                                        "last_date": d[-1], "n_days": 2, "isin_last": None, "is_equity": True})], ignore_index=True)
+    sec.to_parquet(b / "identity" / "securities.parquet")
+    pd.DataFrame({"sec_id": ["S00001", "S00002"], "symbol": ["AAA", "BBB"], "from_date": [d[0], d[4]], "to_date": [d[-1], d[-1]],
+                  "isins": ""}).to_parquet(b / "identity" / "symbol_history.parquet")
+    pd.DataFrame([{"index_key": "NIFTY50", "sec_id": s, "from_date": d[2], "to_date": d[-1]} for s in ("S00001", "S00002")]
+                 ).to_parquet(b / "membership" / "intervals.parquet")
+    pd.DataFrame([{"index_key": "NIFTY50", "from_date": d[2], "to_date": d[-1], "status": "VERIFIED", "reason": ""}]
+                 ).to_parquet(b / "membership" / "coverage.parquet")
+    api.clear_cache()
+
+
+def test_backfill_is_opt_in_flagged_and_limited_to_securities_already_trading(tiny_build):
+    d = tiny_build
+    _verified_from_third_day(d)
+    with pytest.raises(api.CoverageError):
+        api.index_members("NIFTY50", d[0])                                   # default: refused
+    with pytest.warns(api.DataQualityWarning, match="not the published membership"):
+        m = api.index_members("NIFTY50", d[0], backfill=True)
+    assert m.symbol.tolist() == ["AAA"]                                      # BBB lists only on d[4]: not carried back
+    assert set(m.membership_status) == {"BACKFILLED_UNVERIFIED"} and (m.backfilled_from == d[2]).all()
+    v = api.index_members("NIFTY50", d[3], backfill=True)                    # inside a verified window: the real list
+    assert set(v.membership_status) == {"VERIFIED"} and sorted(v.symbol) == ["AAA", "BBB"]
+
+
+def test_backfill_never_reaches_before_2007_or_into_an_unverified_index(tiny_build):
+    d = tiny_build
+    _verified_from_third_day(d)
+    with pytest.raises(api.CoverageError, match="backfill only covers"):
+        api.index_members("NIFTY50", "2006-12-29", backfill=True)
+    with pytest.raises(api.CoverageError):
+        api.index_members("NIFTYBANK", d[0], backfill=True)                  # no verified window to copy from
+
+
+def test_sme_securities_are_marked_unreliable_for_adjusted_prices(tiny_build):
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")                           # a main-board security must not warn
+        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert p.adj_reliable.all() and api.sme_securities().empty
+    f = paths.BUILD / "bhavcopy" / "bhavcopy_2007.parquet"
+    t = pd.read_parquet(f); t["series"] = "SM"; t.to_parquet(f)
+    api.clear_cache()
+    with pytest.warns(api.DataQualityWarning, match="SME-platform"):
+        q = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert not q.adj_reliable.any() and api.sme_securities().sec_id.tolist() == ["S00001"]
+    raw = api.prices("AAA", "2007-01-01", "2007-01-08", None)    # raw prices are exact: no flag, no warning
+    assert "adj_reliable" not in raw.columns

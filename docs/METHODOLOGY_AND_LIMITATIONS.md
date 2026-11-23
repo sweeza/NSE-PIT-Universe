@@ -44,7 +44,7 @@ that carried the symbol or ISIN and traded within 14 days (accepted only if uniq
 security and ex-date the combined factor must match previous-close/open (or /close) within 25%.
 Testable days that fail are searched ±5 sessions for a unique matching day (shift) or rejected.
 Untestable (|S| < 1.5) actions are kept as parsed.
-Result: 1,281 kept, 112 untestable, 6 rejected, 0 shifted (108 waived breaks). A bonus of debentures, NCRPS or preference shares is not a share bonus: it is recorded as SCHEME and never gets a share factor (before 2026-11-23 nine of these were rejected by this gate and two untestable ones were applied wrongly).
+Result: 1,343 kept, 112 untestable, 6 rejected, 0 shifted (108 waived breaks). A bonus of debentures, NCRPS or preference shares is not a share bonus: it is recorded as SCHEME and never gets a share factor (before 2026-11-23 nine of these were rejected by this gate and two untestable ones were applied wrongly).
 
 ## 5. Index values
 Daily files (2012-02-21 →) and the niftyindices.com history API (from each index's base date; the path
@@ -80,8 +80,8 @@ remain `UNVERIFIED` per strict PIT methodology.
   identical, record for record, to the held feed's 2004-2006 records (`data/raw/corporate_actions/`, 2026-11-16).
   No evidence exists to move `COVERAGE_START`.
 - 6 share actions in the feed are contradicted by prices and are not applied (`build/actions_rejected_or_shifted.csv`); two of them (GULFPETRO 2013, AHLEAST 2022) are real actions that a second source confirms but the one-day price test cannot (price band, same-day demerger); see AUDIT_REPORT Stage 4.3.
-- 108 demergers/schemes/rights-without-price leave documented breaks (`data/curated/waivers.csv`); 177 further
-  overnight moves have no explanation in the feed: 97 SME-platform securities (the feed holds no SM/ST records at all), 60 ETF unit splits, 12 real price moves with no corporate action, 8 after the feed ends (2026-10-16). Review: `audit/stage43_review.csv`.
+- 108 demergers/schemes/rights-without-price leave documented breaks (`data/curated/waivers.csv`); 115 further
+  overnight moves have no explanation in the feed: 97 SME-platform securities (the feed holds no SM/ST records at all; adjusted prices of SME names are unreliable, `adj_reliable=False`), 12 real price moves with no corporate action, CCAVENUE 2026-10-19 (10:1 consolidation, not in the feed), and 6 ETFs with non-round ratios. 55 ETF unit splits were added from NSE's own prices (`data/curated/actions_price_evidenced.csv`). Review: `audit/stage43_review.csv`.
 - Rights adjustments use the theoretical price and differ from the market move by >25% on 3 days.
 - Index sources disagree on 1,061 index-days (338 by ≥0.1%), flagged per row; 929 index-days are missing
   inside index lives across 208 indices (869,785 index-days total).

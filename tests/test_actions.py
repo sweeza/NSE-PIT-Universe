@@ -195,3 +195,37 @@ def test_equity_bonus_still_a_bonus_next_to_other_text():
     c = classify("Annual General Meeting/Dividend Rs.3/- Per Share/Bonus 1:1", 10.0)
     assert [x["kind"] for x in c] == ["BONUS", "DIVIDEND"] and c[0]["share_factor"] == pytest.approx(2.0)
     assert classify("Bonus 1 Dvr : 10 Eq Share", 10.0)[0]["kind"] == "UNPARSED"
+
+
+def test_supplement_adds_only_rows_after_the_held_feed_and_not_duplicates(tmp_path):
+    from nseuniverse.actions import load_supplement, build_events
+    held = [{"symbol": "AAA", "exDate": "16-Oct-2026", "subject": "Bonus 1:1", "faceVal": "10", "isin": "INE000000001"}]
+    csv = tmp_path / "s.csv"
+    csv.write_text('\ufeff"SYMBOL","COMPANY NAME","SERIES","PURPOSE","FACE VALUE","EX-DATE","RECORD DATE","BOOK CLOSURE START DATE","BOOK CLOSURE END DATE"\n'
+                   '"AAA","A Ltd","EQ","Bonus 1:1","10","16-Oct-2026","-","-","-"\n'      # same as held, not after it
+                   '"BBB","B Ltd","EQ","Fv Split From Rs.10/- To Re.1/-","1","19-Oct-2026","-","-","-"\n'
+                   '"CCC","C Ltd","EQ","Dividend - Rs 2 Per Share","10","not a date","-","-","-"\n', encoding="utf-8")
+    add = load_supplement(held, csv)
+    assert [r["symbol"] for r in add] == ["BBB"] and add[0]["isin"] is None
+    ev = build_events(held + add)
+    assert set(ev.symbol) == {"AAA", "BBB"}
+    assert ev[ev.symbol == "BBB"].share_factor.iloc[0] == pytest.approx(10.0)
+    assert load_supplement(held, tmp_path / "missing.csv") == []
+
+
+def test_price_evidenced_action_becomes_a_split_event(tmp_path):
+    from nseuniverse.actions import load_price_evidenced, build_events
+    f = tmp_path / "p.csv"
+    f.write_text("symbol,ex_date,kind,share_factor,source,note\n"
+                 "NIFTYBEES,2019-12-19,SPLIT,10,data/raw/bhavcopy/legacy/2019/cm19DEC2019bhav.csv.zip,unit 1:10\n", encoding="utf-8")
+    extra = load_price_evidenced(f)
+    ev = build_events([], extra)
+    r = ev.iloc[0]
+    assert (r.symbol, r.kind, r.share_factor) == ("NIFTYBEES", "SPLIT", 10.0) and str(r.ex_date.date()) == "2019-12-19"
+    assert len(load_price_evidenced(tmp_path / "none.csv")) == 0
+
+
+def test_rights_at_par_with_an_at_sign():
+    c = classify("Rights - 2:3@ Par Rs 10 Per Share", 10.0)   # ALOKTEXT 2013: issue price is the face value
+    r = [x for x in c if x["kind"] == "RIGHTS"][0]
+    assert r["issue_price"] == pytest.approx(10.0) and r["rights_new"] == 2 and r["rights_held"] == 3

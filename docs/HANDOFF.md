@@ -5,7 +5,7 @@ Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE p
 ## State
 - Data start is **2007-01-01** (owner decision); the API refuses unverified index/date. 27 indices have verified membership; start dates per index are in `data/build/membership/coverage.parquet` (Nifty 50/Next 50/100 from 2007-01-02, Nifty 200 from 2010-11-01, Nifty 500 from 2013-08-26, 2016-09-30 for LargeMidcap 250/Midcap 150/Smallcap 250, later for sector indices).
 - Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-23, after the Stage 4 parser fixes; ratchet baseline regenerated: rejected actions 15 to 6).
-- 116 tests pass. Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
+- 122 tests pass. Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
 - `data/raw/` now holds 13,548 manifest files, including `constituents_archive/` (250 archived NSE constituent lists from the Internet Archive).
 
 ## Working rules (owner)
@@ -15,7 +15,7 @@ Nothing is estimated. Every curated row cites a file in `data/raw/`. Ask before 
 Stages 0-9 are done except the items below. Session 4 finished Stage 4: 30 stocks against Yahoo on every common day (26 clean, 4 with one explained demerger/rights stretch; 47 of 50 split dates match, the other 3 are bonus-plus-split days), all 15 rejected actions, 31 of 108 waivers and all 177 unexplained moves reviewed (`audit/stage43_review.csv`), dividend differences reviewed, GENESYS 2019 and SBT 2009 decided. Parser fixes: glued face-value splits (BHARTIARTL, ERAINFRA, COREEDUTEC), bonus of debentures/NCRPS/preference shares is SCHEME not a share bonus (two wrong factors, RADIOCITY 1.10 and TVSHLTD 1.0086, removed; 9 rejections gone), dividends next to splits, `Rs:-` amounts, `Rs.0125` unparsed. A5 test written.
 
 ## Pending, in order (next session)
-1. **Owner decisions:** A18 (SME/ETF unit events and the two real rejected actions GULFPETRO 2013 and AHLEAST 2022: a curated price-evidenced file, with Yahoo split JSON saved to `data/raw` if approved) and A19 (download a fresh corporate-actions feed; it ends 2026-10-16). Do not apply a rounded ratio without the owner's call.
+1. **Owner decisions:** A18 (b)-(d): the 5 non-round ETFs, GULFPETRO/AHLEAST, SUNTV. SME stays out, flagged. A21: delivery quantity, price bands, market cap/free float, impact cost need a fetch route (owner downloads, or approves scripted NSE archive access). Index base dates were checked against the methodology PDF (no mismatch); the five Method_*.pdf in `999 dump/` are one 352-page document.
 2. Unreviewed thin spots: Stage 5.3 base date/value vs NSE methodology (no document held, ask the owner); the other 77 waivers (Yahoo covers only 31; the rest rest on the feed text); A20 rights without issue price (needs a source).
 3. After any change: `python -m nseuniverse.cli build`, then `verify` (13 checks, about 10 minutes; prints nothing until done), regenerate baselines only for deliberate changes (`verify.write_ratchet_baseline()`, `write_coverage_baseline()`), ask before pushing.
 

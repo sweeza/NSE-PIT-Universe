@@ -49,8 +49,26 @@ def _prices_year(year: int) -> pd.DataFrame:
     return pd.read_parquet(p) if p.exists() else pd.DataFrame()
 
 
+@functools.lru_cache(maxsize=None)
+def _sme_secs() -> frozenset:
+    """Securities that ever traded in an SME-platform series (SM, ST)."""
+    out = set()
+    for f in sorted((paths.BUILD / "bhavcopy").glob("bhavcopy_*.parquet")):
+        d = pd.read_parquet(f, columns=["sec_id", "series"])
+        out |= set(d.loc[d.series.isin(["SM", "ST"]), "sec_id"].unique())
+    return frozenset(out)
+
+
+def sme_securities() -> pd.DataFrame:
+    """SME-platform securities (ever traded in series SM or ST). Their ADJUSTED prices are not reliable: the NSE
+    corporate-action feed holds no records for SME securities, so none of their splits or bonuses is applied.
+    Raw prices are exact. prices() marks them with adj_reliable=False."""
+    sec, _ = _identity()
+    return sec[sec.sec_id.isin(_sme_secs())].reset_index(drop=True)
+
+
 def clear_cache():
-    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage):
+    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs):
         f.cache_clear()
 
 
@@ -160,6 +178,11 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         raise ValueError("mask_gaps needs an adjust_mode")
     p = p[(p.date >= start_t) & (p.date <= end_t)]
     if adjust_mode is not None:
+        p["adj_reliable"] = ~p.sec_id.isin(_sme_secs())
+        if not p.adj_reliable.all():
+            warnings.warn("SME-platform securities in the result (adj_reliable=False): the NSE feed has no corporate actions "
+                          "for SME securities, so their adjusted prices carry unadjusted splits and bonuses. Use raw "
+                          "prices or leave them out. See sme_securities().", DataQualityWarning, stacklevel=2)
         fl = p.loc[p.adj_gap, ["sec_id", "date", "adj_gap_class"]].rename(columns={"adj_gap_class": "class"})
         fl = fl.merge(p[["sec_id", "symbol"]].drop_duplicates("sec_id"), on="sec_id", how="left") if "symbol" in p else fl
         p.attrs["flagged"] = fl.reset_index(drop=True)
@@ -237,15 +260,40 @@ def coverage() -> pd.DataFrame:
     return _coverage().copy()
 
 
-def index_members(index: str, as_of) -> pd.DataFrame:
+def index_members(index: str, as_of, backfill: bool = False) -> pd.DataFrame:
+    """Members of an index on a date, with the symbol each security carried then.
+
+    Refuses a date that is not verified (see coverage()). backfill=True is an opt-in for dates BEFORE the
+    index's first verified day (from 2007-01-01): it returns the members of the first verified day that were
+    already trading on `as_of`, marked membership_status='BACKFILLED_UNVERIFIED'. That list is NOT what the
+    index held then (it was not published or was not checked): it carries survivorship and look-ahead bias and
+    is meant for out-of-sample tests only. A date inside or between verified windows is never backfilled."""
     k = indices.name_map().get(indices.key(index), indices.key(index))
     t = pd.Timestamp(as_of)
     c = _coverage()
     ok = c[(c.index_key == k) & (c.status == "VERIFIED") & (c.from_date <= t) & (c.to_date >= t)]
-    if ok.empty:
-        raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage()")
-    sids = membership.members(_intervals(), k, t)
     sec, sh = _identity()
+    if ok.empty:
+        first = c[(c.index_key == k) & (c.status == "VERIFIED")].from_date.min()
+        if not (backfill and pd.notna(first) and adjust.COVERAGE_START <= t < first):
+            raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage()"
+                                + ("" if not backfill else " (backfill only covers 2007-01-01 up to the first verified day)"))
+        sids = membership.members(_intervals(), k, first)
+        started = sec.set_index("sec_id").first_date
+        sids = [s for s in sids if s in started.index and started[s] <= t]
+        out = _with_symbols(sec, sh, sids, t)
+        out["membership_status"] = "BACKFILLED_UNVERIFIED"
+        out["backfilled_from"] = first
+        warnings.warn(f"{index}: {t.date()} is before the first verified day {first.date()}; the member list is the "
+                      f"{first.date()} list restricted to securities already trading, not the published membership",
+                      DataQualityWarning, stacklevel=2)
+        return out
+    out = _with_symbols(sec, sh, membership.members(_intervals(), k, t), t)
+    out["membership_status"] = "VERIFIED"
+    return out
+
+
+def _with_symbols(sec: pd.DataFrame, sh: pd.DataFrame, sids, t: pd.Timestamp) -> pd.DataFrame:
     out = sec[sec.sec_id.isin(sids)].reset_index(drop=True)
     sub = sh[sh.sec_id.isin(sids)]
     sym_map = {}

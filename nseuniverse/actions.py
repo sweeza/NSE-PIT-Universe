@@ -106,7 +106,7 @@ def classify(subject: str, face_value: float | None) -> list[dict]:
                 issue = None
             elif mp and face_value:
                 issue = face_value + float(mp.group(1))
-            elif re.search(r"at par", rest) and face_value:
+            elif re.search(r"(?:\bat|@)\s*par\b", rest) and face_value:
                 issue = face_value
             elif mi:
                 issue = float(mi.group(1))
@@ -187,9 +187,54 @@ def load_raw(path: Path | None = None) -> list[dict]:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def build_events(records: list[dict] | None = None) -> pd.DataFrame:
-    """One row per component event. Deterministic ordering."""
-    records = records if records is not None else load_raw()
+SUPPLEMENT = "CF-CA-equities-01-01-2004-to-23-11-2026.csv"     # NSE Corporate Actions page, Equity, downloaded by the owner
+PRICE_EVIDENCED = "actions_price_evidenced.csv"
+
+
+def load_supplement(held: list[dict], path: Path | None = None) -> list[dict]:
+    """Rows of a newer NSE download (CSV, no ISIN column) that are dated after the last ex-date of the held
+    feed and are not already in it. The held feed stays the base: earlier rows of the CSV are not used (they were
+    compared with the held feed on 2026-11-22: no altered or missing rows). Same record layout as the held JSON."""
+    p = path or (paths.RAW / "corporate_actions" / SUPPLEMENT)
+    if not p.exists():
+        return []
+    df = pd.read_csv(p, dtype=str, encoding="utf-8-sig").fillna("")
+    last = max((d for d in (_date(r.get("exDate")) for r in held) if pd.notna(d)), default=pd.NaT)
+    seen = {((r.get("symbol") or "").strip(), (r.get("exDate") or "").strip(), (r.get("subject") or "").strip()) for r in held}
+    out = []
+    for r in df.itertuples(index=False):
+        d = _date(r[5])
+        key = (r[0].strip(), r[5].strip(), r[3].strip())
+        if pd.isna(d) or (pd.notna(last) and d <= last) or key in seen:
+            continue
+        out.append({"symbol": r[0].strip(), "comp": r[1].strip(), "series": r[2].strip(), "subject": r[3].strip(),
+                    "faceVal": r[4].strip() or None, "exDate": r[5].strip(), "recDate": r[6].strip(),
+                    "bcStartDate": r[7].strip(), "bcEndDate": r[8].strip(), "isin": None, "caBroadcastDate": None,
+                    "source": "supplement"})
+    return out
+
+
+def load_price_evidenced(path: Path | None = None) -> pd.DataFrame:
+    """Curated share actions that the feed does not carry (ETF unit splits). Each row gives the factor and cites
+    the NSE file in data/raw that shows the price move; the price gate still tests the factor against the price."""
+    p = path or (paths.CURATED / PRICE_EVIDENCED)
+    cols = ["symbol", "ex_date", "kind", "share_factor", "source", "note"]
+    if not p.exists():
+        return pd.DataFrame(columns=cols)
+    df = pd.read_csv(p, dtype=str).fillna("")
+    df["share_factor"] = df["share_factor"].astype(float)
+    df["ex_date"] = pd.to_datetime(df["ex_date"], format="%Y-%m-%d")
+    return df[cols]
+
+
+def build_events(records: list[dict] | None = None, extra: pd.DataFrame | None = None) -> pd.DataFrame:
+    """One row per component event. Deterministic ordering.
+    Default inputs: the held feed, plus the newer NSE download after its last ex-date, plus the curated
+    price-evidenced actions."""
+    if records is None:
+        records = load_raw()
+        records = records + load_supplement(records)
+        extra = load_price_evidenced() if extra is None else extra
     rows = []
     for i, r in enumerate(records):
         fv = None
@@ -204,6 +249,11 @@ def build_events(records: list[dict] | None = None) -> pd.DataFrame:
                 "ex_date": _date(r.get("exDate")), "record_date": _date(r.get("recDate")),
                 "face_value": fv, "subject": (r.get("subject") or "").strip(),
                 "knowledge_date": _date(r.get("caBroadcastDate")), **c})
+    for j, r in enumerate(extra.itertuples(index=False) if extra is not None else []):
+        rows.append({"rec_id": len(records) + j, "comp": 0, "symbol": r.symbol, "isin": None, "series": "EQ",
+                     "ex_date": r.ex_date, "record_date": pd.NaT, "face_value": None,
+                     "subject": f"price-evidenced {r.kind.lower()} (curated): {r.note}"[:200], "knowledge_date": pd.NaT,
+                     "kind": r.kind, "share_factor": r.share_factor, "detail": f"{r.share_factor:g} price-evidenced"})
     df = pd.DataFrame(rows)
     for col in ("share_factor", "amount", "rights_new", "rights_held", "issue_price"):
         if col not in df:
