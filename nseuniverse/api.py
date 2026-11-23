@@ -559,3 +559,39 @@ def deals(symbols, start, end, kind: str | None = None) -> pd.DataFrame:
                 sids.add(_sid_for(s, s0))
         out = out[out.sec_id.isin(sids)]
     return out.reset_index(drop=True)
+
+
+def impact_cost(symbols, start, end) -> pd.DataFrame:
+    """Monthly NSE Clearing security category (1/2/3) and 6-month rolling mean impact cost (%) for a standard
+    Rs 1 lakh order (continuous from 2023-10; sporadic earlier months from 2019-03). Raises CoverageError if no
+    monthly file exists in the requested range. Missing values for a security stay NaN and are never filled."""
+    d = _market("impact_cost")
+    if d.empty:
+        raise CoverageError("no impact_cost data in this build (python -m nseuniverse.cli fetch market, then build)")
+    s0 = pd.Timestamp(start).to_period("M").to_timestamp()
+    e0 = pd.Timestamp(end).to_period("M").to_timestamp()
+    if s0 > e0:
+        raise CoverageError(f"invalid range: {start}..{end}")
+    out = d[(d.date >= s0) & (d.date <= e0)]
+    if out.empty:
+        raise CoverageError(f"no impact_cost monthly file between {pd.Timestamp(start).date()} and {pd.Timestamp(end).date()}")
+    if symbols is not None:
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        sids = set()
+        s_t, e_t = pd.Timestamp(start), pd.Timestamp(end)
+        for s in symbols:
+            try:
+                sids.add(_sid_for(s, e_t))
+            except CoverageError:
+                try:
+                    sids.add(_sid_for(s, s_t))
+                except CoverageError:
+                    _, sh = _identity()
+                    ov = sh[(sh.symbol == s) & (sh.from_date <= e_t) & (sh.to_date >= s_t)]["sec_id"].unique()
+                    if len(ov) == 1:
+                        sids.add(ov[0])
+                    else:
+                        raise
+        out = out[out.sec_id.isin(sids)]
+    return out.reset_index(drop=True)

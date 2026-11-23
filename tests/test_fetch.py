@@ -139,3 +139,29 @@ def test_dedupe_manifest_keeps_the_first_row_and_every_other_line_untouched(tmp_
     assert fetch.dedupe_manifest() == 2
     assert paths.MANIFEST.read_bytes() == head + odd + b"b,u,h,2,t" + bytes([13, 10])
     assert fetch.dedupe_manifest() == 0
+
+
+def test_impact_cost_source_is_monthly_validates_bodies_and_reconciles(tmp_path, monkeypatch):
+    import datetime as dt
+    from nseuniverse import fetch, paths
+    monkeypatch.setattr(paths, "ROOT", tmp_path); monkeypatch.setattr(paths, "RAW", tmp_path / "raw")
+    monkeypatch.setattr(paths, "MARKET_RAW", tmp_path / "raw" / "market")
+    monkeypatch.setattr(paths, "MANIFEST", tmp_path / "raw" / "manifest.csv")
+    monkeypatch.setattr(paths, "ABSENT", tmp_path / "raw" / "absent.csv")
+    calls = []
+
+    def fake_get(url, retries=4):
+        calls.append(url)
+        if "JAN2024" in url:
+            return 200, b"10,JAN,2024,000001\n20,AAA,EQ,INE001A01010,1,0.12\n"
+        return 200, b"<!DOCTYPE html><html>not found</html>"
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    res = fetch.fetch_range("impact_cost", dt.date(2024, 1, 15), dt.date(2024, 2, 20), workers=1)
+    assert res == {"fetched": 1, "absent": 1}
+    assert len(calls) == 2 and calls[0].endswith("C_CATG_JAN2024.T01") and calls[1].endswith("C_CATG_FEB2024.T01")
+    assert (paths.MARKET_RAW / "impactcost" / "2024" / "C_CATG_JAN2024.T01").exists()
+    assert not (paths.MARKET_RAW / "impactcost" / "2024" / "C_CATG_FEB2024.T01").exists()
+    f = paths.MARKET_RAW / "impactcost" / "2024" / "C_CATG_MAR2024.T01"
+    f.write_bytes(b"10,MAR,2024,000001\n20,AAA,EQ,INE001A01010,1,0.10\n")
+    assert fetch.reconcile_manifest() == 1
+    assert "C_CATG_MAR2024.T01" in paths.MANIFEST.read_text(encoding="latin-1")

@@ -9,6 +9,7 @@ Tables written to data/build/market/:
   sec_list.parquet      date, symbol, series, band, remarks, sec_id                      (security list, 2020-)
   fo_ban.parquet        date, symbol, sec_id                                             (securities in the F&O ban period)
   deals.parquet         date, symbol, client_name, buy_sell, quantity, price, remarks, kind, sec_id
+  impact_cost.parquet   date, symbol, series, isin, category, impact_cost_pct, sec_id    (monthly NCL file, 2019-)
 """
 from __future__ import annotations
 
@@ -207,6 +208,74 @@ def _read_deals() -> pd.DataFrame:
     return out.drop_duplicates(["date", "kind", "symbol", "client_name", "buy_sell", "quantity", "price"]).reset_index(drop=True)
 
 
+def parse_impact_cost(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:
+    """Monthly NSE Clearing security category & 6-month rolling mean impact cost (.T01).
+    Header: 10,<MMM>,<YYYY>,<count>. Data: 20,<symbol>,<series>,<isin>,<category>,<impact_cost_pct>.
+    Raises UnknownLayout if header or data rows do not match the known 6-field layout."""
+    lines = [l.strip() for l in raw.decode("latin-1").splitlines() if l.strip()]
+    if not lines:
+        raise UnknownLayout("empty impact_cost file")
+    hdr = lines[0].strip('"').strip().split(",")
+    if len(hdr) < 4 or hdr[0] != "10":
+        raise UnknownLayout(f"unexpected impact_cost header: {lines[0]!r}")
+    rows = []
+    for line in lines[1:]:
+        clean = line.strip('"').strip()
+        p = [x.strip() for x in clean.split(",")]
+        if len(p) != 6 or p[0] != "20":
+            raise UnknownLayout(f"unexpected impact_cost row: {line!r}")
+        rows.append((date, p[1], p[2], p[3], p[4], p[5]))
+    df = pd.DataFrame(rows, columns=["date", "symbol", "series", "isin", "category", "impact_cost_pct"])
+    df["category"] = pd.to_numeric(df["category"], errors="coerce").astype("Int64")
+    df["impact_cost_pct"] = pd.to_numeric(df["impact_cost_pct"], errors="coerce")
+    return df[df.symbol != ""].reset_index(drop=True)
+
+
+def _read_impact_cost() -> pd.DataFrame:
+    frames = []
+    root = paths.MARKET_RAW / "impactcost"
+    for f in sorted(root.rglob("C_CATG_*.T01")) if root.exists() else []:
+        m = re.match(r"C_CATG_([A-Z]{3})(\d{4})\.T01$", f.name, re.IGNORECASE)
+        if not m:
+            SKIPPED.append(f.name)
+            continue
+        d = pd.Timestamp(dt.datetime.strptime(m.group(1).upper() + m.group(2), "%b%Y"))
+        try:
+            x = parse_impact_cost(f.read_bytes(), d)
+        except UnknownLayout:
+            SKIPPED.append(f.name)
+            continue
+        if len(x):
+            frames.append(x)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def _attach_monthly(df: pd.DataFrame, t: pd.DataFrame) -> pd.DataFrame:
+    """Attach monthly rows (date = month start) to sec_id using bhavcopy rows in the same calendar month:
+    first by (month, symbol, series), then by (month, symbol) when unique, then by (month, isin) if available."""
+    if df.empty:
+        return df.assign(sec_id=pd.Series([], dtype=object))
+    tm = t[["date", "symbol", "series", "sec_id"]].copy()
+    tm["month"] = tm["date"].dt.to_period("M").dt.to_timestamp()
+    out = df.assign(month=df["date"].dt.to_period("M").dt.to_timestamp())
+    k1 = tm.groupby(["month", "symbol", "series"]).sec_id.agg(lambda s: s.iloc[0] if s.nunique() == 1 else np.nan).dropna().reset_index()
+    out = out.merge(k1, on=["month", "symbol", "series"], how="left")
+    out["sec_id"] = out["sec_id"].astype(object)
+    miss = out["sec_id"].isna()
+    if miss.any():
+        k2 = tm.groupby(["month", "symbol"]).sec_id.agg(lambda s: s.iloc[0] if s.nunique() == 1 else np.nan).dropna().reset_index()
+        fill = out.loc[miss, ["month", "symbol"]].merge(k2, on=["month", "symbol"], how="left")["sec_id"].values
+        out.loc[miss, "sec_id"] = fill
+    miss = out["sec_id"].isna()
+    if miss.any() and "isin" in t.columns and "isin" in out.columns:
+        ti = t[["date", "isin", "sec_id"]].dropna(subset=["isin"]).copy()
+        ti["month"] = ti["date"].dt.to_period("M").dt.to_timestamp()
+        k3 = ti.groupby(["month", "isin"]).sec_id.agg(lambda s: s.iloc[0] if s.nunique() == 1 else np.nan).dropna().reset_index()
+        fill = out.loc[miss, ["month", "isin"]].merge(k3, on=["month", "isin"], how="left")["sec_id"].values
+        out.loc[miss, "sec_id"] = fill
+    return out.drop(columns=["month"])
+
+
 def _attach(df: pd.DataFrame, t: pd.DataFrame) -> pd.DataFrame:
     """sec_id from the bhavcopy row with the same date, symbol and series; if the series is not there that day,
     from the same date and symbol when that identifies exactly one security."""
@@ -239,9 +308,10 @@ def build(out: Path, t: pd.DataFrame) -> dict:
         "fo_ban": _read_dir("fosecban", "fo_secban_*.csv", parse_secban),
         "fo_stocks": _read_fo(),
         "deals": _read_deals(),
+        "impact_cost": _read_impact_cost(),
     }
     for name, df in tabs.items():
-        df = _attach(df, t)
+        df = _attach_monthly(df, t) if name == "impact_cost" else _attach(df, t)
         tabs[name] = df
         if len(df):
             sort_cols = [c for c in ("date", "kind", "symbol", "series", "client_name") if c in df.columns]

@@ -113,8 +113,14 @@ SOURCES.update({
         "fo_bhav_udiff", dt.date(2024, 7, 5), dt.date.today,
         lambda d: f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip",
         _market("fobhav/udiff", lambda d: f"BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip"), _is_zip),
+    # Monthly NSE Clearing (NCL) security category & 6-month rolling mean impact cost (Rs 1 lakh order).
+    "impact_cost": Source(
+        "impact_cost", dt.date(2019, 1, 1), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/content/nsccl/C_CATG_{_MON[d.month-1]}{d.year}.T01",
+        _market("impactcost", lambda d: f"C_CATG_{_MON[d.month-1]}{d.year}.T01"), _starts(b"10,")),
 })
 SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban", "fo_bhav_legacy", "fo_bhav_udiff"}
+MONTHLY_ONLY = {"impact_cost"}
 
 
 def session_days() -> set[dt.date]:
@@ -229,7 +235,8 @@ def fetch_one(src: Source, d: dt.date, absent: dict) -> str:
     if dest.exists():
         return "have"
     key = (src.name, d.isoformat())
-    if key in absent and (dt.date.today() - d).days > 7:
+    retry_window = 35 if src.name in MONTHLY_ONLY else 7
+    if key in absent and (dt.date.today() - d).days > retry_window:
         return "known-absent"
     url = src.url(d)
     status, body = _get(url)
@@ -241,7 +248,7 @@ def fetch_one(src: Source, d: dt.date, absent: dict) -> str:
         tmp.replace(dest)
         row = [dest.relative_to(paths.ROOT).as_posix(), url, hashlib.sha256(body).hexdigest(),
                len(body), dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]
-        if src.name in SESSION_ONLY:
+        if src.name in SESSION_ONLY or src.name in MONTHLY_ONLY:
             _queue_row("manifest", row)
             return "fetched"
         try:
@@ -250,7 +257,7 @@ def fetch_one(src: Source, d: dt.date, absent: dict) -> str:
             return "fetched-unlisted"
         return "fetched"
     note = "html-or-invalid-body" if status == 200 else "not-found"
-    if src.name in SESSION_ONLY:
+    if src.name in SESSION_ONLY or src.name in MONTHLY_ONLY:
         _queue_row("absent", [src.name, d.isoformat(), status, note, today])
     else:
         _append(paths.ABSENT, ["source", "date", "http", "note", "checked"], [src.name, d.isoformat(), status, note, today])
@@ -421,10 +428,17 @@ def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None =
     src = SOURCES[source]
     start = max(start or src.first, src.first)
     end = min(end or src.last_fn(), src.last_fn())
-    days = [start + dt.timedelta(n) for n in range((end - start).days + 1)]
-    if source in SESSION_ONLY:
-        sd = session_days()
-        days = [d for d in days if d in sd]
+    if source in MONTHLY_ONLY:
+        days = []
+        y, m = start.year, start.month
+        while (y, m) <= (end.year, end.month):
+            days.append(dt.date(y, m, 1))
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    else:
+        days = [start + dt.timedelta(n) for n in range((end - start).days + 1)]
+        if source in SESSION_ONLY:
+            sd = session_days()
+            days = [d for d in days if d in sd]
     absent = _read_absent()
     counts: dict[str, int] = {}
     done = 0
@@ -443,7 +457,7 @@ def fetch_range(source: str, start: dt.date | None = None, end: dt.date | None =
                 print(f"[{source}] {done}/{len(days)} {counts}", flush=True)
     flush_queue()
     print(f"[{source}] done {counts}", flush=True)
-    if source in SESSION_ONLY:
+    if source in SESSION_ONLY or source in MONTHLY_ONLY:
         n = reconcile_manifest()
         if n:
             print(f"[{source}] manifest rows added afterwards: {n}", flush=True)
@@ -475,9 +489,9 @@ def reconcile_manifest(root: Path | None = None) -> int:
     root = root or paths.MARKET_RAW
     listed = set()
     if paths.MANIFEST.exists():
-        with open(paths.MANIFEST, newline="") as f:
+        with open(paths.MANIFEST, newline="", encoding="latin-1") as f:
             listed = {r["path"] for r in csv.DictReader(f)}
-    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban"}
+    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban", "impactcost": "impact_cost"}
     n = 0
     for f in sorted(root.rglob("*")):
         if not f.is_file() or f.suffix == ".part":
@@ -491,6 +505,8 @@ def reconcile_manifest(root: Path | None = None) -> int:
         m = __import__("re").search(r"(\d{2})(\d{2})(\d{4})", f.name)
         if f.name.startswith("fo") and f.name.endswith("bhav.csv.zip"):
             d = dt.datetime.strptime(f.name[2:11], "%d%b%Y").date()
+        elif f.name.startswith("C_CATG_") and f.name.endswith(".T01"):
+            d = dt.datetime.strptime(f.name[7:14], "%b%Y").date()
         elif m and not f.name.startswith("BhavCopy"):
             d = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
         elif f.name.startswith("BhavCopy"):

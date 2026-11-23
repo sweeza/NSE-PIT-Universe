@@ -98,3 +98,17 @@ Source page: `https://www.nseindia.com/report-detail/display-bulk-and-block-deal
 | Block Deals | Archive CSV (`block_{YYYYMMDD}_{YYYYMMDD}.csv`) | 2005-11-17 → 2026-11-20 (22 windows) | `Date `, `Symbol `, `Security Name `, `Client Name `, `Buy / Sell `, `Quantity Traded `, `Trade Price / Wght. Avg. Price `, `Remarks ` | Same archive layout as Bulk Deals. |
 | Block Deals | Daily snapshot (`block_{YYYYMMDD}.csv`) | Latest day | `Date`, `Symbol`, `Security Name`, `Client Name`, `Buy/Sell`, `Quantity Traded`, `Trade Price / Wght. Avg. Price` | Same as Bulk daily snapshot except `Remarks` column is omitted. |
 | Short Selling | Archive CSV (`short_{YYYYMMDD}_{YYYYMMDD}.csv`) | 2008-02-01 → 2026-11-20 (19 windows) | `Date `, `Symbol `, `Security Name `, `Quantity ` | UTF-8 BOM, trailing spaces in header, Indian comma-formatted numbers; `"-"` in Quantity (1 row) stays null. |
+
+## 8. Security Category & Impact Cost — VERIFIED (2026-11-23)
+
+Source page: `https://www.nseindia.com/all-reports` (Capital Market → Equities & SME → Monthly Reports: `Security Category Impact Cost`, and Archives: `CM - Security Catergory Impact Cost (.T01)`, both tagged `data-type="monthly-reports"`). NSE does **not** publish a daily per-security impact-cost file.
+
+- **URL pattern:** `https://nsearchives.nseindia.com/content/nsccl/C_CATG_{MMM}{YYYY}.T01` (monthly NSE Clearing file).
+- **Coverage on `nsearchives.nseindia.com`:** 47 monthly files (16,905,605 bytes / 16.12 MB; 532,386 data rows, 172,282 with numeric impact cost). Continuous from **2023-10 through 2026-11** (38 consecutive months), plus 9 earlier months (**2019-03**, **2021-01..2021-06**, **2023-05..2023-06**). All other months from 2004 through 2026 return HTTP 404 (alternate suffixes `.T02`/`.T03` and `/archives/nsccl/` also 404).
+- **Layout (identical across all 47 files, 2019–2026):** Plain CSV (`.T01`, `latin-1`, no column header row):
+  - Header record: `10,{MMM},{YYYY},{count}`
+  - Data record (6 fields): `20,{symbol},{series},{isin},{category},{impact_cost_pct}`
+  - `category`: `1` (Group I: traded ≥80% of days in prior 6 months, mean impact cost ≤1%), `2` (Group II: ≥80% of days, >1%), `3` (Group III / other; impact cost blank).
+  - `impact_cost_pct`: 6-month rolling mean impact cost (%) for a standard **₹1,00,000 (₹1 lakh)** order size per NSE Clearing methodology (no order-size column in the file). Range across all 47 files: 0.00% to 32.01%.
+  - Series covered: all CM series (`EQ`, `BE`, `SM`, `ST`, `BZ`, `SG`, `N0`–`N9`, `GS`, `GB`, `MF`, etc.); impact cost is blank for Group 3, debt, and illiquid series (never filled).
+  - Quirk: 1 row in `C_CATG_APR2026.T01` (`KRISHPP`, `E1`) is wrapped in outer double quotes with a trailing tab; stripped cleanly by `market.parse_impact_cost`.

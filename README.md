@@ -35,8 +35,9 @@ Daily NSE files fetched into `data/raw/market/` (2.9 GB, 34,938 files in the man
 | `api.fo_ban(date)`: securities in the F&O ban period | NSE `fo_secban` files | 2010 on; an empty frame means NIL | files without a list are refused |
 | `api.fo_eligible(date)`: stocks with futures and/or options contracts that day | NSE derivatives bhavcopy (legacy and UDiFF) | 5,681 days, 2004 to 2026-11-20 (50 to 267 stocks a day) | derived from contracts present, not NSE's official eligible list |
 | `api.deals(symbols, start, end, kind=None)`: bulk deals, block deals, and short selling | NSE report archive (64 annual windows, real browser session) and daily snapshots | bulk 2004-01-04.., block 2005-11-17.., short 2008-02-01.. to 2026-11-20 (359,062 rows) | qty > 0 on 100.000% of rows (1 null `"-"`), price inside bhavcopy low–high on 99.969% (259,212/259,293), 104 unattached |
+| `api.impact_cost(symbols, start, end)`: liquidity category (1/2/3) and 6-month rolling mean impact cost (%) for ₹1 lakh order | NSE Clearing monthly `C_CATG_<MMM><YYYY>.T01` (not daily) | 47 months: continuous 2023-10..2026-11 + 9 earlier months (2019-03, 2021-01..06, 2023-05..06); 532,386 rows (172,282 with numeric impact cost) | 0 negative values, 0 above 100% (range 0.00%–32.01%), 52.9% attached overall (250,587 unattached, mostly non-trading debt/SG series); blank values never filled |
 
-Not included: market cap, free float, impact cost. Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
+Not included: market cap, free float. Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
 
 ## Read this before relying on it
 

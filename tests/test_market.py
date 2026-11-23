@@ -180,3 +180,42 @@ def test_deals_build_dedupes_and_api_enforces_coverage(market_build):
         api.deals("AAA", "2020-10-20", "2020-10-20", kind="short")          # short starts 2020-10-21
     with pytest.raises(ValueError):
         api.deals("AAA", "2020-10-20", "2020-10-21", kind="other")
+
+
+def test_parse_impact_cost_and_unknown_layout():
+    nl = bytes([10])
+    raw = (b"10,OCT,2020,000003" + nl +
+           b"20,AAA,EQ,INE001A01010,1,0.15" + nl +
+           b"20,BBB,BE,INE002A01010,3," + nl +
+           b'"20,KRISHPP,E1,IN90GGO01013,1,0.52\t"' + nl)
+    df = market.parse_impact_cost(raw, pd.Timestamp("2020-10-01"))
+    assert df.symbol.tolist() == ["AAA", "BBB", "KRISHPP"]
+    assert df.category.tolist() == [1, 3, 1]
+    assert df.loc[0, "impact_cost_pct"] == pytest.approx(0.15)
+    assert pd.isna(df.loc[1, "impact_cost_pct"])
+    assert df.loc[2, "impact_cost_pct"] == pytest.approx(0.52)
+    with pytest.raises(market.UnknownLayout):
+        market.parse_impact_cost(b"BAD,HEADER" + nl + b"20,AAA,EQ,INE,1,0.1" + nl, pd.Timestamp("2020-10-01"))
+    with pytest.raises(market.UnknownLayout):
+        market.parse_impact_cost(b"10,OCT,2020,1" + nl + b"20,AAA,EQ" + nl, pd.Timestamp("2020-10-01"))
+
+
+def test_impact_cost_build_attaches_monthly_and_api_enforces_coverage(market_build):
+    nl = bytes([10])
+    icdir = paths.MARKET_RAW / "impactcost" / "2020"
+    icdir.mkdir(parents=True, exist_ok=True)
+    (icdir / "C_CATG_OCT2020.T01").write_bytes(
+        b"10,OCT,2020,000002" + nl +
+        b"20,AAA,EQ,INE001A01010,1,0.15" + nl +
+        b"20,BBB,BE,INE002A01010,3," + nl)
+    t = pd.DataFrame([(D, "AAA", "EQ", "S1", 1000.0), (D, "BBB", "BE", "S2", 50.0)],
+                     columns=["date", "symbol", "series", "sec_id", "volume"])
+    info = market.build(paths.BUILD / "market", t)
+    assert info["impact_cost"] == {"rows": 2, "unattached": 0}
+    api.clear_cache()
+    res = api.impact_cost("AAA", "2020-10-01", "2020-10-31")
+    assert len(res) == 1 and res.loc[0, "impact_cost_pct"] == pytest.approx(0.15) and res.loc[0, "category"] == 1
+    res_b = api.impact_cost("BBB", "2020-10-01", "2020-10-31")
+    assert len(res_b) == 1 and pd.isna(res_b.loc[0, "impact_cost_pct"])
+    with pytest.raises(api.CoverageError):
+        api.impact_cost("AAA", "2020-09-01", "2020-09-30")
