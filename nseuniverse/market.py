@@ -204,8 +204,16 @@ def _read_deals() -> pd.DataFrame:
             frames.append(d)
     if not frames:
         return pd.DataFrame()
-    out = pd.concat(frames, ignore_index=True)
-    return out.drop_duplicates(["date", "kind", "symbol", "client_name", "buy_sell", "quantity", "price"]).reset_index(drop=True)
+    key = ["date", "kind", "symbol", "client_name", "buy_sell", "quantity", "price"]
+    parts = []
+    for d in frames:
+        d = d.copy()
+        d["_n"] = d.groupby(key, dropna=False).cumcount()      # the 1st, 2nd ... identical row inside ONE file
+        parts.append(d)
+    out = pd.concat(parts, ignore_index=True)
+    # A row listed in two files (a daily snapshot and a window, or two windows sharing a day) counts once; identical
+    # rows inside one file are separate deals and are all kept.
+    return out.drop_duplicates(key + ["_n"]).drop(columns="_n").reset_index(drop=True)
 
 
 def parse_impact_cost(raw: bytes, date: pd.Timestamp) -> pd.DataFrame:

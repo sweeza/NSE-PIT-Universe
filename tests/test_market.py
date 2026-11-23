@@ -219,3 +219,15 @@ def test_impact_cost_build_attaches_monthly_and_api_enforces_coverage(market_bui
     assert len(res_b) == 1 and pd.isna(res_b.loc[0, "impact_cost_pct"])
     with pytest.raises(api.CoverageError):
         api.impact_cost("AAA", "2020-09-01", "2020-09-30")
+
+
+def test_deals_identical_rows_inside_one_file_are_kept_and_cross_file_repeats_are_dropped(tmp_path, monkeypatch):
+    nl = bytes([10])
+    head = b"Date,Symbol,Security Name,Client Name,Buy/Sell,Quantity Traded,Trade Price / Wght. Avg. Price,Remarks" + nl
+    row = b"20-NOV-2026,AAA,A LTD,CLIENT X,BUY,1000,10.5,-" + nl
+    d = tmp_path / "market" / "deals"; d.mkdir(parents=True)
+    (d / "bulk_20261120_20261120.csv").write_bytes(head + row + row)      # two identical deals the same day
+    (d / "bulk_20261120.csv").write_bytes(head + row)                     # the daily snapshot repeats one of them
+    monkeypatch.setattr(paths, "MARKET_RAW", tmp_path / "market")
+    out = market._read_deals()
+    assert len(out) == 2                                                  # not 1 (over-merged) and not 3 (double-counted)
