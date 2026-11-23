@@ -86,3 +86,15 @@ Probed 2026-11-15 with plain HTTP clients and a browser-like User-Agent, no logi
 
 ### Proposed next step
 Phase 1 can start now for the bhavcopy archive, which depends on neither decision.
+
+## 7. Bulk deals, block deals, and short selling — VERIFIED (2026-11-23)
+
+Source page: `https://www.nseindia.com/report-detail/display-bulk-and-block-deals` (1-year Custom windows downloaded in a real Chrome session) and `nsearchives.nseindia.com/content/equities/{bulk,block}.csv` (daily latest-day snapshots via `fetch.fetch_deals_today()`).
+
+| Report | Era / Source | Coverage | Columns | Notes |
+|---|---|---|---|---|
+| Bulk Deals | Archive CSV (`bulk_{YYYYMMDD}_{YYYYMMDD}.csv`) | 2004-01-04 → 2026-11-20 (23 windows) | `Date `, `Symbol `, `Security Name `, `Client Name `, `Buy / Sell `, `Quantity Traded `, `Trade Price / Wght. Avg. Price `, `Remarks ` | UTF-8 BOM, quoted fields, trailing spaces in header, Indian comma-formatted numbers, `DD-MMM-YYYY` dates. |
+| Bulk Deals | Daily snapshot (`bulk_{YYYYMMDD}.csv`) | Latest day | `Date`, `Symbol`, `Security Name`, `Client Name`, `Buy/Sell`, `Quantity Traded`, `Trade Price / Wght. Avg. Price`, `Remarks` | Plain CSV, no BOM, no trailing spaces, `Buy/Sell` without spaces. |
+| Block Deals | Archive CSV (`block_{YYYYMMDD}_{YYYYMMDD}.csv`) | 2005-11-17 → 2026-11-20 (22 windows) | `Date `, `Symbol `, `Security Name `, `Client Name `, `Buy / Sell `, `Quantity Traded `, `Trade Price / Wght. Avg. Price `, `Remarks ` | Same archive layout as Bulk Deals. |
+| Block Deals | Daily snapshot (`block_{YYYYMMDD}.csv`) | Latest day | `Date`, `Symbol`, `Security Name`, `Client Name`, `Buy/Sell`, `Quantity Traded`, `Trade Price / Wght. Avg. Price` | Same as Bulk daily snapshot except `Remarks` column is omitted. |
+| Short Selling | Archive CSV (`short_{YYYYMMDD}_{YYYYMMDD}.csv`) | 2008-02-01 → 2026-11-20 (19 windows) | `Date `, `Symbol `, `Security Name `, `Quantity ` | UTF-8 BOM, trailing spaces in header, Indian comma-formatted numbers; `"-"` in Quantity (1 row) stays null. |

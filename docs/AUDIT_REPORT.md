@@ -342,6 +342,8 @@ The unexplained list held no missed parser case; the three glued splits were not
 
 Added later the same day: derivatives bhavcopy (`fo_bhav_legacy` 5,091 files to 2024-07-05, `fo_bhav_udiff` 591 files from 2024-07-05; 2.4 GB) and the table `fo_stocks` (stock futures or options present that day; 987,624 rows, 5,681 days, 50 to 267 stocks a day, 28 rows unattached). The manifest briefly held 19 repeated rows (a queued row and a reconcile both listed a file); `fetch.dedupe_manifest()` now removes them, byte-exact for every other line.
 
+Added 2026-11-23: bulk deals (2004-01-04..2026-11-20, 23 annual windows, 245,962 rows), block deals (2005-11-17..2026-11-20, 22 annual windows, 13,375 rows), and short selling (2008-02-01..2026-11-20, 19 annual windows, 99,725 rows), downloaded via a real Chrome session from NSE's report page (1-year Custom windows, 5.5 s pauses, 0 blocks/challenges, 0 empty windows inside covered periods) and listed in `manifest.csv` (34,938 files total). Built into `data/build/market/deals.parquet` (359,062 deduplicated rows, 104 unattached, 0 skipped layouts). Extended `check_market`: `qty > 0` on 100.000% of rows (1 null `"-"` on `LIQUIDBEES` 2026-07-09), price within bhavcopy day low–high on 259,212/259,293 priced attached rows (99.969%). `api.deals()` enforces coverage; `caveats.py` updated (`DEALS_REVISED_BY_EXCHANGE` added). Full verify 14/14 without FAIL; 137 tests pass.
+
 ## Stage 5 (2026-11-22): index values
 
 Script: `audit/stage5_index.py`, `audit/stage52_ew.py`.

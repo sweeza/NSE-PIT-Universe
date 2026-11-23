@@ -5,8 +5,8 @@ Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE p
 ## State
 - Data start is **2007-01-01** (owner decision); the API refuses unverified index/date. 27 indices have verified membership; start dates per index are in `data/build/membership/coverage.parquet` (Nifty 50/Next 50/100 from 2007-01-02, Nifty 200 from 2010-11-01, Nifty 500 from 2013-08-26, 2016-09-30 for LargeMidcap 250/Midcap 150/Smallcap 250, later for sector indices).
 - Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-23, after the Stage 4 parser fixes; ratchet baseline regenerated: rejected actions 15 to 6).
-- 135 tests pass; 14 checks in `verify` (new: `market`). Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
-- `data/raw/` now holds 13,548 manifest files, including `constituents_archive/` (250 archived NSE constituent lists from the Internet Archive).
+- 137 tests pass; 14 checks in `verify` (including `market` with deals: 14/14 without FAIL). Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; later commits are local until the owner says push.
+- `data/raw/` now holds 34,938 manifest files, including `constituents_archive/` (250 archived NSE constituent lists), `market/` (delivery, bands, security lists, F&O bans, derivatives bhavcopy, and 64 annual bulk/block/short-selling deal archives plus daily snapshots).
 
 ## Working rules (owner)
 Nothing is estimated. Every curated row cites a file in `data/raw/`. Ask before pushing, deleting, or saving downloads into `data/raw/` (state names, source, size); audit downloads go to the scratchpad first. Do not bypass NSE or BSE bot protection (scripted calls to NSE's corporate-actions API and BSE bhavcopy were refused; stop there). Add a unit test for every new code path. `999 dump/`, `Project Requirement.docx` and untracked scratch stay as they are (owner decision).

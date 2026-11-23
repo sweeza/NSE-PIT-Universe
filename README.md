@@ -16,7 +16,7 @@ instead of estimated.
 
 ## Know the limits: `api.caveats()` and `api.explain()`
 
-`api.caveats()` lists every known limit of the data (18 flags in six categories) with its severity, what it does to a
+`api.caveats()` lists every known limit of the data (19 flags in six categories) with its severity, what it does to a
 backtest, how to handle it, which column or function shows it, and how much of this build it touches.
 `api.caveats("PRICES")` filters by category. `api.explain(symbols, start, end, index=None)` returns only the flags that
 apply to your selection, with the securities and dates concerned (SME and curated unreliable adjusted prices,
@@ -25,7 +25,7 @@ conflicts, a stale corporate-action feed). Run it before trusting a backtest. Th
 
 ## Market-activity data (added 2026-11-23)
 
-Daily NSE files fetched into `data/raw/market/` (2.9 GB, 34,874 files in the manifest, not committed to git) and built into `data/build/market/`:
+Daily NSE files fetched into `data/raw/market/` (2.9 GB, 34,938 files in the manifest, not committed to git) and built into `data/build/market/`:
 
 | Table / API | Source | Coverage | Check |
 |---|---|---|---|
@@ -33,10 +33,10 @@ Daily NSE files fetched into `data/raw/market/` (2.9 GB, 34,874 files in the man
 | `api.price_band(symbol, date)`: circuit limit | NSE security list (daily, 2020-01 on) and the daily band-change files (2010 on) | exact from 2020; before that the band after the last recorded change, refused if none was recorded | 2 change files with another layout (2017-11-14, 2021-03-30) are skipped and listed |
 | `api.asm_gsm(date)`: ASM/GSM and other surveillance remarks | remarks column of the security list | 2020 on | none beyond parsing |
 | `api.fo_ban(date)`: securities in the F&O ban period | NSE `fo_secban` files | 2010 on; an empty frame means NIL | files without a list are refused |
-
 | `api.fo_eligible(date)`: stocks with futures and/or options contracts that day | NSE derivatives bhavcopy (legacy and UDiFF) | 5,681 days, 2004 to 2026-11-20 (50 to 267 stocks a day) | derived from contracts present, not NSE's official eligible list |
+| `api.deals(symbols, start, end, kind=None)`: bulk deals, block deals, and short selling | NSE report archive (64 annual windows, real browser session) and daily snapshots | bulk 2004-01-04.., block 2005-11-17.., short 2008-02-01.. to 2026-11-20 (359,062 rows) | qty > 0 on 100.000% of rows (1 null `"-"`), price inside bhavcopy low–high on 99.969% (259,212/259,293), 104 unattached |
 
-Not included: bulk/block/short-selling deal history (NSE keeps only the latest day at a fixed URL: `fetch.fetch_deals_today()` saves each day from now on; earlier years need the owner's download from NSE's report page), market cap, free float, impact cost. Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
+Not included: market cap, free float, impact cost. Fetch with `python -m nseuniverse.cli fetch market` (also part of `update`).
 
 ## Read this before relying on it
 

@@ -130,3 +130,53 @@ def test_fo_eligible_api_and_build_merge_the_overlap_day(market_build, tmp_path)
     assert e.symbol.tolist() == ["AAA"] and e.fut.tolist() == [True] and e.opt.tolist() == [True]
     with pytest.raises(api.CoverageError):
         api.fo_eligible("2020-10-21")
+
+
+def test_parse_deals_all_layouts_and_unknown_layout():
+    nl = bytes([10])
+    bom = b"\xef\xbb\xbf"
+    bulk = (bom + b'"Date ","Symbol ","Security Name ","Client Name ","Buy / Sell ","Quantity Traded ","Trade Price / Wght. Avg. Price ","Remarks "' + nl +
+            b'"20-OCT-2020","AAA","A LTD","BIG FUND","BUY","1,25,000","50.25","-"' + nl)
+    b1 = market.parse_deals(bulk, "bulk")
+    assert b1.symbol.tolist() == ["AAA"] and b1.quantity.tolist() == [125000] and b1.price.tolist() == [50.25]
+    assert b1.remarks.tolist() == [""] and b1.kind.tolist() == ["bulk"]
+
+    block_daily = b"Date,Symbol,Security Name,Client Name,Buy/Sell,Quantity Traded,Trade Price / Wght. Avg. Price" + nl + b"20-OCT-2020,AAA,A LTD,FUND X,SELL,50000,51.00" + nl
+    b2 = market.parse_deals(block_daily, "block")
+    assert b2.buy_sell.tolist() == ["SELL"] and b2.remarks.tolist() == [""] and b2.kind.tolist() == ["block"]
+
+    short = bom + b'"Date ","Symbol ","Security Name ","Quantity "' + nl + b'"20-OCT-2020","AAA","A LTD","10,000"' + nl + b'"21-OCT-2020","AAA","A LTD","-"' + nl
+    s1 = market.parse_deals(short, "short")
+    assert s1.quantity.iloc[0] == 10000 and pd.isna(s1.quantity.iloc[1]) and s1.price.isna().all() and s1.kind.tolist() == ["short", "short"]
+
+    with pytest.raises(market.UnknownLayout):
+        market.parse_deals(b"Date,Ticker,Qty" + nl + b"20-OCT-2020,AAA,100" + nl, "bulk")
+
+
+def test_deals_build_dedupes_and_api_enforces_coverage(market_build):
+    nl = bytes([10])
+    ddir = paths.MARKET_RAW / "deals"
+    ddir.mkdir(parents=True, exist_ok=True)
+    row = b"20-OCT-2020,AAA,A LTD,FUND X,BUY,10000,50.00,-" + nl
+    hdr = b"Date,Symbol,Security Name,Client Name,Buy/Sell,Quantity Traded,Trade Price / Wght. Avg. Price,Remarks" + nl
+    (ddir / "bulk_20201001_20201021.csv").write_bytes(hdr + row)
+    (ddir / "bulk_20201020.csv").write_bytes(hdr + row)                     # duplicate row in daily snapshot
+    (ddir / "short_20201001_20201021.csv").write_bytes(b"Date,Symbol,Security Name,Quantity" + nl + b"21-OCT-2020,AAA,A LTD,500" + nl)
+    (ddir / "block_bad.csv").write_bytes(b"Wrong,Header" + nl + b"1,2" + nl)
+
+    t = pd.DataFrame([(D, "AAA", "EQ", "S1", 1000.0), (D + pd.Timedelta(days=1), "AAA", "EQ", "S1", 5.0)],
+                     columns=["date", "symbol", "series", "sec_id", "volume"])
+    info = market.build(paths.BUILD / "market", t)
+    assert info["deals"] == {"rows": 2, "unattached": 0}
+    assert "block_bad.csv" in info["skipped_unknown_layout"]
+    api.clear_cache()
+
+    res = api.deals("AAA", "2020-10-20", "2020-10-21")
+    assert len(res) == 2 and set(res.kind) == {"bulk", "short"}
+    assert len(api.deals("AAA", "2020-10-20", "2020-10-21", kind="bulk")) == 1
+    with pytest.raises(api.CoverageError):
+        api.deals("AAA", "2020-10-19", "2020-10-21")                        # before covered range
+    with pytest.raises(api.CoverageError):
+        api.deals("AAA", "2020-10-20", "2020-10-20", kind="short")          # short starts 2020-10-21
+    with pytest.raises(ValueError):
+        api.deals("AAA", "2020-10-20", "2020-10-21", kind="other")

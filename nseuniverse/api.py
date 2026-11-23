@@ -530,3 +530,32 @@ def fo_eligible(as_of) -> pd.DataFrame:
     if f.empty or not (f.date == t).any():
         raise CoverageError(f"no derivatives bhavcopy for {t.date()} in this build")
     return f[f.date == t].reset_index(drop=True)
+
+
+def deals(symbols, start, end, kind: str | None = None) -> pd.DataFrame:
+    """Bulk deals (2004-), block deals (2005-), and short selling (2008-) from NSE's report archive and daily
+    snapshots. Raises CoverageError outside the covered date range for the requested kind."""
+    if kind not in (None, "bulk", "block", "short"):
+        raise ValueError(f"kind must be None, 'bulk', 'block', or 'short', got {kind!r}")
+    d = _market("deals")
+    if d.empty:
+        raise CoverageError("no deals data in this build (build market tables first)")
+    sub = d[d.kind == kind] if kind is not None else d
+    if sub.empty:
+        raise CoverageError(f"no {kind} deals data in this build")
+    s0, e0 = pd.Timestamp(start), pd.Timestamp(end)
+    lo, hi = sub.date.min(), d.date.max()
+    if s0 > e0 or s0 < lo or e0 > hi:
+        raise CoverageError(f"deals ({kind or 'all'}) cover {lo.date()}..{hi.date()}; requested {s0.date()}..{e0.date()}")
+    out = sub[(sub.date >= s0) & (sub.date <= e0)]
+    if symbols is not None:
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        sids = set()
+        for s in symbols:
+            try:
+                sids.add(_sid_for(s, e0))
+            except CoverageError:
+                sids.add(_sid_for(s, s0))
+        out = out[out.sec_id.isin(sids)]
+    return out.reset_index(drop=True)

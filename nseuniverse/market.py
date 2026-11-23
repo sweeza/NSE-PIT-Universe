@@ -8,6 +8,7 @@ Tables written to data/build/market/:
   band_changes.parquet  date, symbol, series, band_from, band_to, sec_id                 (daily change file, 2010-)
   sec_list.parquet      date, symbol, series, band, remarks, sec_id                      (security list, 2020-)
   fo_ban.parquet        date, symbol, sec_id                                             (securities in the F&O ban period)
+  deals.parquet         date, symbol, client_name, buy_sell, quantity, price, remarks, kind, sec_id
 """
 from __future__ import annotations
 
@@ -142,6 +143,70 @@ def _read_fo() -> pd.DataFrame:
     return out.groupby(["date", "symbol"], as_index=False).agg(fut=("fut", "max"), opt=("opt", "max"))
 
 
+def _parse_deal_dates(s: pd.Series) -> pd.Series:
+    cleaned = s.str.strip()
+    d = pd.to_datetime(cleaned, format="%d-%b-%Y", errors="coerce")
+    miss = d.isna() & (cleaned != "")
+    if miss.any():
+        d = d.fillna(pd.to_datetime(cleaned[miss], format="mixed", dayfirst=True, errors="coerce"))
+    return d
+
+
+def parse_deals(raw: bytes, kind: str) -> pd.DataFrame:
+    """Bulk deals, block deals, or short selling CSV (archive or daily snapshot). Raises UnknownLayout on unrecognised headers."""
+    if kind not in ("bulk", "block", "short"):
+        raise ValueError(f"unknown deals kind: {kind!r}")
+    text = raw.decode("utf-8-sig", errors="replace")
+    df = pd.read_csv(io.StringIO(text), dtype=str, index_col=False).fillna("")
+    df.columns = [re.sub(r"\s+", " ", c.strip().lower()).replace(" / ", "/") for c in df.columns]
+    cols = set(df.columns)
+    if kind in ("bulk", "block") and {"date", "symbol", "client name", "buy/sell", "quantity traded", "trade price/wght. avg. price"} <= cols:
+        out = pd.DataFrame({
+            "date": _parse_deal_dates(df["date"]),
+            "symbol": df["symbol"].str.strip(),
+            "client_name": df["client name"].str.strip(),
+            "buy_sell": df["buy/sell"].str.strip().str.upper(),
+            "quantity": pd.to_numeric(df["quantity traded"].str.replace(",", "", regex=False).str.strip(), errors="coerce"),
+            "price": pd.to_numeric(df["trade price/wght. avg. price"].str.replace(",", "", regex=False).str.strip(), errors="coerce"),
+            "remarks": df["remarks"].str.strip().replace("-", "") if "remarks" in cols else "",
+            "kind": kind,
+        })
+    elif kind == "short" and {"date", "symbol", "quantity"} <= cols:
+        out = pd.DataFrame({
+            "date": _parse_deal_dates(df["date"]),
+            "symbol": df["symbol"].str.strip(),
+            "client_name": "",
+            "buy_sell": "",
+            "quantity": pd.to_numeric(df["quantity"].str.replace(",", "", regex=False).str.strip(), errors="coerce"),
+            "price": np.nan,
+            "remarks": "",
+            "kind": kind,
+        })
+    else:
+        raise UnknownLayout(f"deals ({kind}) columns {list(df.columns)}")
+    return out[(out.symbol != "") & out.date.notna()].reset_index(drop=True)
+
+
+def _read_deals() -> pd.DataFrame:
+    frames = []
+    root = paths.MARKET_RAW / "deals"
+    for f in sorted(root.rglob("*.csv")) if root.exists() else []:
+        prefix = f.name.split("_", 1)[0].lower()
+        if prefix not in ("bulk", "block", "short"):
+            continue
+        try:
+            d = parse_deals(f.read_bytes(), prefix)
+        except UnknownLayout:
+            SKIPPED.append(f.name)
+            continue
+        if len(d):
+            frames.append(d)
+    if not frames:
+        return pd.DataFrame()
+    out = pd.concat(frames, ignore_index=True)
+    return out.drop_duplicates(["date", "kind", "symbol", "client_name", "buy_sell", "quantity", "price"]).reset_index(drop=True)
+
+
 def _attach(df: pd.DataFrame, t: pd.DataFrame) -> pd.DataFrame:
     """sec_id from the bhavcopy row with the same date, symbol and series; if the series is not there that day,
     from the same date and symbol when that identifies exactly one security."""
@@ -173,12 +238,14 @@ def build(out: Path, t: pd.DataFrame) -> dict:
         "sec_list": _read_dir("seclist", "sec_list_*.csv", parse_sec_list),
         "fo_ban": _read_dir("fosecban", "fo_secban_*.csv", parse_secban),
         "fo_stocks": _read_fo(),
+        "deals": _read_deals(),
     }
     for name, df in tabs.items():
         df = _attach(df, t)
         tabs[name] = df
         if len(df):
-            df = df.sort_values([c for c in ("date", "symbol", "series") if c in df.columns], kind="mergesort").reset_index(drop=True)
+            sort_cols = [c for c in ("date", "kind", "symbol", "series", "client_name") if c in df.columns]
+            df = df.sort_values(sort_cols, kind="mergesort").reset_index(drop=True)
         df.to_parquet(out / f"{name}.parquet", index=False, compression="zstd", compression_level=9)
         info[name] = {"rows": len(df), "unattached": int(df["sec_id"].isna().sum()) if len(df) else 0}
     info["skipped_unknown_layout"] = sorted(SKIPPED)
