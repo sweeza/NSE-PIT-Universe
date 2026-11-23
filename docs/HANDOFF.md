@@ -5,7 +5,7 @@ Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE p
 ## State
 - Data start is **2007-01-01** (owner decision); the API refuses unverified index/date. 27 indices have verified membership; start dates per index are in `data/build/membership/coverage.parquet` (Nifty 50/Next 50/100 from 2007-01-02, Nifty 200 from 2010-11-01, Nifty 500 from 2013-08-26, 2016-09-30 for LargeMidcap 250/Midcap 150/Smallcap 250, later for sector indices).
 - Commands: `python -m nseuniverse.cli build|verify [--only NAME]|update` (no `__main__`). Full `verify` is 13 checks, about 11 minutes; `build` several minutes. Last full verify: 13/13 without FAIL (2026-11-23, after the Stage 4 parser fixes; ratchet baseline regenerated: rejected actions 15 to 6).
-- 130 tests pass; 14 checks in `verify` (new: `market`). Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
+- 131 tests pass; 14 checks in `verify` (new: `market`). Everything up to the end of session 3 was pushed to origin on 2026-11-22 with the owner's approval; the session-4 commit is local until the owner says push.
 - `data/raw/` now holds 13,548 manifest files, including `constituents_archive/` (250 archived NSE constituent lists from the Internet Archive).
 
 ## Working rules (owner)
@@ -18,6 +18,9 @@ Stages 0-9 are done except the items below. Session 4 finished Stage 4: 30 stock
 1. **Owner decisions:** A18 (b)-(d): the 5 non-round ETFs, GULFPETRO/AHLEAST, SUNTV. SME stays out, flagged. A21: delivery quantity, price bands, market cap/free float, impact cost need a fetch route (owner downloads, or approves scripted NSE archive access). Index base dates were checked against the methodology PDF (no mismatch); the five Method_*.pdf in `999 dump/` are one 352-page document.
 2. Unreviewed thin spots: Stage 5.3 base date/value vs NSE methodology (no document held, ask the owner); the other 77 waivers (Yahoo covers only 31; the rest rest on the feed text); A20 rights without issue price (needs a source).
 3. After any change: `python -m nseuniverse.cli build`, then `verify` (13 checks, about 10 minutes; prints nothing until done), regenerate baselines only for deliberate changes (`verify.write_ratchet_baseline()`, `write_coverage_baseline()`), ask before pushing.
+
+## Caveat registry
+`nseuniverse/caveats.py` holds the catalogue (id, category, severity, backtest impact, handling, shown_by); `api.caveats()` adds live counts and `api.explain()` applies it to a selection. When a new limitation is found, add a row there and a test; do not only write it in a doc.
 
 ## Tool notes
 - Yahoo comparison scripts live in the session scratchpad only; `audit/stage24_prices.py` is the committed sample version. Yahoo `close` is split-adjusted and also adjusts demergers; its single-day bars differ from NSE's close on some days (2025-03-18 in 28 of 30 stocks).

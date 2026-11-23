@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import adjust, bhavcopy, indices, membership, paths, pipeline
+from . import adjust, bhavcopy, caveats as _caveats, indices, membership, paths, pipeline
 
 
 class CoverageError(LookupError):
@@ -406,3 +406,117 @@ def fo_ban(as_of) -> pd.DataFrame:
     if not days.exists():
         raise CoverageError(f"no F&O ban file for {t.date()}")
     return b[b.date == t].reset_index(drop=True) if len(b) else b
+
+
+def _events() -> pd.DataFrame:
+    p = paths.BUILD / "actions" / "events.parquet"
+    return pd.read_parquet(p, columns=["symbol", "sec_id", "ex_date", "kind", "subject", "status"]) if p.exists() else pd.DataFrame()
+
+
+def caveats(category: str | None = None) -> pd.DataFrame:
+    """Every known limit of the data with its backtest impact and how to handle it, plus `affected`: how much of this
+    build it touches (None where a count does not apply). category: PRICES, ACTIONS, MEMBERSHIP, INDEX, MARKET, GENERAL."""
+    c = _caveats.catalogue()
+    if category:
+        c = c[c.category == category.upper()]
+
+    def n(fn):
+        try:
+            return fn()
+        except Exception:
+            return None
+    ev = n(_events)
+    unq = n(lambda: int(ev[ev.kind.isin(["UNPARSED", "UNKNOWN", "SCHEME"]) & (ev.status == "OK") & (ev.ex_date >= "2007-01-01")].shape[0]))
+    div = n(lambda: int(ev[((ev.kind == "UNPARSED") & ev.subject.str.contains("(?i)div")) | (ev.status == "NO_TRADING_NEAR")].shape[0]))
+    sme = n(lambda: len(_sme_secs()))
+    cur = n(lambda: len([s for s, r in _unreliable().items() if not r.startswith("SME")]))
+    gaps = n(lambda: adjustment_gaps().query("date >= '2007-01-01'").sec_id.nunique())
+    feed = n(lambda: str(ev.ex_date.max().date()))
+    cov = n(lambda: int(_coverage()[_coverage().status == "VERIFIED"].index_key.nunique()))
+    conf = n(lambda: int(len(pd.read_csv(paths.BUILD / "index_conflicts.csv"))))
+    counts = {"SME_ADJUSTED_PRICES": f"{sme} securities", "CURATED_UNRELIABLE_ADJUSTED": f"{cur} securities",
+              "DOCUMENTED_ADJUSTMENT_BREAK": f"{gaps} securities", "UNQUANTIFIED_CORPORATE_ACTIONS": f"{unq} events",
+              "DIVIDENDS_FROM_FEED_TEXT": f"{div} records", "FEED_ENDS": f"last ex-date {feed}",
+              "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled",
+              "INDEX_VALUE_CONFLICTS": f"{conf} index-days"}
+    c = c.copy()
+    c["affected"] = c["id"].map(counts)
+    return c.reset_index(drop=True)
+
+
+def explain(symbols=None, start=None, end=None, index: str | None = None) -> pd.DataFrame:
+    """The flags that apply to a selection: securities (symbols) over a date range and/or an index over a range.
+    One row per flag with the securities and dates concerned. Always-on flags (no announcement dates, unstable
+    sec_id) are included. Use before trusting a backtest on the selection."""
+    cat = _caveats.catalogue().set_index("id")
+    s0 = pd.Timestamp(start) if start is not None else pd.Timestamp("2007-01-01")
+    e0 = pd.Timestamp(end) if end is not None else pd.Timestamp.today().normalize()
+    rows = []
+
+    def add(fid, detail):
+        r = cat.loc[fid]
+        rows.append((fid, r.category, r.severity, detail, r.backtest_impact, r.handling))
+    if isinstance(symbols, str):
+        symbols = [symbols]
+    if symbols:
+        sids = {}
+        for s in symbols:
+            try:
+                sids[_sid_for(s, e0)] = s
+            except CoverageError:
+                sids[_sid_for(s, s0)] = s
+        un = _unreliable()
+        for sid, sym in sids.items():
+            if sid in un:
+                add("SME_ADJUSTED_PRICES" if un[sid].startswith("SME") else "CURATED_UNRELIABLE_ADJUSTED", f"{sym}: {un[sid]}")
+        try:
+            g = adjustment_gaps()
+            g = g[g.sec_id.isin(sids) & (g.date >= s0) & (g.date <= e0)]
+            for sid, x in g.groupby("sec_id"):
+                add("DOCUMENTED_ADJUSTMENT_BREAK", f"{sids[sid]}: " + ", ".join(f"{d.date()} ({c})" for d, c in zip(x.date, x["class"]))[:300])
+        except CoverageError:
+            pass
+        ev = _events()
+        if len(ev):
+            x = ev[ev.sec_id.isin(sids) & ev.kind.isin(["UNPARSED", "UNKNOWN", "SCHEME"]) & (ev.status == "OK") & (ev.ex_date >= s0) & (ev.ex_date <= e0)]
+            for sid, y in x.groupby("sec_id"):
+                add("UNQUANTIFIED_CORPORATE_ACTIONS", f"{sids[sid]}: " + "; ".join(f"{d.date()} {k} {sub[:40]}" for d, k, sub in zip(y.ex_date, y.kind, y.subject))[:300])
+            feed = ev.ex_date.max()
+            if e0 > feed - pd.Timedelta(days=30):
+                add("FEED_ENDS", f"corporate-action feed ends {feed.date()}; the selection reaches {e0.date()}")
+        if s0 < adjust.COVERAGE_START:
+            add("ADJUSTED_BEFORE_2007", f"range starts {s0.date()}")
+    if index is not None:
+        k = indices.name_map().get(indices.key(index), indices.key(index))
+        c = _coverage()
+        v = c[(c.index_key == k) & (c.status == "VERIFIED")]
+        if v.empty:
+            add("MEMBERSHIP_NOT_VERIFIED", f"{index}: no verified window")
+        else:
+            first = v.from_date.min()
+            if s0 < first:
+                add("MEMBERSHIP_BACKFILLED", f"{index}: verified from {first.date()}; {s0.date()} to {min(e0, first).date()} would be backfilled")
+            gaps_ = []
+            lo = max(s0, first)
+            for r in v.sort_values("from_date").itertuples():
+                if r.from_date > lo and lo <= e0:
+                    gaps_.append(f"{lo.date()}..{(r.from_date - pd.Timedelta(days=1)).date()}")
+                lo = max(lo, r.to_date + pd.Timedelta(days=1))
+            if lo <= e0:
+                gaps_.append(f"{lo.date()}..{e0.date()}")
+            if gaps_:
+                add("MEMBERSHIP_NOT_VERIFIED", f"{index}: unverified inside the range: " + ", ".join(gaps_))
+            if s0 < pd.Timestamp("2010-01-01"):
+                add("MEMBERSHIP_2007_2009_THIN_EVIDENCE", f"{index}: range starts {s0.date()}")
+        try:
+            iv = index_values(index, s0, e0)
+            nconf = int(iv.conflict.sum()) if "conflict" in iv else 0
+            if nconf:
+                add("INDEX_VALUE_CONFLICTS", f"{index}: {nconf} conflicting index-days in the range")
+        except Exception:
+            pass
+    add("EX_DATE_NOT_ANNOUNCEMENT_DATE", "applies to every adjusted series")
+    add("SEC_ID_NOT_STABLE", "applies to every saved sec_id")
+    out = pd.DataFrame(rows, columns=["id", "category", "severity", "applies_to", "backtest_impact", "handling"])
+    order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+    return out.sort_values(["severity", "category", "id"], key=lambda s: s.map(order) if s.name == "severity" else s, kind="mergesort").reset_index(drop=True)

@@ -1,0 +1,112 @@
+"""Catalogue of the known limits of the data, each with its backtest impact and the way to handle it.
+
+    api.caveats()                    every flag, with live counts of what it touches in this build
+    api.caveats("PRICES")            one category (PRICES, ACTIONS, MEMBERSHIP, INDEX, MARKET, GENERAL)
+    api.explain(symbols, start, end, index=None)
+                                     the flags that apply to this selection, with the dates and securities concerned
+
+A flag is a fact about the data, not an opinion: each one names the column, function or file that shows it.
+"""
+from __future__ import annotations
+
+import pandas as pd
+
+COLUMNS = ["id", "category", "severity", "what", "backtest_impact", "handling", "shown_by"]
+
+# severity: HIGH = results can be wrong if ignored; MEDIUM = changes results at the margin; LOW = good to know.
+CATALOGUE = [
+    ("SME_ADJUSTED_PRICES", "PRICES", "HIGH",
+     "SME-platform securities (series SM/ST): the NSE corporate-action feed holds no records for them, so none of their splits or bonuses is applied.",
+     "Adjusted series carry unadjusted drops (a 2:1 bonus is a -50% day). Momentum, volatility, drawdown and stop rules see crashes that never happened; a stock can be dropped or bought on them.",
+     "Filter on adj_reliable, or drop api.sme_securities() from the universe, or use raw prices (exact).",
+     "prices().adj_reliable=False; api.sme_securities(); DataQualityWarning"),
+    ("CURATED_UNRELIABLE_ADJUSTED", "PRICES", "HIGH",
+     "Known wrong adjusted history on named securities: ETFs with non-round unit ratios, real bonuses the price test rejected (GULFPETRO, AHLEAST, SUNTV), CCAVENUE's unrecorded 10:1 consolidation.",
+     "Same as SME: a fake jump or crash on the day, and every earlier adjusted price is off by the missing factor.",
+     "Filter on adj_reliable or exclude api.unreliable_adjusted().sec_id.",
+     "prices().adj_reliable=False; api.unreliable_adjusted(); data/curated/adjustment_unreliable.csv"),
+    ("DOCUMENTED_ADJUSTMENT_BREAK", "PRICES", "MEDIUM",
+     "Demergers and schemes the feed gives no ratio for (about 108), plus overnight moves nothing explains. The break stays in the adjusted series.",
+     "One day of fake return (typically -30% to -70%) on the day of the event; cumulative adjusted returns before it are overstated or understated by that move.",
+     "api.prices(..., mask_gaps=True) sets adj_return to NaN on those days; or skip the security around the date.",
+     "prices().adj_gap and adj_gap_class; api.adjustment_gaps()"),
+    ("ADJUSTED_BEFORE_2007", "PRICES", "HIGH",
+     "Adjusted prices before 2007-01-01 are not verified: the feed holds almost no splits or bonuses for those years.",
+     "Backtests starting before 2007 would use unadjusted history for older actions.",
+     "The API refuses adjusted prices before 2007-01-01 unless allow_unverified=True (then treat as unverified).",
+     "CoverageError from prices()"),
+    ("UNQUANTIFIED_CORPORATE_ACTIONS", "ACTIONS", "MEDIUM",
+     "Events the feed gives no usable size for: rights issues with no issue price, text the parser cannot read (about 90 UNPARSED/UNKNOWN since 2007), and about 600 mergers, demergers, buy-backs and capital reductions: recorded, not quantified.",
+     "No adjustment is applied. For rights this shifts earlier adjusted prices by the missing dilution (typically a few percent to 20%); total_return mode misses an unparsed dividend.",
+     "Treat the security's returns around the ex-date as unreliable; list the events with api.explain().",
+     "build/actions/events.parquet kinds UNPARSED, UNKNOWN, SCHEME"),
+    ("DIVIDENDS_FROM_FEED_TEXT", "ACTIONS", "LOW",
+     "Cash dividends come from the feed's free text; ambiguous forms (e.g. 'Rs .50', 'Rs.0125') are left out, and a dividend with no trade within 7 days is not applied.",
+     "total_return mode can miss a dividend; price_return mode is unaffected.",
+     "Use adjust_mode='splits' for price returns; treat total_return as approximate.",
+     "events.parquet status NO_TRADING_NEAR / kind UNPARSED"),
+    ("EX_DATE_NOT_ANNOUNCEMENT_DATE", "ACTIONS", "LOW",
+     "NSE's feed carries no announcement dates; adjustments use ex-dates. This is point-in-time safe for prices, but 'what was known when' is not available.",
+     "as_of= limits actions by ex-date, not by announcement date; a strategy that reacts to announcements cannot be tested.",
+     "Do not use the feed to time announcement-driven signals.",
+     "prices(as_of=...)"),
+    ("FEED_ENDS", "ACTIONS", "MEDIUM",
+     "The corporate-action feed is a download as of a date (see the manifest); actions announced after it are missing and appear as unexplained jumps.",
+     "Recent splits and bonuses are not adjusted until the feed is refreshed.",
+     "Refresh the feed after each month-end (A19) and rebuild; treat the last weeks as unadjusted.",
+     "data/raw/corporate_actions; ratchet unexplained moves"),
+    ("MEMBERSHIP_NOT_VERIFIED", "MEMBERSHIP", "HIGH",
+     "Index membership is verified only on the windows in coverage(); other dates and the roughly 30 indices without historical sheets are refused.",
+     "No member list exists for those dates; any estimate would be a model.",
+     "Query within api.coverage() windows. The API raises CoverageError otherwise.",
+     "CoverageError from index_members(); api.coverage()"),
+    ("MEMBERSHIP_BACKFILLED", "MEMBERSHIP", "HIGH",
+     "index_members(..., backfill=True) returns, for dates from 2007-01-01 up to an index's first verified day, the first verified list restricted to securities already trading.",
+     "Survivorship and look-ahead bias: members are chosen with knowledge of later outcomes. Not suitable for out-of-sample claims.",
+     "Use only as a stress test; prefer Nifty 50/Next 50/Nifty 100, verified from 2007.",
+     "membership_status='BACKFILLED_UNVERIFIED'; backfilled_from; DataQualityWarning"),
+    ("MEMBERSHIP_2007_2009_THIN_EVIDENCE", "MEMBERSHIP", "MEDIUM",
+     "2007-05 to 2009-12 rests on one archived list (Nifty 50, 2007-04-30), the workbook IndexInclExcl.xls (origin unverified) and press releases; the daily size and subset checks pass.",
+     "Lower evidence than later years; a compensating pair of errors would not be caught.",
+     "Back-test from 2010 for fully confirmed membership.",
+     "docs/AUDIT_REPORT.md Stage 6"),
+    ("DUAL_CLASS_EXTRA_MEMBER", "MEMBERSHIP", "LOW",
+     "Tata Motors DVR was an extra security in several indices (51 securities for 50 companies) while the parent was a member.",
+     "Member counts exceed the official size by one on those days; weights are not in the data.",
+     "Count companies, not securities, if a rule depends on the index size.",
+     "data/curated/index_dual_class.csv"),
+    ("INDEX_VALUE_CONFLICTS", "INDEX", "MEDIUM",
+     "NSE's two index sources disagree on about 1,061 index-days (338 by 0.1% or more) and about 950 index-days are missing inside index lives.",
+     "A return computed across a conflicting or missing day is unreliable.",
+     "index_values(..., mask_conflicts=True); both values are kept (alt_close).",
+     "index_values().conflict; frame.attrs['flagged']"),
+    ("INDEX_HISTORY_IS_BACKCAST", "INDEX", "MEDIUM",
+     "NSE's published index levels before an index's launch date are back-calculated by NSE (for example Nifty Midcap 150 from 2005-04-01).",
+     "The level series exists, but the constituents behind it were never published, so it cannot be reproduced from membership.",
+     "Use the levels as benchmarks, not as evidence of what the index held.",
+     "index_values(); methodology document"),
+    ("PRICE_BAND_BEFORE_2020", "MARKET", "MEDIUM",
+     "Circuit limits are exact from 2020 (daily security list). Before that only the band changes since 2010 are known: the band is the last recorded change, and a security with no change recorded is refused.",
+     "A rule on circuit limits cannot be tested before 2020 for stocks that never changed band.",
+     "price_band() raises CoverageError when the band is unknown.",
+     "api.price_band()"),
+    ("DELIVERY_SOURCE_DISAGREEMENTS", "MARKET", "LOW",
+     "NSE's delivery file and the bhavcopy disagree on traded quantity for about 0.07% of rows (for example EIDPARRY 2004-01-02).",
+     "A delivery percentage on those rows rests on one of two conflicting volumes.",
+     "Compare api.delivery().traded_qty with the bhavcopy volume when a delivery signal triggers on a single day.",
+     "verify check `market`"),
+    ("FO_ELIGIBILITY_AND_DEALS_MISSING", "MARKET", "MEDIUM",
+     "F&O eligibility history, bulk/block deal history before 2026-11-23, market cap, shares outstanding, free float and impact cost are not in the data.",
+     "Rules that need them cannot be tested; equal-weight and index-level work are unaffected.",
+     "See OPEN_ISSUES A21.",
+     "docs/OPEN_ISSUES.md"),
+    ("SEC_ID_NOT_STABLE", "GENERAL", "MEDIUM",
+     "sec_id labels are renumbered when the data is rebuilt.",
+     "Anything saved by sec_id can point at another security after a rebuild.",
+     "Key durable data by symbol plus ISIN.",
+     "api.securities()"),
+]
+
+
+def catalogue() -> pd.DataFrame:
+    return pd.DataFrame(CATALOGUE, columns=COLUMNS)

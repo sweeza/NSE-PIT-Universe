@@ -14,6 +14,15 @@ instead of estimated.
 | **Official index values** | **238 indices** from two independent NSE publications (daily files from 2012, history API from each index's base date), including price, total return, PE/PB/yield (869,785 index-days). | The sources agree on 99.6% of overlapping days; the 1,061 disagreements are flagged `conflict=True` with the other source's value, never hidden. |
 | **Index membership from 2007-01-01** | **27 indices verified (20 anchored + 7 composite), 40 VERIFIED coverage windows.** `NIFTY50`, `NIFTYNEXT50`, `NIFTY100`, `NIFTYBANK`, `NIFTYPSUBANK` and `NIFTYPHARMA` are each verified `2007-01-02` → `2026-11-19` (4,929 trading days); broad market and sectoral indices (`NIFTY200`, `NIFTY500`, `NIFTYMIDCAP150`, `NIFTYSMALLCAP250`, `NIFTYMIDCAP50`, `NIFTYSMALLCAP100`, `NIFTYSMALLCAP50`, `NIFTYFMCG`, `NIFTYIT`, `NIFTYAUTO`, `NIFTYFINANCIALSERVICES`, `NIFTYMEDIA`, `NIFTYMETAL`, `NIFTYREALTY`, and 7 composite benchmarks) are verified from their respective restructuring / launch dates with **0 contradictions** across the entire dataset. Dual-class shares (`TATAMTRDVR`) are verified through `index_dual_class.csv`; the audit confirmed every one of those rows is load-bearing. Zero-price demerger dummies (Siemens Energy, ITC Hotels, Jio Financial, etc.) are listed in `index_size_exceptions.csv` as documentation only: the build counts real members, and the audit showed dropping any of those rows changes nothing. The remaining 30 indices in `data/curated/index_universe.csv` lack historical workbook sheets and legitimately remain `UNVERIFIED` per strict PIT rules. | Exactly the official number of real members on every trading day, every member traded within ±3 sessions, and the set equals NSE's official list today with 0 subset violations across all 4,929 trading days. |
 
+## Know the limits: `api.caveats()` and `api.explain()`
+
+`api.caveats()` lists every known limit of the data (18 flags in six categories) with its severity, what it does to a
+backtest, how to handle it, which column or function shows it, and how much of this build it touches.
+`api.caveats("PRICES")` filters by category. `api.explain(symbols, start, end, index=None)` returns only the flags that
+apply to your selection, with the securities and dates concerned (SME and curated unreliable adjusted prices,
+documented breaks, unquantified corporate actions, unverified or backfilled membership windows, index-value
+conflicts, a stale corporate-action feed). Run it before trusting a backtest. The catalogue is `nseuniverse/caveats.py`.
+
 ## Market-activity data (added 2026-11-23)
 
 Daily NSE files fetched into `data/raw/market/` (526 MB, 15,641 files, all in the manifest) and built into `data/build/market/`:

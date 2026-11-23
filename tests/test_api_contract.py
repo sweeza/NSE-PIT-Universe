@@ -220,3 +220,25 @@ def test_curated_unreliable_list_marks_a_main_board_security_too(tiny_build, tmp
     assert not p.adj_reliable.any()
     u = api.unreliable_adjusted()
     assert u.symbol.tolist() == ["AAA"] and "ETF unit change" in u.reason.iloc[0]
+
+
+def test_caveats_catalogue_and_explain_list_the_flags_that_apply(tiny_build):
+    d = tiny_build
+    c = api.caveats()
+    assert {"id", "category", "severity", "backtest_impact", "handling", "shown_by", "affected"} <= set(c.columns)
+    assert c.id.is_unique and set(c.severity) <= {"HIGH", "MEDIUM", "LOW"}
+    assert set(api.caveats("prices").category) == {"PRICES"}
+    # a clean main-board security: only the always-on flags
+    e = api.explain("AAA", "2007-01-01", "2007-01-08")
+    assert set(e.id) == {"EX_DATE_NOT_ANNOUNCEMENT_DATE", "SEC_ID_NOT_STABLE"}
+    # mark it as SME-platform and ask about an index that is verified only from the third day
+    f = paths.BUILD / "bhavcopy" / "bhavcopy_2007.parquet"
+    t = pd.read_parquet(f); t["series"] = "SM"; t.to_parquet(f)
+    pd.DataFrame([{"index_key": "NIFTY50", "from_date": d[2], "to_date": d[-1], "status": "VERIFIED", "reason": ""}]
+                 ).to_parquet(paths.BUILD / "membership" / "coverage.parquet")
+    api.clear_cache()
+    e = api.explain("AAA", d[0], d[-1], index="NIFTY50")
+    assert {"SME_ADJUSTED_PRICES", "MEMBERSHIP_BACKFILLED"} <= set(e.id)
+    assert e.severity.iloc[0] == "HIGH" and "adj_reliable" in e[e.id == "SME_ADJUSTED_PRICES"].handling.iloc[0]
+    assert "2007-01-01" in e[e.id == "MEMBERSHIP_BACKFILLED"].applies_to.iloc[0]
+    assert "ADJUSTED_BEFORE_2007" not in set(e.id)
