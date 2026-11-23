@@ -33,14 +33,14 @@ def main(argv=None) -> int:
         if a.what in ("press", "all"):
             fetch.fetch_press_releases()
         if a.what in ("market", "all"):
-            for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list", "fo_bhav_legacy", "fo_bhav_udiff", "impact_cost"):
+            for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list", "fo_bhav_legacy", "fo_bhav_udiff", "impact_cost", "mii_security"):
                 fetch.fetch_range(s)
             print(fetch.fetch_deals_today())
         return 0
     if a.cmd == "update":
         fetch.fetch_range("bhav_udiff")
         fetch.fetch_range("index_daily")
-        for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list", "fo_bhav_legacy", "fo_bhav_udiff", "impact_cost"):
+        for s in ("delivery_mto", "band_changes", "fo_secban", "sec_list", "fo_bhav_legacy", "fo_bhav_udiff", "impact_cost", "mii_security"):
             fetch.fetch_range(s)
         print(fetch.fetch_deals_today())
         w = actions.feed_lag_warning()

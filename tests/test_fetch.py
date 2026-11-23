@@ -165,3 +165,31 @@ def test_impact_cost_source_is_monthly_validates_bodies_and_reconciles(tmp_path,
     f.write_bytes(b"10,MAR,2024,000001\n20,AAA,EQ,INE001A01010,1,0.10\n")
     assert fetch.reconcile_manifest() == 1
     assert "C_CATG_MAR2024.T01" in paths.MANIFEST.read_text(encoding="latin-1")
+
+
+def test_mii_security_source_is_session_only_validates_gzip_and_reconciles(tmp_path, monkeypatch):
+    import datetime as dt
+    import gzip
+    from nseuniverse import fetch, paths
+    monkeypatch.setattr(paths, "ROOT", tmp_path); monkeypatch.setattr(paths, "RAW", tmp_path / "raw")
+    monkeypatch.setattr(paths, "MARKET_RAW", tmp_path / "raw" / "market")
+    monkeypatch.setattr(paths, "MANIFEST", tmp_path / "raw" / "manifest.csv")
+    monkeypatch.setattr(paths, "ABSENT", tmp_path / "raw" / "absent.csv")
+    monkeypatch.setattr(paths, "BHAV_RAW", tmp_path / "raw" / "bhavcopy")
+    for d in ("20240205", "20240206"):
+        f = paths.BHAV_RAW / "udiff" / "2024" / f"BhavCopy_NSE_CM_0_0_0_{d}_F_0000.csv.zip"
+        f.parent.mkdir(parents=True, exist_ok=True); f.write_bytes(b"x")
+    body = gzip.compress(b"FinInstrmId,TckrSymb,IssdCptl,FreeFltCptl\n1,AAA,100,60\n")
+
+    def fake_get(url, retries=4):
+        return (200, body) if "05022024" in url else (200, b"<html>no</html>")
+    monkeypatch.setattr(fetch, "_get", fake_get)
+    assert fetch.SOURCES["mii_security"].first == dt.date(2024, 2, 5)
+    res = fetch.fetch_range("mii_security", dt.date(2024, 2, 1), dt.date(2024, 2, 8), workers=1)
+    assert res == {"fetched": 1, "absent": 1}                      # only the two session days are tried; HTML body rejected
+    f = paths.MARKET_RAW / "mii" / "2024" / "NSE_CM_security_05022024.csv.gz"
+    assert f.exists() and gzip.decompress(f.read_bytes()).startswith(b"FinInstrmId")
+    g = paths.MARKET_RAW / "mii" / "2024" / "NSE_CM_security_07022024.csv.gz"
+    g.write_bytes(body)
+    assert fetch.reconcile_manifest() == 1
+    assert "NSE_CM_security_07022024.csv.gz" in paths.MANIFEST.read_text(encoding="latin-1")

@@ -118,8 +118,14 @@ SOURCES.update({
         "impact_cost", dt.date(2019, 1, 1), dt.date.today,
         lambda d: f"https://nsearchives.nseindia.com/content/nsccl/C_CATG_{_MON[d.month-1]}{d.year}.T01",
         _market("impactcost", lambda d: f"C_CATG_{_MON[d.month-1]}{d.year}.T01"), _starts(b"10,")),
+    # NSE daily MII security master (gzip CSV): IssdCptl = issued capital (shares), FreeFltCptl, ParVal, ListgDt.
+    # First file on the archive host is 2024-02-05 (404 before).
+    "mii_security": Source(
+        "mii_security", dt.date(2024, 2, 5), dt.date.today,
+        lambda d: f"https://nsearchives.nseindia.com/content/cm/NSE_CM_security_{d:%d%m%Y}.csv.gz",
+        _market("mii", lambda d: f"NSE_CM_security_{d:%d%m%Y}.csv.gz"), _starts(b"\x1f\x8b")),
 })
-SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban", "fo_bhav_legacy", "fo_bhav_udiff"}
+SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban", "fo_bhav_legacy", "fo_bhav_udiff", "mii_security"}
 MONTHLY_ONLY = {"impact_cost"}
 
 
@@ -491,7 +497,7 @@ def reconcile_manifest(root: Path | None = None) -> int:
     if paths.MANIFEST.exists():
         with open(paths.MANIFEST, newline="", encoding="latin-1") as f:
             listed = {r["path"] for r in csv.DictReader(f)}
-    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban", "impactcost": "impact_cost"}
+    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban", "impactcost": "impact_cost", "mii": "mii_security"}
     n = 0
     for f in sorted(root.rglob("*")):
         if not f.is_file() or f.suffix == ".part":
