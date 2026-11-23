@@ -242,3 +242,28 @@ def test_caveats_catalogue_and_explain_list_the_flags_that_apply(tiny_build):
     assert e.severity.iloc[0] == "HIGH" and "adj_reliable" in e[e.id == "SME_ADJUSTED_PRICES"].handling.iloc[0]
     assert "2007-01-01" in e[e.id == "MEMBERSHIP_BACKFILLED"].applies_to.iloc[0]
     assert "ADJUSTED_BEFORE_2007" not in set(e.id)
+
+
+def test_index_availability_gives_the_reliable_start_and_the_gaps(tiny_build, tmp_path, monkeypatch):
+    d = tiny_build
+    cur = tmp_path / "curated"; cur.mkdir()
+    (cur / "index_universe.csv").write_text(
+        "category,index_name,index_key,source" + chr(10) + "broad_market,Nifty 50,NIFTY50,x" + chr(10) +
+        "sectoral,Nifty Bank,NIFTYBANK,x" + chr(10) + "sectoral,Nifty IT,NIFTYIT,x" + chr(10), encoding="utf-8")
+    monkeypatch.setattr(paths, "CURATED", cur)
+    monkeypatch.setattr(indices, "values", lambda name: pd.DataFrame({"date": d}))
+    pd.DataFrame([
+        {"index_key": "NIFTY50", "from_date": d[0], "to_date": d[1], "status": "VERIFIED", "reason": ""},
+        {"index_key": "NIFTY50", "from_date": d[3], "to_date": d[-1], "status": "VERIFIED", "reason": ""},     # a gap on d[2]
+        {"index_key": "NIFTYBANK", "from_date": d[0], "to_date": d[-1], "status": "VERIFIED", "reason": ""},
+        {"index_key": "NIFTYIT", "from_date": d[0], "to_date": d[-1], "status": "UNVERIFIED", "reason": ""},
+    ]).to_parquet(paths.BUILD / "membership" / "coverage.parquet")
+    api.clear_cache()
+    a = api.index_availability().set_index("index_key")
+    assert a.loc["NIFTY50", "membership_status"] == "GAPS" and a.loc["NIFTY50", "reliable_from"] == d[3]
+    assert a.loc["NIFTY50", "membership_gaps"] == f"{d[2].date()}..{d[2].date()}" and a.loc["NIFTY50", "membership_from"] == d[0]
+    assert a.loc["NIFTYBANK", "membership_status"] == "FULL" and a.loc["NIFTYBANK", "reliable_from"] == d[0]
+    assert bool(a.loc["NIFTYBANK", "thin_evidence"]) is True                       # 2007 dates
+    assert a.loc["NIFTYIT", "membership_status"] == "UNVERIFIED" and pd.isna(a.loc["NIFTYIT", "reliable_from"])
+    assert a.loc["NIFTYIT", "values_from"] == d[0]
+    assert list(api.index_availability("sectoral").index_key) == ["NIFTYBANK", "NIFTYIT"]

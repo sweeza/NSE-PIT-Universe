@@ -300,7 +300,7 @@ def index_members(index: str, as_of, backfill: bool = False) -> pd.DataFrame:
     if ok.empty:
         first = c[(c.index_key == k) & (c.status == "VERIFIED")].from_date.min()
         if not (backfill and pd.notna(first) and adjust.COVERAGE_START <= t < first):
-            raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage()"
+            raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage() and index_availability()"
                                 + ("" if not backfill else " (backfill only covers 2007-01-01 up to the first verified day)"))
         sids = membership.members(_intervals(), k, first)
         started = sec.set_index("sec_id").first_date
@@ -595,3 +595,45 @@ def impact_cost(symbols, start, end) -> pd.DataFrame:
                         raise
         out = out[out.sec_id.isin(sids)]
     return out.reset_index(drop=True)
+
+
+def index_availability(category: str | None = None) -> pd.DataFrame:
+    """For each equity index in scope (data/curated/index_universe.csv: broad market and sectoral), from when the data
+    can be relied on. One row per index:
+      values_from / values_to   first and last date of NSE's published index levels held (levels before the index's
+                                launch are NSE's own back-calculation, see caveat INDEX_HISTORY_IS_BACKCAST)
+      membership_from / _to     first and last day of verified membership; membership_status is FULL (one unbroken
+                                verified span to the last data day), GAPS (verified, but with unverified stretches
+                                listed in membership_gaps) or UNVERIFIED (no verified day: index_members refuses it)
+      reliable_from             start of the unbroken verified span that reaches the last day: use dates on or after it
+      thin_evidence             True when reliable_from is before 2010-01-01 (2007-2009 rests on less evidence)
+    Backfill (index_members(..., backfill=True)) may cover the dates before membership_from, flagged as unverified."""
+    uni = pd.read_csv(paths.CURATED / "index_universe.csv")
+    if category:
+        uni = uni[uni.category == category]
+    cov = _coverage()
+    rows = []
+    for r in uni.itertuples():
+        k = r.index_key
+        try:
+            v = indices.values(r.index_name)
+            vf, vt = (v.date.min(), v.date.max()) if len(v) else (pd.NaT, pd.NaT)
+        except Exception:
+            vf = vt = pd.NaT
+        w = cov[(cov.index_key == k) & (cov.status == "VERIFIED")].sort_values("from_date")
+        if w.empty:
+            rows.append((k, r.index_name, r.category, vf, vt, pd.NaT, pd.NaT, "UNVERIFIED", "", "", pd.NaT, False))
+            continue
+        gaps, start, prev_end = [], w.iloc[0].from_date, w.iloc[0].to_date
+        for x in w.iloc[1:].itertuples():
+            if (x.from_date - prev_end).days > 1:
+                gaps.append(f"{(prev_end + pd.Timedelta(days=1)).date()}..{(x.from_date - pd.Timedelta(days=1)).date()}")
+                start = x.from_date
+            prev_end = max(prev_end, x.to_date)
+        last_day = cov.to_date.max()
+        status = "FULL" if not gaps and prev_end >= last_day - pd.Timedelta(days=7) else "GAPS"
+        spans = "; ".join(f"{a.date()}..{b.date()}" for a, b in zip(w.from_date, w.to_date))
+        rows.append((k, r.index_name, r.category, vf, vt, w.from_date.min(), prev_end, status, "; ".join(gaps), spans, start,
+                     bool(start < pd.Timestamp("2010-01-01"))))
+    return pd.DataFrame(rows, columns=["index_key", "index_name", "category", "values_from", "values_to", "membership_from",
+                                       "membership_to", "membership_status", "membership_gaps", "verified_spans", "reliable_from", "thin_evidence"])
