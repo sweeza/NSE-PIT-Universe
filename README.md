@@ -34,6 +34,8 @@ nse.delivery("INFY", "2020-01-01", "2020-03-31")
 nse.index_values("Nifty 50", "2010-01-01", "2020-12-31")
 nse.index_members("Nifty 50", "2024-01-15")         # raises CoverageError outside verified dates
 nse.index_members("Nifty 50", "2008-06-02", backfill=True)   # opt-in proxy list (see below)
+nse.index_members("Nifty Midcap150", "2011-06-01", reconstruct=True)   # UNVERIFIED rule-based rebuild, see below
+nse.index_start_dates(); nse.reconstruction_accuracy("Nifty 50")      # start dates; how close the rebuild is to the verified lists
 nse.coverage()                                      # what is verified, per index
 nse.adjustment_gaps("TATAMOTORS")                   # known breaks in the adjusted series
 nse.caveats(); nse.explain(["INFY"], "2012-01-02", "2020-12-31", index="Nifty 50")
@@ -52,6 +54,14 @@ Symbols resolve as of the query end date and follow renames back (`INFY` <- `INF
 2. **Backfill is opt-in and is not membership.** `index_members(idx, date, backfill=True)` returns, for dates from
    2007-01-01 up to the index's first verified day, the first verified list restricted to securities already trading
    (`BACKFILLED_UNVERIFIED`, with a warning). It carries survivorship and look-ahead bias.
+   **Reconstruction is a second, separate opt-in** (`reconstruct=True`, `nseuniverse reconstruct`; needs
+   `archive/raw/market/mii`). For the 16 size-rank indices it ranks stocks by 6-month average market capitalisation each
+   April/October from 2007-04 with the current methodology bands, and returns `RECONSTRUCTED_UNVERIFIED` lists with the
+   rank and an imputed-size flag. Shares are the 2024-26 issued capital carried back through splits and bonuses (traded-value
+   imputation for delisted stocks), free float is ignored, and the 11 sectoral indices are refused (no sector data). It
+   only fills dates that are not verified. Measured overlap with NSE's verified lists is in
+   `api.reconstruction_accuracy()`: good for wide indices (Nifty 500 about 0.7-0.86 Jaccard, LargeMidcap 250 about 0.85-0.91), poor
+   for narrow ones (Nifty 50 about 0.5-0.65, Next 50 and Midcap 50 about 0.2-0.5). 2007-2009 cannot be scored and is expected to be weaker.
 3. **Adjusted prices before 2007-01-01 do not exist** in this bank. `as_of=` limits which corporate actions are applied,
    not which price rows are returned.
 4. **No announcement dates**: NSE's feed has ex-dates only.

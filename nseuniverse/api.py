@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import actions, adjust, bhavcopy, caveats as _caveats, indices, membership, paths, pipeline
+from . import actions, adjust, bhavcopy, caveats as _caveats, indices, membership, paths, pipeline, reconstruct as _recon
 
 
 class CoverageError(LookupError):
@@ -91,7 +91,7 @@ def unreliable_adjusted() -> pd.DataFrame:
 
 
 def clear_cache():
-    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs, _unreliable, _market):
+    for f in (_identity, _adjustments, _prices, _prices_year, _intervals, _coverage, _sme_secs, _unreliable, _market, _recon_ranks, _recon_accuracy):
         f.cache_clear()
 
 
@@ -279,8 +279,85 @@ def coverage() -> pd.DataFrame:
     return _coverage().copy()
 
 
-def index_members(index: str, as_of, backfill: bool = False) -> pd.DataFrame:
+@functools.lru_cache(maxsize=None)
+def _recon_ranks() -> pd.DataFrame:
+    p = paths.BUILD / "reconstruction" / "ranks.parquet"
+    if not p.exists():
+        raise CoverageError("no reconstruction in this build: run `nseuniverse reconstruct` (needs archive/raw/market/mii)")
+    return pd.read_parquet(p)
+
+
+@functools.lru_cache(maxsize=None)
+def _recon_accuracy() -> pd.DataFrame:
+    p = paths.BUILD / "reconstruction" / "accuracy.csv"
+    return pd.read_csv(p, parse_dates=["effective"]) if p.exists() else pd.DataFrame()
+
+
+def reconstruction_accuracy(index: str | None = None) -> pd.DataFrame:
+    """How close the rule-based rebuild came to NSE's verified list, at every April/October review that falls inside a
+    verified window: one row per index and review (jaccard, precision, recall, how many rebuilt members had an imputed
+    size, how many verified members could not be ranked at all). This is the only evidence of how good the unverified
+    rebuild is; the same indices are scored only where the truth is known (2010 onward)."""
+    a = _recon_accuracy()
+    if index is not None:
+        k = indices.name_map().get(indices.key(index), indices.key(index))
+        a = a[a.index_key == k]
+    return a.copy()
+
+
+def index_start_dates() -> pd.DataFrame:
+    """Per index in scope, the dates that matter when choosing how far back to go:
+      values_from        first index level NSE publishes (back-calculated before the index existed)
+      official_first_list first day of a verified NSE constituent list held (membership_from)
+      reliable_from      start of the unbroken verified span
+      reconstruct_from   first date index_members(..., reconstruct=True) can return (None when not reconstructable)
+      reconstruct_rule   the rank rule used
+      rebuild_jaccard    mean overlap of the rebuild with the verified lists where both exist (1.0 = identical)
+    The index's public launch date is not in the data bank and is not asserted here."""
+    av = index_availability()[["index_key", "index_name", "category", "values_from", "membership_from", "reliable_from"]]
+    av = av.rename(columns={"membership_from": "official_first_list"})
+    try:
+        first = _recon_ranks().effective.min()
+    except CoverageError:
+        first = pd.NaT
+    acc = _recon_accuracy()
+    jac = acc.groupby("index_key").jaccard.mean() if len(acc) else pd.Series(dtype=float)
+    av["reconstruct_from"] = [first if k in _recon.RULES else pd.NaT for k in av.index_key]
+    av["reconstruct_rule"] = [_recon.RULES[k][2] if k in _recon.RULES else "not reconstructed: " + _recon.NOT_RECONSTRUCTED
+                              for k in av.index_key]
+    av["rebuild_jaccard"] = av.index_key.map(jac)
+    return av
+
+
+def _reconstructed(index: str, k: str, t: pd.Timestamp, first_verified) -> pd.DataFrame:
+    if k not in _recon.RULES:
+        raise CoverageError(f"{index!r} cannot be reconstructed: {_recon.NOT_RECONSTRUCTED}")
+    ranks = _recon_ranks()
+    if t < ranks.effective.min():
+        raise CoverageError(f"{index!r} cannot be reconstructed on {t.date()}: the first six-month ranking window "
+                            f"needs prices from 2007-01-02, so the first review is {ranks.effective.min().date()}")
+    g = _recon.members_at(ranks, k, t)
+    sec, sh = _identity()
+    out = _with_symbols(sec, sh, g.sec_id, t).merge(
+        g[["sec_id", "rank", "mcap_avg_cr", "imputed", "effective", "short_window"]], on="sec_id")
+    out = out.rename(columns={"imputed": "mcap_imputed", "effective": "rebuilt_review_date"}).sort_values("rank").reset_index(drop=True)
+    out["membership_status"] = "RECONSTRUCTED_UNVERIFIED"
+    out.attrs["index_first_verified_list"] = first_verified
+    jac = reconstruction_accuracy(index).jaccard
+    out.attrs["rebuild_jaccard_vs_verified"] = float(jac.mean()) if len(jac) else float("nan")
+    warnings.warn(f"{index}: {t.date()} is reconstructed from market-cap ranks (full cap, estimated shares, no free float), not NSE's "
+                  f"published membership; first verified list {first_verified.date() if pd.notna(first_verified) else 'none'}; "
+                  f"mean overlap with the verified lists {out.attrs['rebuild_jaccard_vs_verified']:.2f}", DataQualityWarning, stacklevel=3)
+    return out
+
+
+def index_members(index: str, as_of, backfill: bool = False, reconstruct: bool = False) -> pd.DataFrame:
     """Members of an index on a date, with the symbol each security carried then.
+
+    reconstruct=True is a second opt-in (not combinable with backfill) for dates that are not verified: it returns the
+    rule-based rebuild of reconstruct.py (rank by 6-month average market capitalisation, current methodology bands),
+    marked membership_status='RECONSTRUCTED_UNVERIFIED' with rank, mcap_avg_cr and mcap_imputed columns. It is a
+    model: shares are estimated, free float is ignored, sectoral indices are refused. Verified dates are never replaced.
 
     Refuses a date that is not verified (see coverage()). backfill=True is an opt-in for dates BEFORE the
     index's first verified day (from 2007-01-01): it returns the members of the first verified day that were
@@ -294,6 +371,10 @@ def index_members(index: str, as_of, backfill: bool = False) -> pd.DataFrame:
     sec, sh = _identity()
     if ok.empty:
         first = c[(c.index_key == k) & (c.status == "VERIFIED")].from_date.min()
+        if reconstruct:
+            if backfill:
+                raise ValueError("backfill and reconstruct are different opt-ins; pass one")
+            return _reconstructed(index, k, t, first)
         if not (backfill and pd.notna(first) and adjust.COVERAGE_START <= t < first):
             raise CoverageError(f"membership of {index!r} on {t.date()} is not verified; see coverage() and index_availability()"
                                 + ("" if not backfill else " (backfill only covers 2007-01-01 up to the first verified day)"))
@@ -388,7 +469,8 @@ def caveats(category: str | None = None) -> pd.DataFrame:
     counts = {"NOT_SERVED_ADJUSTED": f"{sme + cur} securities",
               "DOCUMENTED_ADJUSTMENT_BREAK": f"{gaps} securities", "UNQUANTIFIED_CORPORATE_ACTIONS": f"{unq} events",
               "FEED_ENDS": f"last ex-date {feed}", "FEED_LAGS_BHAVCOPY": lag,
-              "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled"}
+              "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled",
+              "MEMBERSHIP_RECONSTRUCTED": f"{len(_recon.RULES)} indices can be reconstructed"}
     c = c.copy()
     c["affected"] = c["id"].map(counts)
     return c.reset_index(drop=True)

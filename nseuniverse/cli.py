@@ -20,6 +20,7 @@ def main(argv=None) -> int:
     v = sub.add_parser("verify", help="run integrity checks; exit 1 on any FAIL")
     v.add_argument("--only", nargs="*")
     sub.add_parser("determinism", help="build twice into temp dirs and compare checksums")
+    sub.add_parser("reconstruct", help="rebuild UNVERIFIED rule-based index membership into build/reconstruction (opt-in; needs archive/raw/market/mii)")
     sub.add_parser("update", help="fetch recent data, rebuild, and verify")
     a = ap.parse_args(argv)
 
@@ -57,6 +58,10 @@ def main(argv=None) -> int:
         fails = [r for r in res if r.status == "FAIL"]
         print(f"\n{len(res) - len(fails)}/{len(res)} checks without FAIL")
         return 1 if fails else 0
+    if a.cmd == "reconstruct":
+        from . import reconstruct
+        print(reconstruct.build())
+        return 0
     if a.cmd == "determinism":
         sums = []
         for i in range(2):
