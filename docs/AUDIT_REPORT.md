@@ -388,3 +388,13 @@ Script: `audit/stage1_redownload.py` (seed 20261122; plain GETs, one at a time, 
 | Press PDFs | 100 | 100 |
 
 The one real difference: `cm22DEC2023bhav.csv.zip` has the same size and the same CSV inside (byte-equal), but the zip member timestamp differs by 6 seconds (17:32:18 now, 17:32:24 held), so the zip hash differs. The data is unchanged; the held copy remains the evidence. Limits: a sample (329 of 13,548 files); constituent lists are live files and matched the held copies a week later by luck of no index change, which says nothing about earlier dates.
+
+## Spot check of 30 membership dates (2026-11-24)
+
+Script `audit/spot30.py`, result `audit/spot30_result.csv` (seed 20261124).
+
+- **Draw.** 207 held NSE constituent captures (data/raw/constituents_archive) dated 2010-01-04 or later fall inside a verified window of their index; 30 were drawn at random, at most 4 per index. Indices covered: Nifty 50, Next 50, 100, 200, 500, Bank, FMCG, IT, Metal, Midcap 50, Midcap 150, MidSmallcap 400, Pharma, PSU Bank, Realty, Smallcap 100.
+- **Result: 30 of 30 match exactly** (symbol sets equal, a renamed symbol counted as equal on the same ISIN), build member count equals the NSE file's count each time (e.g. 501 for Nifty 500 with the HEG dummy, 101 for Nifty 100 on 2017-11-02).
+- **Limits.** The captures are 2013-2026 (none in the draw before 2013; the held captures before that are few and were used in the earlier 6.4b/6.4c comparison, so this is a fresh draw of the same evidence family, not a new source). Boundary days (the day of a change) were not targeted.
+- **Second source (Nifty 50, 2010-2026).** Wikipedia's index-changes table (revision 1386392186, fetched by a subagent; the flattened rowspan text cannot tell OUT from IN, and its date blocks are shifted against each other) was compared by company: 76 companies, 100 mentions against 102 build change events. After allowing for the shifted blocks every company agrees except Jaiprakash Associates and Tata Communications, which Wikipedia lists in an 8 April 2010 block; the NSE capture of 2010-01-02 (`ind_niftylist_20100102023400.csv`) shows Jaiprakash already a member and Tata Communications not, as in the build. The September 2025 changes (Hero MotoCorp and IndusInd out, IndiGo and Max Healthcare in) were checked against the held NSE press release `ind_prs22082025.pdf`: effective 2025-09-30, as built. Wikipedia is a secondary compilation, so this confirms the dates and names only where it agrees with NSE's own files.
+- **Not covered.** Nifty 100 and Nifty 500 before 2013 (no captures), the 2010-2012 boundaries of the sector indices, and index weights.
