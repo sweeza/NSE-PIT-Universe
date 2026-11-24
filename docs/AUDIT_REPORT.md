@@ -1,5 +1,8 @@
 # Audit report (interim): Stages 0, 7 and part of 6
 
+> **Scope note (2026-11-24):** the data bank was cut to its core (bhavcopy from 2007, split/bonus-adjusted prices, delivery, 27 verified equity indices with membership from 2010). Price bands, ASM/GSM, F&O, deals, impact cost, shares outstanding, dividends/total return, the 30 unverified indices, non-equity index values and 2004-2006 data were removed from the build; sections below that describe them are history. Full version: git tag `full-2026-11-24`; raw files: `archive/`.
+
+
 Date: 2026-11-22. Code at commit 34deb34. Scripts: `audit/rehash.py`, `audit/mutate.py` (written by the auditor, no project parsers used for the re-hash).
 
 ## Stage 0: reproducibility

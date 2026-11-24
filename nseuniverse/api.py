@@ -62,7 +62,7 @@ def _sme_secs() -> frozenset:
 def sme_securities() -> pd.DataFrame:
     """SME-platform securities (ever traded in series SM or ST). Their ADJUSTED prices are not reliable: the NSE
     corporate-action feed holds no records for SME securities, so none of their splits or bonuses is applied.
-    Raw prices are exact. prices() marks them with adj_reliable=False."""
+    Raw prices are exact; prices() refuses an adjust_mode for them."""
     sec, _ = _identity()
     return sec[sec.sec_id.isin(_sme_secs())].reset_index(drop=True)
 
@@ -82,7 +82,7 @@ def _unreliable() -> dict:
 
 def unreliable_adjusted() -> pd.DataFrame:
     """Securities whose adjusted prices are known to be wrong or incomplete (SME platform, plus the curated list
-    data/curated/adjustment_unreliable.csv): sec_id, symbol (last), reason. prices() marks them adj_reliable=False."""
+    data/curated/adjustment_unreliable.csv): sec_id, symbol (last), reason. prices() refuses an adjust_mode for them."""
     sec, _ = _identity()
     u = _unreliable()
     out = sec[sec.sec_id.isin(u)][["sec_id", "last_symbol"]].rename(columns={"last_symbol": "symbol"}).reset_index(drop=True)
@@ -138,22 +138,25 @@ def adjustment_gaps(symbol: str | None = None) -> pd.DataFrame:
 
 
 def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, series: str = "primary",
-           allow_unverified: bool = False, mask_gaps: bool = False) -> pd.DataFrame:
+           mask_gaps: bool = True) -> pd.DataFrame:
     """Daily prices for the securities that carried `symbols` on `end` (names are resolved at the
     end date, so a renamed company is followed back through its old tickers).
-    adjust_mode: None (as published), 'splits' (splits, bonuses, consolidations, rights),
-    'total_return' (also cash dividends). as_of: use only corporate actions with ex-date <= as_of.
-    With an adjust_mode the frame also has adj_return (daily change of adj_close per security) and
-    adj_gap (True on a day where the adjusted series has a documented or unexplained break, see
-    adjustment_gaps()). mask_gaps=True sets adj_return to NaN on those days so a fake demerger
-    drop never enters a return calculation."""
+    adjust_mode: None (as published) or 'splits' (splits, bonuses, consolidations, rights; no dividends). as_of: use
+    only corporate actions with ex-date <= as_of. With an adjust_mode the frame also has adj_return (daily change of
+    adj_close per security) and adj_gap (True on a day where the adjusted series has a documented or unexplained
+    break, see adjustment_gaps()). mask_gaps=True (the default) sets adj_return to NaN on those days so a fake
+    demerger drop never enters a return calculation; the days are listed in frame.attrs['flagged']. SME securities
+    and the securities in unreliable_adjusted() are refused with an adjust_mode (use adjust_mode=None for their
+    as-published prices)."""
+    if adjust_mode not in (None, "splits"):
+        raise ValueError("adjust_mode must be None or 'splits'; dividend (total-return) adjustment is not offered")
     if isinstance(symbols, str):
         symbols = [symbols]
     end_t, start_t = pd.Timestamp(end), pd.Timestamp(start)
-    if adjust_mode is not None and start_t < adjust.COVERAGE_START and not allow_unverified:
+    if adjust_mode is not None and start_t < adjust.COVERAGE_START:
         raise CoverageError(
             f"adjusted prices before {adjust.COVERAGE_START.date()} are not verified: the corporate-action feed has almost no "
-            f"splits/bonuses before then. Use adjust_mode=None, start later, or allow_unverified=True.")
+            f"splits/bonuses before then. The data bank starts on that date: use adjust_mode=None or start later.")
     def _resolve_for_prices(sym: str) -> str:
         ref = pd.Timestamp(as_of) if as_of is not None else end_t
         try:
@@ -173,6 +176,11 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
             raise
 
     sids = [_resolve_for_prices(s) for s in symbols]
+    if adjust_mode is not None:
+        bad = {sym: _unreliable()[sid] for sym, sid in zip(symbols, sids) if sid in _unreliable()}
+        if bad:
+            raise CoverageError("adjusted prices are not offered for: " + "; ".join(f"{k} ({v[:80]})" for k, v in bad.items())
+                                + ". Use adjust_mode=None for as-published prices.")
     frames = [_prices_year(y) for y in range(start_t.year, end_t.year + 1)]
     frames = [f for f in frames if not f.empty]
     p = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["sec_id", "date", "series", "close"])
@@ -197,16 +205,8 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         p["adj_gap_class"] = [gcls.get((s, d), "") for s, d in zip(p.sec_id, p.date)]
         if mask_gaps:
             p.loc[p["adj_gap"], "adj_return"] = float("nan")
-    elif mask_gaps:
-        raise ValueError("mask_gaps needs an adjust_mode")
     p = p[(p.date >= start_t) & (p.date <= end_t)]
     if adjust_mode is not None:
-        p["adj_reliable"] = ~p.sec_id.isin(_unreliable())
-        if not p.adj_reliable.all():
-            why = sorted({_unreliable()[s] for s in p.loc[~p.adj_reliable, "sec_id"].unique()})
-            warnings.warn("securities with unreliable adjusted prices in the result (adj_reliable=False): "
-                          + "; ".join(w[:90] for w in why[:4]) + ". Use raw prices or leave them out. See unreliable_adjusted().",
-                          DataQualityWarning, stacklevel=2)
         fl = p.loc[p.adj_gap, ["sec_id", "date", "adj_gap_class"]].rename(columns={"adj_gap_class": "class"})
         fl = fl.merge(p[["sec_id", "symbol"]].drop_duplicates("sec_id"), on="sec_id", how="left") if "symbol" in p else fl
         p.attrs["flagged"] = fl.reset_index(drop=True)
@@ -220,37 +220,17 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
     return p.sort_values(["sec_id", "date"]).reset_index(drop=True)
 
 
-def index_values(index: str, start=None, end=None, mask_conflicts: bool = False, source: str | None = None) -> pd.DataFrame:
-    """Official index values. Adds ret (daily change of close). Days where NSE's two sources disagree carry
-    conflict=True. A return is unreliable if either its day or the previous day conflicts; with
-    mask_conflicts=True ret is NaN on those days. frame.attrs['flagged'] lists them either way.
-    source='history' or 'daily' (explicit, never the default): on conflict days use that source's close instead of the
-    other's; open/high/low/tri/ntr are blanked on those days (they would come from the other source) and ret is computed
-    from the chosen source. The choice is yours: check the index's boundary days first (see docs/AUDIT_REPORT.md).
-    source='rule' (explicit, never the default) applies a fixed rule to each conflict day, estimating nothing:
-      a close of 0 in one source is a placeholder: the other source's close is used (class SOURCE_CONFLICT_RESOLVED_ZERO);
-      the two closes differ by less than 0.1%: the daily file's close is used (SOURCE_CONFLICT_RESOLVED_DAILY);
-      they differ by 0.1% or more: neither is chosen, the close stays as built and the return of that day and the next
-      is NaN (SOURCE_CONFLICT_UNRESOLVED). open/high/low/tri/ntr are blanked on rows whose close was switched."""
-    if source not in (None, "history", "daily", "rule"):
-        raise ValueError("source must be None, 'history', 'daily' or 'rule'")
-    if source is not None and mask_conflicts:
-        raise ValueError("use either source= or mask_conflicts=True, not both")
+def index_values(index: str, start=None, end=None, mask_conflicts: bool = False) -> pd.DataFrame:
+    """Official index values (only the verified equity indices are in the build). Adds ret (daily change of close).
+    conflict=True marks a day where NSE's two sources disagree; none exists for the indices in this build, and
+    mask_conflicts=True would set ret to NaN around one. frame.attrs['flagged'] lists such days."""
     v = indices.values(index)
     if v.empty:
-        raise CoverageError(f"no values for index {index!r}")
+        raise CoverageError(f"no values for index {index!r}: only the verified equity indices (api.coverage()) are in this build")
     v = v.sort_values("date").reset_index(drop=True)
     conf = v["conflict"].fillna(False).astype(bool) if "conflict" in v else pd.Series(False, index=v.index)
-    swapped = pd.Series(False, index=v.index)
-    if source == "rule":
-        return _index_values_rule(index, v, conf, start, end)
-    if source is not None:
-        swapped = conf & (v["src"] != source)
-        v.loc[swapped, "close"] = v.loc[swapped, "alt_close"]
-        v.loc[swapped, [c for c in ("open", "high", "low", "tri", "ntr") if c in v]] = float("nan")
-        v.loc[swapped, "src"] = source
     v["ret"] = v["close"].pct_change()
-    bad = pd.Series(False, index=v.index) if source is not None else conf | conf.shift(1, fill_value=False)
+    bad = conf | conf.shift(1, fill_value=False)
     v["ret_unreliable"] = bad
     if mask_conflicts:
         v.loc[bad, "ret"] = float("nan")
@@ -259,58 +239,10 @@ def index_values(index: str, start=None, end=None, mask_conflicts: bool = False,
     if end is not None:
         v = v[v.date <= pd.Timestamp(end)]
     v = v.reset_index(drop=True)
-    if source is not None:
-        fl = v.loc[v["conflict"].fillna(False).astype(bool), ["date", "close", "alt_close"]].assign(
-            **{"class": f"SOURCE_CONFLICT_USED_{source.upper()}"})
-        v.attrs["flagged"] = fl.reset_index(drop=True)
-        if len(fl):
-            warnings.warn(f"{len(fl)} {index} conflict day(s) in the result use the {source!r} source by your choice; "
-                          f"open/high/low/tri/ntr are blank on the {int(swapped.sum())} rows that were switched.",
-                          DataQualityWarning, stacklevel=2)
-        return v
-    fl = v.loc[v.ret_unreliable, ["date", "close", "alt_close"]].assign(**{"class": "SOURCE_CONFLICT"})         if "alt_close" in v else v.loc[v.ret_unreliable, ["date"]].assign(**{"class": "SOURCE_CONFLICT"})
+    fl = v.loc[v.ret_unreliable, ["date", "close", "alt_close"]].assign(**{"class": "SOURCE_CONFLICT"}) if "alt_close" in v else v.loc[v.ret_unreliable, ["date"]].assign(**{"class": "SOURCE_CONFLICT"})
     v.attrs["flagged"] = fl.reset_index(drop=True)
     if len(fl):
         warnings.warn(_flag_summary(fl, f"{index} source-conflict", mask_conflicts), DataQualityWarning, stacklevel=2)
-    return v
-
-
-RULE_TOLERANCE = 0.001  # index_values(source="rule"): relative close difference below which the daily file is used
-
-
-def _index_values_rule(index, v, conf, start, end):
-    alt = v["alt_close"] if "alt_close" in v else pd.Series(float("nan"), index=v.index)
-    zero = conf & ((v["close"] == 0) | (alt == 0))
-    rel = (v["close"] - alt).abs() / pd.concat([v["close"].abs(), alt.abs()], axis=1).max(axis=1)
-    small = conf & ~zero & (rel < RULE_TOLERANCE)
-    unresolved = conf & ~zero & ~small
-    swapped = (zero & (v["close"] == 0)) | (small & (v["src"] != "daily"))
-    v.loc[swapped, "close"] = alt[swapped]
-    v.loc[swapped, [c for c in ("open", "high", "low", "tri", "ntr") if c in v]] = float("nan")
-    v.loc[swapped & zero, "src"] = "history"
-    v.loc[swapped & small, "src"] = "daily"
-    cls = pd.Series("", index=v.index)
-    cls[zero] = "SOURCE_CONFLICT_RESOLVED_ZERO"
-    cls[small] = "SOURCE_CONFLICT_RESOLVED_DAILY"
-    cls[unresolved] = "SOURCE_CONFLICT_UNRESOLVED"
-    v["ret"] = v["close"].pct_change()
-    bad = unresolved | unresolved.shift(1, fill_value=False)
-    v["ret_unreliable"] = bad
-    v.loc[bad, "ret"] = float("nan")
-    v["conflict_class"] = cls
-    if start is not None:
-        v = v[v.date >= pd.Timestamp(start)]
-    if end is not None:
-        v = v[v.date <= pd.Timestamp(end)]
-    v = v.reset_index(drop=True)
-    fl = v.loc[v["conflict_class"] != "", ["date", "close", "alt_close", "conflict_class"]].rename(
-        columns={"conflict_class": "class"})
-    v.attrs["flagged"] = fl.reset_index(drop=True)
-    n_un = int((v["conflict_class"] == "SOURCE_CONFLICT_UNRESOLVED").sum())
-    if len(fl):
-        warnings.warn(f"{len(fl)} {index} conflict day(s) in the result were handled by source='rule': {n_un} remain "
-                      f"unresolved (return NaN); see frame.attrs['flagged'] and the 'class' column.",
-                      DataQualityWarning, stacklevel=3)
     return v
 
 
@@ -411,49 +343,6 @@ def delivery(symbols, start, end) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def price_band(symbol: str, as_of) -> dict:
-    """Circuit limit (percent; 'No Band' stays text) of a security on a date, with its source. From 2020 the daily
-    security list gives it for every security; before that only the recorded changes since 2010 do: the band is the
-    last 'To' value on or before the date, and a security with no recorded change yet is refused (the starting band
-    was not published)."""
-    t = pd.Timestamp(as_of)
-    sid = _sid_for(symbol, t)
-    sl = _market("sec_list")
-    if len(sl):
-        x = sl[(sl.sec_id == sid) & (sl.date == t)]
-        if len(x):
-            r = x.iloc[0]
-            return {"band": r.band, "series": r.series, "source": "sec_list", "remarks": r.remarks}
-    bc = _market("band_changes")
-    if len(bc):
-        y = bc[(bc.sec_id == sid) & (bc.date <= t)].sort_values("date")
-        if len(y):
-            r = y.iloc[-1]
-            return {"band": r.band_to, "series": r.series, "source": f"band_changes {r.date.date()}", "remarks": ""}
-    raise CoverageError(f"price band of {symbol!r} on {t.date()} is not known: no security list for that day and no recorded band change since 2010")
-
-
-def asm_gsm(as_of) -> pd.DataFrame:
-    """Securities with a surveillance remark (ASM/GSM stage etc.) in NSE's security list for the day (2020-)."""
-    t = pd.Timestamp(as_of)
-    sl = _market("sec_list")
-    x = sl[(sl.date == t) & (sl.remarks != "")] if len(sl) else sl
-    if sl.empty or not (sl.date == t).any():
-        raise CoverageError(f"no security list for {t.date()} (available from 2020)")
-    return x.reset_index(drop=True)
-
-
-def fo_ban(as_of) -> pd.DataFrame:
-    """Securities in the F&O ban period on a date. An empty frame means NSE's file for that day says NIL; a day
-    without a file raises."""
-    t = pd.Timestamp(as_of)
-    b = _market("fo_ban")
-    days = paths.MARKET_RAW / "fosecban" / f"{t.year}" / f"fo_secban_{t:%d%m%Y}.csv"
-    if not days.exists():
-        raise CoverageError(f"no F&O ban file for {t.date()}")
-    return b[b.date == t].reset_index(drop=True) if len(b) else b
-
-
 def _events() -> pd.DataFrame:
     p = paths.BUILD / "actions" / "events.parquet"
     return pd.read_parquet(p, columns=["symbol", "sec_id", "ex_date", "kind", "subject", "status"]) if p.exists() else pd.DataFrame()
@@ -473,19 +362,16 @@ def caveats(category: str | None = None) -> pd.DataFrame:
             return None
     ev = n(_events)
     unq = n(lambda: int(ev[ev.kind.isin(["UNPARSED", "UNKNOWN", "SCHEME"]) & (ev.status == "OK") & (ev.ex_date >= "2007-01-01")].shape[0]))
-    div = n(lambda: int(ev[((ev.kind == "UNPARSED") & ev.subject.str.contains("(?i)div")) | (ev.status == "NO_TRADING_NEAR")].shape[0]))
     sme = n(lambda: len(_sme_secs()))
     cur = n(lambda: len([s for s, r in _unreliable().items() if not r.startswith("SME")]))
     gaps = n(lambda: adjustment_gaps().query("date >= '2007-01-01'").sec_id.nunique())
     feed = n(lambda: str(ev.ex_date.max().date()))
     lag = n(lambda: (lambda r: None if r[0] is None else f"feed ends {r[1].date()}, last bhavcopy {r[2].date()} ({r[0]} days)")(actions.feed_lag()))
     cov = n(lambda: int(_coverage()[_coverage().status == "VERIFIED"].index_key.nunique()))
-    conf = n(lambda: int(len(pd.read_csv(paths.BUILD / "index_conflicts.csv"))))
-    counts = {"SME_ADJUSTED_PRICES": f"{sme} securities", "CURATED_UNRELIABLE_ADJUSTED": f"{cur} securities",
+    counts = {"NOT_SERVED_ADJUSTED": f"{sme + cur} securities",
               "DOCUMENTED_ADJUSTMENT_BREAK": f"{gaps} securities", "UNQUANTIFIED_CORPORATE_ACTIONS": f"{unq} events",
-              "DIVIDENDS_FROM_FEED_TEXT": f"{div} records", "FEED_ENDS": f"last ex-date {feed}", "FEED_LAGS_BHAVCOPY": lag,
-              "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled",
-              "INDEX_VALUE_CONFLICTS": f"{conf} index-days"}
+              "FEED_ENDS": f"last ex-date {feed}", "FEED_LAGS_BHAVCOPY": lag,
+              "MEMBERSHIP_NOT_VERIFIED": f"{cov} indices have a verified window", "MEMBERSHIP_BACKFILLED": f"{cov} indices can be backfilled"}
     c = c.copy()
     c["affected"] = c["id"].map(counts)
     return c.reset_index(drop=True)
@@ -515,7 +401,7 @@ def explain(symbols=None, start=None, end=None, index: str | None = None) -> pd.
         un = _unreliable()
         for sid, sym in sids.items():
             if sid in un:
-                add("SME_ADJUSTED_PRICES" if un[sid].startswith("SME") else "CURATED_UNRELIABLE_ADJUSTED", f"{sym}: {un[sid]}")
+                add("NOT_SERVED_ADJUSTED", f"{sym}: {un[sid]}")
         try:
             g = adjustment_gaps()
             g = g[g.sec_id.isin(sids) & (g.date >= s0) & (g.date <= e0)]
@@ -531,8 +417,6 @@ def explain(symbols=None, start=None, end=None, index: str | None = None) -> pd.
             feed = ev.ex_date.max()
             if e0 > feed - pd.Timedelta(days=30):
                 add("FEED_ENDS", f"corporate-action feed ends {feed.date()}; the selection reaches {e0.date()}")
-        if s0 < adjust.COVERAGE_START:
-            add("ADJUSTED_BEFORE_2007", f"range starts {s0.date()}")
     if index is not None:
         k = indices.name_map().get(indices.key(index), indices.key(index))
         c = _coverage()
@@ -553,122 +437,11 @@ def explain(symbols=None, start=None, end=None, index: str | None = None) -> pd.
                 gaps_.append(f"{lo.date()}..{e0.date()}")
             if gaps_:
                 add("MEMBERSHIP_NOT_VERIFIED", f"{index}: unverified inside the range: " + ", ".join(gaps_))
-            if s0 < pd.Timestamp("2010-01-01"):
-                add("MEMBERSHIP_2007_2009_THIN_EVIDENCE", f"{index}: range starts {s0.date()}")
-        try:
-            iv = index_values(index, s0, e0)
-            nconf = int(iv.conflict.sum()) if "conflict" in iv else 0
-            if nconf:
-                add("INDEX_VALUE_CONFLICTS", f"{index}: {nconf} conflicting index-days in the range")
-        except Exception:
-            pass
     add("EX_DATE_NOT_ANNOUNCEMENT_DATE", "applies to every adjusted series")
     add("SEC_ID_NOT_STABLE", "applies to every saved sec_id")
     out = pd.DataFrame(rows, columns=["id", "category", "severity", "applies_to", "backtest_impact", "handling"])
     order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
     return out.sort_values(["severity", "category", "id"], key=lambda s: s.map(order) if s.name == "severity" else s, kind="mergesort").reset_index(drop=True)
-
-
-def fo_eligible(as_of) -> pd.DataFrame:
-    """Stocks with futures and/or options contracts in NSE's derivatives bhavcopy on a date (2004-): the F&O segment
-    for that day. `fut` and `opt` say which. A date with no derivatives file raises."""
-    t = pd.Timestamp(as_of)
-    f = _market("fo_stocks")
-    if f.empty or not (f.date == t).any():
-        raise CoverageError(f"no derivatives bhavcopy for {t.date()} in this build")
-    return f[f.date == t].reset_index(drop=True)
-
-
-def deals(symbols, start, end, kind: str | None = None) -> pd.DataFrame:
-    """Bulk deals (2004-), block deals (2005-), and short selling (2008-) from NSE's report archive and daily
-    snapshots. Raises CoverageError outside the covered date range for the requested kind."""
-    if kind not in (None, "bulk", "block", "short"):
-        raise ValueError(f"kind must be None, 'bulk', 'block', or 'short', got {kind!r}")
-    d = _market("deals")
-    if d.empty:
-        raise CoverageError("no deals data in this build (build market tables first)")
-    sub = d[d.kind == kind] if kind is not None else d
-    if sub.empty:
-        raise CoverageError(f"no {kind} deals data in this build")
-    s0, e0 = pd.Timestamp(start), pd.Timestamp(end)
-    lo, hi = sub.date.min(), d.date.max()
-    if s0 > e0 or s0 < lo or e0 > hi:
-        raise CoverageError(f"deals ({kind or 'all'}) cover {lo.date()}..{hi.date()}; requested {s0.date()}..{e0.date()}")
-    out = sub[(sub.date >= s0) & (sub.date <= e0)]
-    if symbols is not None:
-        if isinstance(symbols, str):
-            symbols = [symbols]
-        sids = set()
-        for s in symbols:
-            try:
-                sids.add(_sid_for(s, e0))
-            except CoverageError:
-                sids.add(_sid_for(s, s0))
-        out = out[out.sec_id.isin(sids)]
-    return out.reset_index(drop=True)
-
-
-def shares_outstanding(symbols, start, end) -> pd.DataFrame:
-    """Issued share count per security and trading day from NSE's MII security master (2024-02-05 onward), with the
-    face value. A count is NSE's figure for that day, never filled or carried across days that have no file.
-    Free float is not published in that file (it is empty), so no free-float or float-adjusted market cap exists.
-    A market cap would be the raw (unadjusted) `close * shares_outstanding`, computed by the caller. Raises
-    CoverageError outside the covered dates or if the build holds no MII data."""
-    d = _market("shares")
-    if d.empty:
-        raise CoverageError("no shares data in this build (python -m nseuniverse.cli fetch market, then build)")
-    s0, e0 = pd.Timestamp(start), pd.Timestamp(end)
-    lo, hi = d.date.min(), d.date.max()
-    if s0 > e0 or s0 < lo or e0 > hi:
-        raise CoverageError(f"shares outstanding cover {lo.date()}..{hi.date()}; requested {s0.date()}..{e0.date()}")
-    out = d[(d.date >= s0) & (d.date <= e0)]
-    if symbols is not None:
-        if isinstance(symbols, str):
-            symbols = [symbols]
-        sids = set()
-        for s in symbols:
-            try:
-                sids.add(_sid_for(s, e0))
-            except CoverageError:
-                sids.add(_sid_for(s, s0))
-        out = out[out.sec_id.isin(sids)]
-    return out.reset_index(drop=True)
-
-
-def impact_cost(symbols, start, end) -> pd.DataFrame:
-    """Monthly NSE Clearing security category (1/2/3) and 6-month rolling mean impact cost (%) for a standard
-    Rs 1 lakh order (continuous from 2023-10; sporadic earlier months from 2019-03). Raises CoverageError if no
-    monthly file exists in the requested range. Missing values for a security stay NaN and are never filled."""
-    d = _market("impact_cost")
-    if d.empty:
-        raise CoverageError("no impact_cost data in this build (python -m nseuniverse.cli fetch market, then build)")
-    s0 = pd.Timestamp(start).to_period("M").to_timestamp()
-    e0 = pd.Timestamp(end).to_period("M").to_timestamp()
-    if s0 > e0:
-        raise CoverageError(f"invalid range: {start}..{end}")
-    out = d[(d.date >= s0) & (d.date <= e0)]
-    if out.empty:
-        raise CoverageError(f"no impact_cost monthly file between {pd.Timestamp(start).date()} and {pd.Timestamp(end).date()}")
-    if symbols is not None:
-        if isinstance(symbols, str):
-            symbols = [symbols]
-        sids = set()
-        s_t, e_t = pd.Timestamp(start), pd.Timestamp(end)
-        for s in symbols:
-            try:
-                sids.add(_sid_for(s, e_t))
-            except CoverageError:
-                try:
-                    sids.add(_sid_for(s, s_t))
-                except CoverageError:
-                    _, sh = _identity()
-                    ov = sh[(sh.symbol == s) & (sh.from_date <= e_t) & (sh.to_date >= s_t)]["sec_id"].unique()
-                    if len(ov) == 1:
-                        sids.add(ov[0])
-                    else:
-                        raise
-        out = out[out.sec_id.isin(sids)]
-    return out.reset_index(drop=True)
 
 
 def index_availability(category: str | None = None) -> pd.DataFrame:

@@ -58,7 +58,7 @@ def _legacy_url(d):
 
 SOURCES = {
     "bhav_legacy": Source(
-        "bhav_legacy", dt.date(2004, 1, 1), lambda: min(dt.date(2024, 7, 31), dt.date.today()),
+        "bhav_legacy", dt.date(2007, 1, 1), lambda: min(dt.date(2024, 7, 31), dt.date.today()),
         _legacy_url,
         lambda d: paths.BHAV_RAW / "legacy" / f"{d.year}" / f"cm{d.day:02d}{_MON[d.month-1]}{d.year}bhav.csv.zip",
         _is_zip),
@@ -83,50 +83,16 @@ def _market(kind: str, name: Callable[[dt.date], str]) -> Callable[[dt.date], Pa
     return lambda d: paths.MARKET_RAW / kind / f"{d.year}" / name(d)
 
 
-# Market-activity files. They are only fetched for days on which a bhavcopy exists (the session calendar), see
-# session_days(). A missing file on such a day is recorded in absent.csv: for band changes it can simply mean "no
-# change that day".
+# Delivery file. It is only fetched for days on which a bhavcopy exists (the session calendar), see
+# session_days(). A missing file on such a day is recorded in absent.csv.
 SOURCES.update({
     "delivery_mto": Source(
-        "delivery_mto", dt.date(2004, 1, 1), dt.date.today,
+        "delivery_mto", dt.date(2007, 1, 1), dt.date.today,
         lambda d: f"https://nsearchives.nseindia.com/archives/equities/mto/MTO_{d:%d%m%Y}.DAT",
         _market("delivery", lambda d: f"MTO_{d:%d%m%Y}.DAT"), _starts(b"Security Wise Delivery Position")),
-    "band_changes": Source(
-        "band_changes", dt.date(2010, 1, 1), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/content/equities/eq_band_changes_{d:%d%m%Y}.csv",
-        _market("bandchanges", lambda d: f"eq_band_changes_{d:%d%m%Y}.csv"), _starts(b"Sr. No")),
-    "sec_list": Source(
-        "sec_list", dt.date(2020, 1, 1), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/content/equities/sec_list_{d:%d%m%Y}.csv",
-        _market("seclist", lambda d: f"sec_list_{d:%d%m%Y}.csv"), _starts(b"Symbol,Series")),
-    "fo_secban": Source(
-        "fo_secban", dt.date(2010, 1, 1), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/archives/fo/sec_ban/fo_secban_{d:%d%m%Y}.csv",
-        _market("fosecban", lambda d: f"fo_secban_{d:%d%m%Y}.csv"), _starts(b"Securities in Ban")),
-    # Derivatives bhavcopy: F&O eligibility on a day = the stock has futures contracts that day.
-    "fo_bhav_legacy": Source(
-        "fo_bhav_legacy", dt.date(2004, 1, 1), lambda: min(dt.date(2024, 7, 5), dt.date.today()),
-        lambda d: (f"https://nsearchives.nseindia.com/content/historical/DERIVATIVES/{d.year}/"
-                   f"{_MON[d.month-1]}/fo{d.day:02d}{_MON[d.month-1]}{d.year}bhav.csv.zip"),
-        _market("fobhav/legacy", lambda d: f"fo{d.day:02d}{_MON[d.month-1]}{d.year}bhav.csv.zip"), _is_zip),
-    "fo_bhav_udiff": Source(
-        "fo_bhav_udiff", dt.date(2024, 7, 5), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip",
-        _market("fobhav/udiff", lambda d: f"BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip"), _is_zip),
-    # Monthly NSE Clearing (NCL) security category & 6-month rolling mean impact cost (Rs 1 lakh order).
-    "impact_cost": Source(
-        "impact_cost", dt.date(2019, 1, 1), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/content/nsccl/C_CATG_{_MON[d.month-1]}{d.year}.T01",
-        _market("impactcost", lambda d: f"C_CATG_{_MON[d.month-1]}{d.year}.T01"), _starts(b"10,")),
-    # NSE daily MII security master (gzip CSV): IssdCptl = issued capital (shares), FreeFltCptl, ParVal, ListgDt.
-    # First file on the archive host is 2024-02-05 (404 before).
-    "mii_security": Source(
-        "mii_security", dt.date(2024, 2, 5), dt.date.today,
-        lambda d: f"https://nsearchives.nseindia.com/content/cm/NSE_CM_security_{d:%d%m%Y}.csv.gz",
-        _market("mii", lambda d: f"NSE_CM_security_{d:%d%m%Y}.csv.gz"), _starts(b"\x1f\x8b")),
 })
-SESSION_ONLY = {"delivery_mto", "band_changes", "sec_list", "fo_secban", "fo_bhav_legacy", "fo_bhav_udiff", "mii_security"}
-MONTHLY_ONLY = {"impact_cost"}
+SESSION_ONLY = {"delivery_mto"}
+MONTHLY_ONLY: set[str] = set()
 
 
 def session_days() -> set[dt.date]:
@@ -497,26 +463,20 @@ def reconcile_manifest(root: Path | None = None) -> int:
     if paths.MANIFEST.exists():
         with open(paths.MANIFEST, newline="", encoding="latin-1") as f:
             listed = {r["path"] for r in csv.DictReader(f)}
-    by_dir = {"delivery": "delivery_mto", "bandchanges": "band_changes", "seclist": "sec_list", "fosecban": "fo_secban", "impactcost": "impact_cost", "mii": "mii_security"}
+    by_dir = {"delivery": "delivery_mto"}
     n = 0
     for f in sorted(root.rglob("*")):
         if not f.is_file() or f.suffix == ".part":
             continue
         rel = f.relative_to(paths.ROOT).as_posix()
         top = f.relative_to(root).parts[0]
-        src = by_dir.get(top) or (("fo_bhav_legacy" if f.name.startswith("fo") else "fo_bhav_udiff") if top == "fobhav" else None)
+        src = by_dir.get(top)
         if rel in listed or src is None:
             continue
         d = None
         m = __import__("re").search(r"(\d{2})(\d{2})(\d{4})", f.name)
-        if f.name.startswith("fo") and f.name.endswith("bhav.csv.zip"):
-            d = dt.datetime.strptime(f.name[2:11], "%d%b%Y").date()
-        elif f.name.startswith("C_CATG_") and f.name.endswith(".T01"):
-            d = dt.datetime.strptime(f.name[7:14], "%b%Y").date()
-        elif m and not f.name.startswith("BhavCopy"):
+        if m:
             d = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
-        elif f.name.startswith("BhavCopy"):
-            d = dt.datetime.strptime(f.name.split("_")[6], "%Y%m%d").date()
         body = f.read_bytes()
         _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
                 [rel, SOURCES[src].url(d) if d else "", hashlib.sha256(body).hexdigest(), len(body),
@@ -524,26 +484,3 @@ def reconcile_manifest(root: Path | None = None) -> int:
         n += 1
     dedupe_manifest()
     return n
-
-
-def fetch_deals_today() -> dict[str, str]:
-    """NSE keeps only the latest day of bulk and block deals at a fixed URL; save today's copy under today's date.
-    History before the first call has to come from the owner's download (NSE's report page)."""
-    out = {}
-    for kind in ("bulk", "block"):
-        url = f"https://nsearchives.nseindia.com/content/equities/{kind}.csv"
-        status, body = _get(url)
-        if status != 200 or body[:4] == b"<!DO" or b"<html" in body[:200].lower():
-            out[kind] = "absent"
-            continue
-        dest = paths.MARKET_RAW / "deals" / f"{kind}_{dt.date.today():%Y%m%d}.csv"
-        if dest.exists():
-            out[kind] = "have"
-            continue
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(body)
-        _append(paths.MANIFEST, ["path", "url", "sha256", "bytes", "fetched_utc"],
-                [dest.relative_to(paths.ROOT).as_posix(), url, hashlib.sha256(body).hexdigest(), len(body),
-                 dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")])
-        out[kind] = "fetched"
-    return out

@@ -20,4 +20,4 @@ HELD = RAW / "held"           # inputs obtained before this rebuild (origin not 
 MANIFEST = RAW / "manifest.csv"   # path,url,sha256,bytes,fetched_utc
 ABSENT = RAW / "absent.csv"       # source,date,http,note   (days NSE has no file for)
 
-START_DATE = "2004-01-01"
+START_DATE = "2007-01-01"

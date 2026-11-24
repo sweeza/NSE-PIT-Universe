@@ -261,7 +261,6 @@ def test_feed_lag_is_in_the_caveat_catalogue():
 def test_update_prints_the_feed_warning_before_and_after_the_run(monkeypatch, capsys):
     from nseuniverse import cli, fetch, pipeline, verify
     monkeypatch.setattr(fetch, "fetch_range", lambda *a, **k: None)
-    monkeypatch.setattr(fetch, "fetch_deals_today", lambda: {})
     monkeypatch.setattr(pipeline, "build_all", lambda: {})
     monkeypatch.setattr(verify, "run", lambda: [])
     monkeypatch.setattr(actions, "feed_lag_warning", lambda: "WARNING: feed old")

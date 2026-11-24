@@ -695,13 +695,13 @@ def check_ratchet_baseline() -> Result:
 
 
 def check_market() -> Result:
-    """Market-activity tables (delivery, bands, security list, F&O ban) against the bhavcopy.
+    """Delivery table against the bhavcopy.
     FAIL: delivery quantity above traded quantity, delivery percent off by more than 0.05 from its own quantities,
     or traded quantity that differs from the bhavcopy volume of the same day, symbol and series on more than 1% of
-    rows. WARN: rows that could not be attached to a security. Missing tables are a WARN (data not fetched)."""
+    rows. WARN: rows that could not be attached to a security. A missing table is a WARN (data not fetched)."""
     mdir = paths.BUILD / "market"
     if not (mdir / "delivery.parquet").exists():
-        return Result("market", "WARN", "no market tables in this build (fetch market, then build)")
+        return Result("market", "WARN", "no delivery table in this build (fetch market, then build)")
     d = pd.read_parquet(mdir / "delivery.parquet")
     t = bhavcopy.load()[["date", "symbol", "series", "volume"]]
     m = d.merge(t.drop_duplicates(["date", "symbol", "series"]), on=["date", "symbol", "series"], how="inner")
@@ -710,58 +710,13 @@ def check_market() -> Result:
     bad_pct = int(((pct - d.deliv_pct).abs() > 0.05).sum())
     diff = int((m.traded_qty != m.volume).sum())
     rate = diff / max(len(m), 1)
-    unatt = {n: int(pd.read_parquet(mdir / f"{n}.parquet")["sec_id"].isna().sum()) for n in ("delivery", "band_changes", "sec_list", "fo_ban", "deals")
-             if (mdir / f"{n}.parquet").exists() and len(pd.read_parquet(mdir / f"{n}.parquet"))}
+    unatt = int(d["sec_id"].isna().sum())
     cov = f"{d.date.min().date()}..{d.date.max().date()}, {d.date.nunique()} days"
-    fo = ""
-    if (mdir / "fo_stocks.parquet").exists():
-        f = pd.read_parquet(mdir / "fo_stocks.parquet")
-        if len(f):
-            per = f.groupby("date").size()
-            fo = f"; F&O stocks: {f.date.nunique()} days, {int(per.min())}..{int(per.max())} stocks a day, unattached={int(f.sec_id.isna().sum())}"
-    dl_msg = ""
-    dl_fail = False
-    if (mdir / "deals.parquet").exists():
-        dl = pd.read_parquet(mdir / "deals.parquet")
-        if len(dl):
-            qty_ok = int((dl.quantity > 0).sum())
-            qty_rate = qty_ok / len(dl)
-            priced = dl[dl.price.notna() & dl.sec_id.notna()]
-            lh = bhavcopy.load().groupby(["date", "sec_id"], as_index=False).agg(low=("low", "min"), high=("high", "max"))
-            m_dl = priced.merge(lh, on=["date", "sec_id"], how="inner")
-            in_lh = int(((m_dl.price >= m_dl.low - 1e-6) & (m_dl.price <= m_dl.high + 1e-6)).sum()) if len(m_dl) else 0
-            lh_rate = in_lh / max(len(m_dl), 1)
-            dl_fail = qty_rate < 0.99 or (len(m_dl) > 0 and lh_rate < 0.99)
-            dl_msg = f"; deals rows={len(dl)} (qty>0 {qty_rate:.3%}, price in bhavcopy low-high {in_lh}/{len(m_dl)}={lh_rate:.3%})"
-    ic_msg = ""
-    ic_fail = False
-    if (mdir / "impact_cost.parquet").exists():
-        ic = pd.read_parquet(mdir / "impact_cost.parquet")
-        if len(ic):
-            neg = int((ic.impact_cost_pct < 0).sum())
-            over100 = int((ic.impact_cost_pct > 100).sum())
-            att = ic.sec_id.notna().mean()
-            bhav_months = t.loc[t.date >= ic.date.min(), "date"].dt.to_period("M").nunique()
-            ic_fail = neg > 0
-            ic_msg = (f"; impact_cost rows={len(ic)} ({ic.date.nunique()}/{bhav_months} months "
-                      f"{ic.date.min().date()}..{ic.date.max().date()}, attached={att:.1%}, neg={neg}, >100%={over100})")
-    sh_msg = ""
-    sh_fail = False
-    if (mdir / "shares.parquet").exists():
-        sh = pd.read_parquet(mdir / "shares.parquet")
-        if len(sh):
-            eq = sh[sh.series == "EQ"]
-            nonpos = int((eq.shares_outstanding <= 0).sum())
-            nan_eq = int(eq.shares_outstanding.isna().sum())
-            dup = int(sh.duplicated(["date", "sec_id", "series"]).sum())
-            sh_fail = nonpos > 0 or dup > 0
-            sh_msg = (f"; shares rows={len(sh)} ({sh.date.nunique()} days {sh.date.min().date()}..{sh.date.max().date()}, "
-                      f"EQ non-positive={nonpos}, EQ missing={nan_eq}, duplicate keys={dup})")
-    fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01 or dl_fail or ic_fail or sh_fail
-    status = "FAIL" if fail else ("WARN" if any(unatt.values()) else "PASS")
+    fail = bad_q > 0 or bad_pct > 0.001 * len(d) or rate > 0.01
+    status = "FAIL" if fail else ("WARN" if unatt else "PASS")
     return Result("market", status,
                   f"delivery rows={len(d)} ({cov}); deliverable>traded={bad_q}; percent differs from own quantities={bad_pct}; "
-                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}{fo}{dl_msg}{ic_msg}{sh_msg}")
+                  f"traded quantity differs from bhavcopy volume on {diff} of {len(m)} compared rows ({rate:.3%}); unattached rows={unatt}")
 
 
 ALL = [check_manifest, check_bhavcopy_lossless, check_overlap_days, check_calendar, check_table_sanity,

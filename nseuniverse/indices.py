@@ -163,6 +163,8 @@ def build(out_dir: Path | None = None) -> dict:
     out_dir = out_dir or paths.BUILD / "indices"
     out_dir.mkdir(parents=True, exist_ok=True)
     d, h = daily_table(), history_table()
+    keep = set(pd.read_csv(paths.CURATED / "index_universe.csv").index_key)       # only the verified equity indices
+    d, h = d[d.index_key.isin(keep)], h[h.index_key.isin(keep)]
     d, log = resolve_daily_duplicates(d, h)
     log.sort_values(["index_key", "date", "close"], kind="mergesort").to_csv(out_dir / "daily_duplicate_resolution.csv", index=False)
     for name, t in (("daily", d), ("history", h)):

@@ -58,8 +58,8 @@ def test_dated_alias_picks_the_company_that_existed_on_the_date():
 def test_index_universe_reference_is_complete_and_unique():
     from nseuniverse import paths
     u = pd.read_csv(paths.CURATED / "index_universe.csv")
-    assert u.index_key.is_unique and len(u) == 57
-    assert u.category.value_counts().to_dict() == {"sectoral": 34, "broad_market": 23}
+    assert u.index_key.is_unique and len(u) == 27
+    assert u.category.value_counts().to_dict() == {'broad_market': 16, 'sectoral': 11}
 
 
 def test_contradictions_flag_events_that_cannot_be_undone():
@@ -79,7 +79,7 @@ def test_every_anchor_file_exists_and_matches_its_declared_size():
     from pathlib import Path
     from nseuniverse import paths
     assert {"NIFTY50", "NIFTYNEXT50", "NIFTY100", "NIFTY500"} <= set(m.ANCHORED)
-    assert m.FLOORS["NIFTY500"] == "2007-01-01"
+    assert m.FLOORS["NIFTY500"] == "2010-01-01"
     exc_p = paths.CURATED / "index_size_exceptions.csv"
     exc = pd.read_csv(exc_p) if exc_p.exists() else pd.DataFrame()
     for k, (n, f) in m.ANCHORED.items():

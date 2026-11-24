@@ -1,5 +1,8 @@
 # Source Register (Phase 0)
 
+> **Scope note (2026-11-24):** the data bank was cut to its core (bhavcopy from 2007, split/bonus-adjusted prices, delivery, 27 verified equity indices with membership from 2010). Price bands, ASM/GSM, F&O, deals, impact cost, shares outstanding, dividends/total return, the 30 unverified indices, non-equity index values and 2004-2006 data were removed from the build; sections below that describe them are history. Full version: git tag `full-2026-11-24`; raw files: `archive/`.
+
+
 Probed 2026-11-15 with plain HTTP clients and a browser-like User-Agent, no login. Samples were downloaded to a scratch folder, not into `data/`. "Verified" below means a sample was fetched and its content inspected today.
 
 ## 1. Equity bhavcopy — VERIFIED, fully reachable

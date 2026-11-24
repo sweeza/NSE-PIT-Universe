@@ -1,5 +1,8 @@
 # Methodology and limitations
 
+> **Scope note (2026-11-24):** the data bank was cut to its core (bhavcopy from 2007, split/bonus-adjusted prices, delivery, 27 verified equity indices with membership from 2010). Price bands, ASM/GSM, F&O, deals, impact cost, shares outstanding, dividends/total return, the 30 unverified indices, non-equity index values and 2004-2006 data were removed from the build; sections below that describe them are history. Full version: git tag `full-2026-11-24`; raw files: `archive/`.
+
+
 ## Principles
 1. **Only NSE publications are data.** Everything in `data/raw/` was downloaded from NSE/NSE Indices
    (hash-listed in `manifest.csv`), except the held inputs listed in section 8.

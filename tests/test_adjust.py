@@ -64,11 +64,12 @@ def test_rights_terp_math():
     assert a.vol_mult.iloc[0] == 1.0
 
 
-def test_dividend_only_in_total_return_mode():
+def test_dividends_are_never_applied_and_total_return_is_refused():
     p = px([100, 100, 95, 95])
     a = adj_table([("S00001", p.date[2], "DIVIDEND", 0.95, 1.0, "rs 5", 0)])
     assert adjust.apply(p, a, mode="splits")["adj_close"].tolist() == [100, 100, 95, 95]
-    assert adjust.apply(p, a, mode="total_return")["adj_close"].tolist() == pytest.approx([95, 95, 95, 95])
+    with pytest.raises(ValueError):
+        adjust.apply(p, a, mode="total_return")
 
 
 def test_duplicate_listing_of_same_action_applies_once():

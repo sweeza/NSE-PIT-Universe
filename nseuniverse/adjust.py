@@ -123,10 +123,11 @@ def build_adjustments(ev: pd.DataFrame, close_by_sec: dict[str, pd.Series]) -> p
 
 
 def apply(prices: pd.DataFrame, adj: pd.DataFrame, mode: str = "splits", as_of=None) -> pd.DataFrame:
-    """Return prices with adj_* columns. mode: 'splits' (share events + rights) or
-    'total_return' (also dividends). as_of: only events with eff_date <= as_of are used."""
-    kinds = {"splits": ("SPLIT", "BONUS", "CONSOLIDATION", "RIGHTS"),
-             "total_return": ("SPLIT", "BONUS", "CONSOLIDATION", "RIGHTS", "DIVIDEND")}[mode]
+    """Return prices with adj_* columns. mode: 'splits' (share events + rights); dividends are not applied
+    (total-return adjustment was removed from the build on 2026-11-24). as_of: only events with eff_date <= as_of."""
+    if mode != "splits":
+        raise ValueError("adjust mode must be 'splits' (or None for as-published prices); dividend adjustment is not offered")
+    kinds = ("SPLIT", "BONUS", "CONSOLIDATION", "RIGHTS")
     a = adj[adj.kind.isin(kinds)]
     if as_of is not None:
         a = a[a.eff_date <= pd.Timestamp(as_of)]

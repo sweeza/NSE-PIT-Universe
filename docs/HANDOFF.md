@@ -1,5 +1,8 @@
 # Handoff for a new session (updated 2026-11-23, end of session 5)
 
+> **Scope note (2026-11-24):** the data bank was cut to its core (bhavcopy from 2007, split/bonus-adjusted prices, delivery, 27 verified equity indices with membership from 2010). Price bands, ASM/GSM, F&O, deals, impact cost, shares outstanding, dividends/total return, the 30 unverified indices, non-equity index values and 2004-2006 data were removed from the build; sections below that describe them are history. Full version: git tag `full-2026-11-24`; raw files: `archive/`.
+
+
 Project: Nifty Universe (`nseuniverse`), a deterministic, source-traceable NSE point-in-time dataset for selecting backtest universes. Owner uses it for Nifty 500 (equal-weight and similar) backtests in other projects. Read first: `CHECKPOINT.md`, `docs/OPEN_ISSUES.md`, `docs/AUDIT_REPORT.md`, `docs/INDEX_AVAILABILITY.md`, then `nseuniverse/caveats.py`.
 
 ## State (all pushed to origin `sweeza/NSE-PIT-Universe`, branch main, last code commit `6336846`)

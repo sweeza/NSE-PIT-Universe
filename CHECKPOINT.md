@@ -1,5 +1,8 @@
 # Nifty Universe — Build & Verification Checkpoint
 
+> **Scope note (2026-11-24):** the data bank was cut to its core (bhavcopy from 2007, split/bonus-adjusted prices, delivery, 27 verified equity indices with membership from 2010). Price bands, ASM/GSM, F&O, deals, impact cost, shares outstanding, dividends/total return, the 30 unverified indices, non-equity index values and 2004-2006 data were removed from the build; sections below that describe them are history. Full version: git tag `full-2026-11-24`; raw files: `archive/`.
+
+
 **Last updated:** `2026-11-22 12:35 IST`  
 **Overall progress:** **Phase 4 COMPLETE & VERIFIED (All 4 Phases Complete).** Full institutional-grade dataset covering 2004-01-01 through 2026-11-19 (5,684 trading days, 9,968,593 bhavcopy rows across 8,182 securities). 0 `FAIL` across all 13 integrity checks in `verify.run()`, 135/135 unit tests PASS (`pytest -q`), 0 contradictions across all indices (last contradiction `NIFTYMIDCAP100 2009-03-27 GVT&D` resolved via `ind_prs12122011.pdf`), 3,489 curated raw references verified with 0 missing, 0 membership subset violations, and build determinism confirmed with SHA-256 checksums recorded in `data/build/checksums.txt`.  
 **Status:** **All planned phases done; independent audit in progress (see `docs/AUDIT_REPORT.md`, `docs/HANDOFF.md`).** 27 of 57 in-scope indices have verified membership (the other 30 have no historical source and stay `UNVERIFIED`). Open items remain in `docs/OPEN_ISSUES.md` (A2, B7, B8, B9, B12, B16). Much of the curated press/alias data was bulk-generated and has not been spot-checked by a human; see `docs/AUDIT_PLAN.md`. Do not describe this as "complete" or "production ready" until that audit is done.
