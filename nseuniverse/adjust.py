@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 SHARE_KINDS = ("SPLIT", "BONUS", "CONSOLIDATION")
+DEMERGER_EST = "DEMERGER_EST"   # curated ESTIMATE for a demerger the feed cannot quantify (data/curated/demerger_estimates.csv)
 # The held NSE corporate-action feed has no share-structure events before May 2006 (2004: none,
 # 2005: two) and only a thin trickle through 2006 (6-19 a month against ~80 a year from 2007).
 # 2007-01-01 is the first full year; adjusted prices before it are not verified and the API
@@ -127,7 +128,7 @@ def apply(prices: pd.DataFrame, adj: pd.DataFrame, mode: str = "splits", as_of=N
     (total-return adjustment was removed from the build on 2026-11-24). as_of: only events with eff_date <= as_of."""
     if mode != "splits":
         raise ValueError("adjust mode must be 'splits' (or None for as-published prices); dividend adjustment is not offered")
-    kinds = ("SPLIT", "BONUS", "CONSOLIDATION", "RIGHTS")
+    kinds = ("SPLIT", "BONUS", "CONSOLIDATION", "RIGHTS", DEMERGER_EST)
     a = adj[adj.kind.isin(kinds)]
     if as_of is not None:
         a = a[a.eff_date <= pd.Timestamp(as_of)]
@@ -233,3 +234,24 @@ def gate_override_keys(ev: pd.DataFrame, path=None) -> frozenset:
     x = ev[ev.kind.isin(SHARE_KINDS) & (ev.status == "OK")].merge(o, on=["symbol", "ex_date"], suffixes=("", "_o"))
     x = x[(x.share_factor - x.share_factor_o).abs() < 1e-6]
     return frozenset(zip(x.sec_id, x.eff_date))
+
+
+def demerger_estimates(ev: pd.DataFrame, path=None) -> pd.DataFrame:
+    """Adjustment rows (same columns as build_adjustments) for the demergers in data/curated/demerger_estimates.csv.
+    Each row is an ESTIMATE of the demerged value: parent close / (parent close + resulting close) on the first listing
+    day, accepted only where it agrees with the parent's own ex-day move within 10% (owner decision 2026-11-24). A row
+    must match exactly one SCHEME event of the same symbol and ex-date or the build stops."""
+    from . import paths
+    cols = ["sec_id", "eff_date", "kind", "price_mult", "vol_mult", "detail", "rec_id"]
+    p = path or (paths.CURATED / "demerger_estimates.csv")
+    if not p.exists():
+        return pd.DataFrame(columns=cols)
+    o = pd.read_csv(p, dtype=str)
+    rows = []
+    for r in o.itertuples():
+        x = ev[(ev.symbol == r.symbol) & (ev.ex_date == pd.Timestamp(r.ex_date)) & (ev.kind == "SCHEME") & (ev.status == "OK")]
+        if len(x) != 1 or pd.isna(x.sec_id.iloc[0]):
+            raise ValueError(f"demerger_estimates.csv row {r.symbol} {r.ex_date} matches {len(x)} SCHEME events, expected 1")
+        rows.append((x.sec_id.iloc[0], x.eff_date.iloc[0], DEMERGER_EST, float(r.price_factor), 1.0,
+                     f"estimate: value at listing {r.listing_date} ({r.resulting})", int(x.rec_id.iloc[0])))
+    return pd.DataFrame(rows, columns=cols)

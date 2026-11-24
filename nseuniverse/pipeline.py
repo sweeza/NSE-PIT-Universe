@@ -68,6 +68,8 @@ def build_actions(out: Path, t: pd.DataFrame | None = None, seg_map=None, sh=Non
     pcg = pc.sort_values(["sec_id", "date"]).copy()
     pcg["prev_close_obs"] = pcg.groupby("sec_id")["close"].shift(1)
     adj, glog = adjust.gate(adj, pcg, override=adjust.gate_override_keys(ev))
+    adj = pd.concat([adj, adjust.demerger_estimates(ev)], ignore_index=True).sort_values(
+        ["sec_id", "eff_date", "kind", "rec_id"], kind="mergesort").reset_index(drop=True)
     ca = out / "actions"
     ca.mkdir(parents=True, exist_ok=True)
     ev.to_parquet(ca / "events.parquet", index=False, compression="zstd", compression_level=9)

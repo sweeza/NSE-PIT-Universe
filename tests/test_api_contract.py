@@ -57,17 +57,43 @@ def test_membership_outside_verified_windows_is_refused(tiny_build):
         api.index_members("Nifty 50", "2007-01-02")
 
 
-def test_mask_gaps_nulls_the_return_on_a_flagged_day_only(tiny_build):
-    d = tiny_build
-    pd.DataFrame({"sec_id": ["S00001"], "symbol": "AAA", "date": [d[4]], "series": "EQ", "r": 0.3, "class": "UNEXPLAINED"}
+def _gaps(d, cls):
+    pd.DataFrame({"sec_id": ["S00001"], "symbol": "AAA", "date": [d[4]], "series": "EQ", "r": 0.3, "class": cls}
                  ).to_csv(paths.BUILD / "adjustment_gaps.csv", index=False)
-    with pytest.warns(api.DataQualityWarning, match="NOT masked"):
-        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps=False)
-    assert p.adj_gap.tolist() == [False, False, False, False, True, False]
-    assert p.adj_return.notna().sum() == 5
-    with pytest.warns(api.DataQualityWarning, match="set to NaN"):
-        m = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")                       # masked by default
-    assert m.adj_return.isna().tolist() == [True, False, False, False, True, False]    # day 0 has no prior day
+
+
+def test_default_masks_documented_event_days_but_not_unexplained_moves(tiny_build):
+    d = tiny_build
+    _gaps(d, "ON_ACTION_DAY")
+    with pytest.warns(api.DataQualityWarning, match="1 of them were set to NaN"):
+        m = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")                        # default: events
+    assert m.adj_gap.tolist() == [False, False, False, False, True, False]
+    assert m.adj_return.isna().tolist() == [True, False, False, False, True, False]       # day 0 has no prior day
+    _gaps(d, "UNEXPLAINED")                                                                # can be a real crash
+    with pytest.warns(api.DataQualityWarning, match="0 of them were set to NaN"):
+        u = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert u.adj_return.notna().sum() == 5
+    with pytest.warns(api.DataQualityWarning, match="1 of them were set to NaN"):
+        a = api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps="all")      # True is the same
+    assert a.adj_return.isna().tolist() == [True, False, False, False, True, False]
+    with pytest.warns(api.DataQualityWarning):
+        n = api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps="none")
+    assert n.adj_return.notna().sum() == 5
+    with pytest.raises(ValueError):
+        api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps="some")
+
+
+def test_estimated_demerger_day_is_flagged_and_masked_by_default(tiny_build):
+    d = tiny_build
+    adj = pd.read_parquet(paths.BUILD / "actions" / "adjustments.parquet")
+    est = pd.DataFrame({"sec_id": ["S00001"], "eff_date": [d[4]], "kind": "DEMERGER_EST", "price_mult": 0.5, "vol_mult": 1.0,
+                        "detail": "estimate", "rec_id": 9})
+    pd.concat([adj, est], ignore_index=True).to_parquet(paths.BUILD / "actions" / "adjustments.parquet")
+    api.clear_cache()
+    with pytest.warns(api.DataQualityWarning, match="DEMERGER_ESTIMATED"):
+        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
+    assert p.adj_gap_class.tolist()[4] == "DEMERGER_ESTIMATED" and p.adj_return.isna().tolist()[4]
+    assert p.adj_close.tolist()[3] == pytest.approx(25.0)            # the level before the estimated demerger is scaled
 
 
 def test_masking_needs_the_gap_table_and_dividend_adjustment_is_not_offered(tiny_build):
@@ -116,8 +142,6 @@ def test_flagged_prices_warn_and_list_the_days_with_their_class(tiny_build):
         p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps=False)
     assert p.adj_gap_class.tolist()[4] == "UNEXPLAINED"
     assert p.attrs["flagged"]["class"].tolist() == ["UNEXPLAINED"]
-    with pytest.warns(api.DataQualityWarning, match="set to NaN"):
-        api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
 
 
 def test_index_returns_are_flagged_and_masked_around_source_conflicts(tiny_build, monkeypatch):

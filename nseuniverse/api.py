@@ -138,16 +138,21 @@ def adjustment_gaps(symbol: str | None = None) -> pd.DataFrame:
 
 
 def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, series: str = "primary",
-           mask_gaps: bool = True) -> pd.DataFrame:
+           mask_gaps: bool | str = "events") -> pd.DataFrame:
     """Daily prices for the securities that carried `symbols` on `end` (names are resolved at the
     end date, so a renamed company is followed back through its old tickers).
     adjust_mode: None (as published) or 'splits' (splits, bonuses, consolidations, rights; no dividends). as_of: use
     only corporate actions with ex-date <= as_of. With an adjust_mode the frame also has adj_return (daily change of
     adj_close per security) and adj_gap (True on a day where the adjusted series has a documented or unexplained
-    break, see adjustment_gaps()). mask_gaps=True (the default) sets adj_return to NaN on those days so a fake
-    demerger drop never enters a return calculation; the days are listed in frame.attrs['flagged']. SME securities
-    and the securities in unreliable_adjusted() are refused with an adjust_mode (use adjust_mode=None for their
-    as-published prices)."""
+    break, see adjustment_gaps()). mask_gaps="events" (the default) sets adj_return to NaN on days of a documented
+    corporate event the feed cannot quantify (class ON_ACTION_DAY: demerger, scheme; class DEMERGER_ESTIMATED: a
+    demerger whose factor is a curated estimate), where the drop is not a real return. UNEXPLAINED moves are NOT masked by default because they can be real crashes (Yes Bank 2020, Satyam
+    2009); they are flagged. mask_gaps="all" (or True) masks both, "none" (or False) masks nothing. The days are in
+    frame.attrs['flagged']. SME securities and the securities in unreliable_adjusted() are refused with an
+    adjust_mode (use adjust_mode=None for their as-published prices)."""
+    mask_gaps = {True: "all", False: "none"}.get(mask_gaps, mask_gaps)
+    if mask_gaps not in ("events", "all", "none"):
+        raise ValueError("mask_gaps must be 'events', 'all' or 'none'")
     if adjust_mode not in (None, "splits"):
         raise ValueError("adjust_mode must be None or 'splits'; dividend (total-return) adjustment is not offered")
     if isinstance(symbols, str):
@@ -196,22 +201,34 @@ def prices(symbols, start, end, adjust_mode: str | None = "splits", as_of=None, 
         try:
             gaps = adjustment_gaps()
         except CoverageError:
-            if mask_gaps:
+            if mask_gaps != "none":
                 raise
             gaps = pd.DataFrame({"sec_id": [], "date": []})
+        est = _adjustments()
+        est = est[est.kind == adjust.DEMERGER_EST]
+        if len(est):       # an estimated demerger factor fixes the price level, but the day's return is not clean: flag it
+            e = est[["sec_id", "eff_date"]].rename(columns={"eff_date": "date"}).assign(**{"class": "DEMERGER_ESTIMATED"})
+            keep = gaps[~gaps.set_index(["sec_id", "date"]).index.isin(e.set_index(["sec_id", "date"]).index)] if len(gaps) else gaps
+            gaps = pd.concat([x for x in (keep, e) if len(x)], ignore_index=True)
         gk = set(zip(gaps.sec_id, gaps.date))
         gcls = {(s, d): c for s, d, c in zip(gaps.sec_id, gaps.date, gaps.get("class", [""] * len(gaps)))}
         p["adj_gap"] = [(s, d) in gk for s, d in zip(p.sec_id, p.date)]
         p["adj_gap_class"] = [gcls.get((s, d), "") for s, d in zip(p.sec_id, p.date)]
-        if mask_gaps:
+        if mask_gaps == "all":
             p.loc[p["adj_gap"], "adj_return"] = float("nan")
+        elif mask_gaps == "events":
+            p.loc[p["adj_gap"] & p["adj_gap_class"].isin(["ON_ACTION_DAY", "DEMERGER_ESTIMATED"]), "adj_return"] = float("nan")
     p = p[(p.date >= start_t) & (p.date <= end_t)]
     if adjust_mode is not None:
         fl = p.loc[p.adj_gap, ["sec_id", "date", "adj_gap_class"]].rename(columns={"adj_gap_class": "class"})
         fl = fl.merge(p[["sec_id", "symbol"]].drop_duplicates("sec_id"), on="sec_id", how="left") if "symbol" in p else fl
         p.attrs["flagged"] = fl.reset_index(drop=True)
         if len(fl):
-            warnings.warn(_flag_summary(fl, "flagged adjusted-price", mask_gaps), DataQualityWarning, stacklevel=2)
+            by = fl.groupby("class").size().to_dict()
+            nm = int(len(fl) if mask_gaps == "all" else fl["class"].isin(["ON_ACTION_DAY", "DEMERGER_ESTIMATED"]).sum() if mask_gaps == "events" else 0)
+            warnings.warn(f"{len(fl)} flagged adjusted-price day(s) in the result ({by}); returns on {nm} of them were set to NaN "
+                          f"(mask_gaps={mask_gaps!r}), the rest are NOT masked. See frame.attrs['flagged'] for the exact days.",
+                          DataQualityWarning, stacklevel=2)
     if p.empty:
         raise CoverageError(f"no price rows for {symbols} between {start_t.date()} and {end_t.date()}: "
                             f"no trading session in the range, or the security did not trade in series {series!r}")

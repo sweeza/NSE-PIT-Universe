@@ -28,7 +28,7 @@ import nseuniverse.api as nse
 
 nse.bhavcopy_day("2015-03-02")                      # every row NSE published that day
 nse.securities(as_of="2012-06-29")                  # equity securities trading then
-nse.prices("INFY", "2012-01-02", "2020-12-31")      # adjust_mode="splits"; adj_return is NaN on days with a break
+nse.prices("INFY", "2012-01-02", "2020-12-31")      # adjust_mode="splits"; adj_return is NaN on documented-event days
 nse.prices("INFY", "2012-01-02", "2020-12-31", None)  # as published
 nse.delivery("INFY", "2020-01-01", "2020-03-31")
 nse.index_values("Nifty 50", "2010-01-01", "2020-12-31")
@@ -43,10 +43,12 @@ Symbols resolve as of the query end date and follow renames back (`INFY` <- `INF
 
 ## The rules that matter for a backtest
 
-1. **Break days are masked by default.** On a documented demerger/scheme day, or an overnight move nothing explains,
-   `prices()` sets `adj_return` to NaN (`mask_gaps=True`) and lists the days in `frame.attrs['flagged']` with a class
-   (`ON_ACTION_DAY`, `UNEXPLAINED`). `UNEXPLAINED` can be a real crash (Yes Bank 2020). A NaN return is not zero: count
-   the masked days and report them. Do not compound `adj_close` across a flagged day. `mask_gaps=False` turns this off.
+1. **Documented event days are masked by default.** On a demerger/scheme day the feed cannot quantify
+   (`ON_ACTION_DAY`), `prices()` sets `adj_return` to NaN (`mask_gaps="events"`). Overnight moves nothing explains
+   (`UNEXPLAINED`) are flagged but **not** masked, because they can be real crashes (Yes Bank 2020, Satyam 2009) and
+   masking them would hide real losses. `mask_gaps="all"` masks both, `"none"` neither. All flagged days are in
+   `frame.attrs['flagged']`. A NaN return is not zero: count the masked days and report them. Do not compound
+   `adj_close` across a flagged day.
 2. **Backfill is opt-in and is not membership.** `index_members(idx, date, backfill=True)` returns, for dates from
    2007-01-01 up to the index's first verified day, the first verified list restricted to securities already trading
    (`BACKFILLED_UNVERIFIED`, with a warning). It carries survivorship and look-ahead bias.
@@ -55,8 +57,11 @@ Symbols resolve as of the query end date and follow renames back (`INFY` <- `INF
 4. **No announcement dates**: NSE's feed has ex-dates only.
 5. **Corporate-action feed age**: refresh it after each month-end (download in a browser, save into
    `data/raw/corporate_actions`, rebuild). Splits after the feed end show up as one-day crashes.
-6. **Unquantified events** (about 90 rights/unparsed events and about 108 demergers since 2007) stay unadjusted and are
-   masked on their day; the stock stays in the universe.
+6. **Unquantified events** (about 90 rights/unparsed events and about 100 demergers since 2007) stay unadjusted and are
+   masked on their day; the stock stays in the universe. Five demergers carry a curated **estimated** factor
+   (`DEMERGER_EST`, value at the new company's first listing, accurate to a few percent; `demerger_estimates.csv`):
+   Bajaj Holdings 2008, Alembic 2011, Triveni 2011, ABFRL 2025, SKF India 2025. Their event day is flagged
+   `DEMERGER_ESTIMATED` and masked by default.
 
 ## Workflow
 

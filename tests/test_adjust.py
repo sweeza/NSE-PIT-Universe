@@ -133,3 +133,21 @@ def test_gate_override_keys_need_the_same_symbol_date_and_factor(tmp_path):
     keys = adjust.gate_override_keys(ev, f)
     assert keys == frozenset({("S1", pd.Timestamp("2013-07-09"))})     # not the factor-3 record, not another symbol
     assert adjust.gate_override_keys(ev, tmp_path / "none.csv") == frozenset()
+
+
+def test_demerger_estimates_match_one_scheme_event_and_stop_the_build_otherwise(tmp_path):
+    ev = pd.DataFrame({"symbol": ["AAA", "AAA"], "ex_date": pd.to_datetime(["2020-01-10", "2020-01-10"]), "kind": ["SCHEME", "DIVIDEND"],
+                       "status": "OK", "sec_id": "S00001", "eff_date": pd.to_datetime(["2020-01-10", "2020-01-10"]), "rec_id": [7, 8]})
+    f = tmp_path / "d.csv"
+    f.write_text("symbol,ex_date,price_factor,listing_date,resulting,observed_ex_ratio,source,note\n"
+                 "AAA,2020-01-10,0.4,2020-03-02,BBB,0.41,x,y\n", encoding="utf-8")
+    r = adjust.demerger_estimates(ev, f)
+    assert r.kind.tolist() == ["DEMERGER_EST"] and r.price_mult.tolist() == [0.4] and r.vol_mult.tolist() == [1.0] and r.rec_id.tolist() == [7]
+    p = px([100, 100, 40, 40])
+    a = adj_table([("S00001", p.date[2], "DEMERGER_EST", 0.4, 1.0, "estimate", 7)])
+    assert adjust.apply(p, a)["adj_close"].tolist() == pytest.approx([40, 40, 40, 40])
+    f.write_text("symbol,ex_date,price_factor,listing_date,resulting,observed_ex_ratio,source,note\n"
+                 "AAA,2020-02-10,0.4,2020-03-02,BBB,0.41,x,y\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        adjust.demerger_estimates(ev, f)
+    assert adjust.demerger_estimates(ev, tmp_path / "none.csv").empty

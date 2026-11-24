@@ -427,7 +427,7 @@ def check_indices() -> Result:
 def check_curated_provenance() -> Result:
     """Every data/raw/... reference in data/curated/*.csv must exist on disk."""
     files = ["index_events_press.csv", "index_dual_class.csv", "index_size_exceptions.csv",
-             "identity_links.csv", "name_aliases.csv", "actions_price_evidenced.csv", "adjustment_unreliable.csv", "gate_overrides.csv"]
+             "identity_links.csv", "name_aliases.csv", "actions_price_evidenced.csv", "adjustment_unreliable.csv", "gate_overrides.csv", "demerger_estimates.csv"]
     checked = 0
     n_files = 0
     missing = []
