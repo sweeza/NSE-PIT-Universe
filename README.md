@@ -1,5 +1,7 @@
 # NSE Point-in-Time Universe
 
+> **Read first: [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md).** The data is audited in-house only; the independent review (A8) is outstanding.
+
 A deterministic, source-traceable Python package for NSE equity history: every bhavcopy row since
 2004, corporate-action-adjusted prices, official index values, and index membership. Each claim is
 backed by a check in `nseuniverse verify`; anything that cannot be verified is refused by the API
