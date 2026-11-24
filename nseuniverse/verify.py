@@ -138,7 +138,7 @@ def check_bhavcopy_lossless(sample_every: int = 1) -> Result:
                     problems.append((str(d), f"{r.symbol}/{r.series} {c}: table={tv} raw={rv}")); bad = True; break
             if not bad:
                 isin = raw.get("isin") or None
-                if isin != r.isin:
+                if isin != (None if pd.isna(r.isin) else r.isin):   # a missing ISIN is NaN in the table, None in the re-parse
                     problems.append((str(d), f"{r.symbol}/{r.series} isin table={r.isin} raw={isin}")); bad = True
             if bad:
                 break
