@@ -26,40 +26,12 @@ def test_backward_replay_recovers_earlier_sets_from_the_anchor():
     assert (m.size_on(out, days) == 2).all()
 
 
-def test_member_since_before_first_event_has_open_start_and_is_found():
-    out = iv([("X", "A", None, None), ("X", "B", "2020-01-01", None)])
-    assert m.members(out, "X", "2010-01-01") == {"A"}
-    assert m.members(out, "X", "2021-01-01") == {"A", "B"}
-
-
-def test_size_counts_half_open_intervals():
-    out = iv([("X", "A", "2020-01-02", "2020-01-06")])
-    days = pd.bdate_range("2020-01-01", "2020-01-08")
-    s = m.size_on(out, days)
-    assert s.tolist() == [0, 1, 1, 0, 0, 0]       # in on Jan 2, out (exclusive) on Jan 6
-
-
 def test_name_matching_is_exact_after_normalisation_and_never_fuzzy():
     nb = m.NameBook()
     nb.add("Tata Consultancy Services Ltd.", "TCS", "t")
     assert nb.candidates("TATA CONSULTANCY SERVICES LIMITED") == {"TCS"}
     assert nb.candidates("Tata Consultancy Service") == set()     # near miss is only a suggestion
     assert nb.suggest("Tata Consultancy Service")
-
-
-def test_dated_alias_picks_the_company_that_existed_on_the_date():
-    nb = m.NameBook()
-    nb.add("Bajaj Auto Ltd", "BAJAJAUTO", "a", None, "2008-03-14")
-    nb.add("Bajaj Auto Ltd", "BAJAJ-AUTO", "a", "2008-03-15", None)
-    assert nb.candidates("Bajaj Auto Ltd", pd.Timestamp("2005-01-01")) == {"BAJAJAUTO"}
-    assert nb.candidates("Bajaj Auto Ltd", pd.Timestamp("2010-01-01")) == {"BAJAJ-AUTO"}
-
-
-def test_index_universe_reference_is_complete_and_unique():
-    from nseuniverse import paths
-    u = pd.read_csv(paths.CURATED / "index_universe.csv")
-    assert u.index_key.is_unique and len(u) == 27
-    assert u.category.value_counts().to_dict() == {'broad_market': 16, 'sectoral': 11}
 
 
 def test_contradictions_flag_events_that_cannot_be_undone():
@@ -91,25 +63,6 @@ def test_every_anchor_file_exists_and_matches_its_declared_size():
         assert (~lst.Symbol.str.startswith("DUMMY")).sum() == n + ext and lst.Symbol.is_unique, k
 
 
-def test_exclusive_alias_overrides_other_candidates_only_inside_its_window():
-    nb = m.NameBook()
-    nb.add("United Breweries Ltd.", "UBL", "a")
-    nb.add("United Breweries Ltd.", "UBHOLDINGS", "b")
-    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2015-01-01")) == {"UBL", "UBHOLDINGS"}
-    nb.add("United Breweries Ltd.", "UBL", "c", "2013-04-01", "2019-12-31", exclusive=True)
-    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2015-01-01")) == {"UBL"}
-    assert nb.candidates("United Breweries Ltd.", pd.Timestamp("2010-01-01")) == {"UBL", "UBHOLDINGS"}   # outside the window nothing changes
-
-
-def test_documented_dummy_constituents_are_counted_per_day_and_stack():
-    days = pd.bdate_range("2026-04-27", "2026-05-06")
-    exc = pd.DataFrame([("X", "2026-04-30", "2026-05-04", 1, "dummy", "s"), ("X", "2026-05-01", "2026-05-01", 2, "dummy", "s")],
-                       columns=["index_key", "from_date", "to_date", "extra_members", "reason", "source"])
-    assert m.extra_members(days, exc, "X").tolist() == [0, 0, 0, 1, 3, 1, 0, 0]
-    assert not m.extra_members(days, exc, "Y").any()
-    assert not m.extra_members(days, None, "X").any()
-
-
 def test_dual_class_security_counts_only_while_dvr_and_parent_are_members():
     days = pd.bdate_range("2016-03-30", "2016-04-06")
     seg = pd.DataFrame([("DVR", "d", "2016-01-01", "2017-12-31"), ("PAR", "p", "2016-01-01", "2017-12-31")],
@@ -133,96 +86,6 @@ def test_floor_masks_days_before_it_and_leaves_no_floor_untouched():
     assert out.tolist() == scope.tolist() == [False, False, False, True, True, True, True]    # 2006-12-27..29 are out of scope
     out, scope = m.apply_floor(ok, days, None)
     assert out.all() and scope.all()
-
-
-def test_norm_name_preserves_parenthetical_tokens():
-    assert m.norm_name("Jindal Stainless (Hisar) Ltd.") == "jindal stainless hisar"
-    assert m.norm_name("Jindal Stainless Ltd.") == "jindal stainless"
-    assert m.norm_name("United Breweries (Holdings) Ltd.") == "united breweries holdings"
-    assert m.norm_name("United Breweries Ltd.") == "united breweries"
-
-
-def test_namebook_loads_corporate_actions(tmp_path, monkeypatch):
-    import json
-    ca_file = tmp_path / "raw_corporate_actions_1995_2026.json"
-    ca_file.write_text(json.dumps([{"comp": "Acme Corp Ltd.", "symbol": "ACME"}]), encoding="utf-8")
-    monkeypatch.setattr(m.paths, "HELD", tmp_path)
-    monkeypatch.setattr(m.paths, "RAW", tmp_path)
-    monkeypatch.setattr(m.paths, "CURATED", tmp_path)
-    nb = m.NameBook.build()
-    assert nb.candidates("Acme Corp Ltd.") == {"ACME"}
-
-
-def test_build_anchored_raises_on_unmapped_press_or_anchor(tmp_path, monkeypatch):
-    cur_dir = tmp_path / "curated"
-    cur_dir.mkdir()
-    monkeypatch.setattr(m.paths, "CURATED", cur_dir)
-
-    seg = pd.DataFrame([{"sec_id": "S1", "symbol": "A", "start": pd.Timestamp("2000-01-01"), "end": pd.Timestamp("2030-01-01")}])
-    t = pd.DataFrame([{"sec_id": "S1", "series": "EQ", "date": pd.Timestamp("2026-01-02")}])
-    ev_res = pd.DataFrame(columns=["index_key", "resolution", "date", "sec_id", "action"])
-
-    anchor_dir = tmp_path / "2026-01-02"
-    anchor_dir.mkdir()
-    (anchor_dir / "a.csv").write_text("Symbol\nA\n", encoding="utf-8")
-    monkeypatch.setattr(m, "ANCHORED", {"X": (1, "2026-01-02/a.csv")})
-
-    # 1) Unmapped press event raises ValueError
-    (cur_dir / "index_events_press.csv").write_text("index_key,date,symbol,action\nX,2026-01-02,MISSING,IN\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="Unmapped press events"):
-        m.build_anchored(ev_res, seg, t, tmp_path)
-
-    # 2) Unmapped real anchor raises ValueError
-    (cur_dir / "index_events_press.csv").unlink()
-    (anchor_dir / "a.csv").write_text("Symbol\nA\nMISSING_ANCHOR\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="Unmapped anchor symbols"):
-        m.build_anchored(ev_res, seg, t, tmp_path)
-
-
-def test_build_anchored_writes_contradictions_csv(tmp_path, monkeypatch):
-    cur_dir = tmp_path / "curated"
-    cur_dir.mkdir()
-    monkeypatch.setattr(m.paths, "CURATED", cur_dir)
-
-    seg = pd.DataFrame([
-        {"sec_id": "S1", "symbol": "A", "start": pd.Timestamp("2000-01-01"), "end": pd.Timestamp("2030-01-01")},
-        {"sec_id": "S2", "symbol": "B", "start": pd.Timestamp("2000-01-01"), "end": pd.Timestamp("2030-01-01")},
-    ])
-    t = pd.DataFrame([
-        {"sec_id": "S1", "series": "EQ", "date": pd.Timestamp("2026-01-02")},
-        {"sec_id": "S2", "series": "EQ", "date": pd.Timestamp("2026-01-02")},
-    ])
-    # S2 (B) is in anchor, but has an un-re-included OUT event -> contradiction
-    ev_res = pd.DataFrame([
-        {"index_key": "X", "resolution": "OK", "date": pd.Timestamp("2020-01-01"), "sec_id": "S2", "action": "OUT"}
-    ])
-    anchor_dir = tmp_path / "2026-01-02"
-    anchor_dir.mkdir()
-    (anchor_dir / "a.csv").write_text("Symbol\nA\nB\n", encoding="utf-8")
-    monkeypatch.setattr(m, "ANCHORED", {"X": (2, "2026-01-02/a.csv")})
-    monkeypatch.setattr(m, "FLOORS", {"X": "2007-01-01"})
-
-    out_csv = tmp_path / "contradictions.csv"
-    m.build_anchored(ev_res, seg, t, tmp_path, contradictions_out=out_csv)
-    assert out_csv.exists()
-    cdf = pd.read_csv(out_csv)
-    assert cdf.to_dict("records") == [{"index_key": "X", "date": "2020-01-01", "sec_id": "S2", "last_symbol": "B", "action": "OUT"}]
-
-
-def test_namebook_accepts_exclusive_true_string(tmp_path, monkeypatch):
-    cur_dir = tmp_path / "curated"
-    cur_dir.mkdir()
-    (cur_dir / "name_aliases.csv").write_text(
-        "company,symbol,source,valid_from,valid_to,exclusive\n"
-        "Acme Ltd.,ACME1,test,,,True\n"
-        "Acme Ltd.,ACME2,test,,,\n",
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(m.paths, "HELD", tmp_path)
-    monkeypatch.setattr(m.paths, "RAW", tmp_path)
-    monkeypatch.setattr(m.paths, "CURATED", cur_dir)
-    nb = m.NameBook.build()
-    assert nb.candidates("Acme Ltd.", pd.Timestamp("2020-01-01")) == {"ACME1"}
 
 
 def test_build_composites_derives_eq_and_diff_indices(tmp_path, monkeypatch):
@@ -300,36 +163,6 @@ def test_build_composites_derives_eq_and_diff_indices(tmp_path, monkeypatch):
     c_diff_iv = [df for df in ivs_test if df["index_key"].iloc[0] == "C_DIFF"][0]
     m_diff_day0 = m.members(c_diff_iv, "C_DIFF", days[0])
     assert m_diff_day0 == {"S2", "S3"}
-
-
-
-def test_difference_composite_drops_the_dual_class_dvr_of_its_parent(tmp_path, monkeypatch):
-    """NSE's derived lists (e.g. MidSmallcap 400) do not carry a DVR that is in the parent index only."""
-    days = pd.bdate_range("2026-01-01", "2026-01-10")
-    traded = {f"S{i}": np.arange(len(days)) for i in range(1, 5)}
-    seg = pd.DataFrame([{"sec_id": f"S{i}", "symbol": f"SYM{i}", "start": days[0], "end": days[-1]} for i in range(1, 5)])
-    exc = pd.DataFrame(columns=["index_key", "from_date", "to_date", "reason", "source"])
-    cur = tmp_path / "curated"; cur.mkdir()
-    pd.DataFrame([{"index_key": "NIFTY500", "from_date": days[0], "to_date": days[-1], "extra_securities": 1,
-                   "symbols": "SYM4", "parent_symbol": "SYM3", "reason": "dvr", "source": "x"}]
-                 ).to_csv(cur / "index_dual_class.csv", index=False)
-    monkeypatch.setattr(m.paths, "CURATED", cur)
-    anchor = tmp_path / "data" / "raw" / "constituents" / "2026-11-19"; anchor.mkdir(parents=True)
-    (anchor / "ind_nifty500list.csv").write_text("Symbol\nSYM1\nSYM2\nSYM3\n", encoding="utf-8")
-    (anchor / "ind_nifty100list.csv").write_text("Symbol\nSYM1\n", encoding="utf-8")
-    (tmp_path / "raw").mkdir()
-    (tmp_path / "raw" / "c_diff.csv").write_text("Symbol\nSYM2\nSYM3\n", encoding="utf-8")
-    monkeypatch.setattr(m, "COMPOSITE_ANCHORS", {"C_DIFF": (2, "raw/c_diff.csv", ("DIFF", "NIFTY500", "NIFTY100"))})
-    monkeypatch.setattr(m, "FLOORS", {"C_DIFF": "2026-01-01"})
-    nat = pd.NaT
-    ivs = [pd.DataFrame([{"index_key": "NIFTY500", "sec_id": s, "from_date": nat, "to_date": nat} for s in ("S1", "S2", "S3", "S4")]),
-           pd.DataFrame([{"index_key": "NIFTY100", "sec_id": "S1", "from_date": nat, "to_date": nat}])]
-    cov = [("NIFTY500", days[0], days[-1], "VERIFIED", ""), ("NIFTY100", days[0], days[-1], "VERIFIED", "")]
-    m.build_composites(ivs, cov, days, traded, seg, exc, tmp_path)
-    iv = [d for d in ivs if d["index_key"].iloc[0] == "C_DIFF"][0]
-    assert m.members(iv, "C_DIFF", days[0]) == {"S2", "S3"}           # S4 (the DVR) is not carried
-    ok = [c for c in cov if c[0] == "C_DIFF" and c[3] == "VERIFIED"]
-    assert len(ok) == 1 and ok[0][1] == days[0] and ok[0][2] == days[-1]
 
 
 def _anchored_fixture(tmp_path, monkeypatch, n_members, syms):

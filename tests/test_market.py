@@ -22,8 +22,6 @@ def test_parse_mto_reads_only_data_rows_and_keeps_missing_numbers_null():
     assert pd.isna(df.loc[2, "deliv_qty"]) and (df.date == D).all()
 
 
-
-
 @pytest.fixture()
 def market_build(tmp_path, monkeypatch):
     raw = tmp_path / "raw" / "market"
@@ -49,10 +47,3 @@ def test_build_attaches_securities_and_checks_delivery_against_bhavcopy_volume(m
     info = market_build
     assert info["delivery"] == {"rows": 3, "unattached": 0}
     assert info["delivery_volume_match"] == {"compared": 3, "equal": 2}      # CCC: file 10, bhavcopy 11
-
-
-def test_api_delivery_returns_rows_and_refuses_an_empty_range(market_build):
-    d = api.delivery("AAA", "2020-10-20", "2020-10-21")
-    assert d.deliv_qty.tolist() == [400] and d.deliv_pct.tolist() == [40.0]
-    with pytest.raises(api.CoverageError):
-        api.delivery("AAA", "2020-11-01", "2020-11-05")

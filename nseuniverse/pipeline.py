@@ -1,4 +1,4 @@
-"""The deterministic build: raw/ + curated/ -> build/. Offline, no timestamps in outputs."""
+"""The deterministic build: raw/ + curated/ -> final/. Offline, no timestamps in outputs."""
 from __future__ import annotations
 
 import hashlib
@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import actions, adjust, bhavcopy, identity, indices, market, membership, paths
+from . import actions, adjust, bhavcopy, export, identity, indices, market, membership, paths
 
 from .series import EQUITY_SERIES, PRIMARY_SERIES  # noqa: E402
 
@@ -47,6 +47,8 @@ def build_all(out: Path | None = None, with_indices: bool = True) -> dict:
         info["indices"] = indices.build(out / "indices")
         info["membership"] = membership.build(out)
     write_checksums(out)
+    if with_indices and out == paths.BUILD:      # the consumer tables; temp builds (determinism) skip them
+        info["final"] = export.write()
     return info
 
 

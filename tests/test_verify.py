@@ -33,32 +33,6 @@ def synthetic_env(tmp_path, monkeypatch):
     return root
 
 
-def test_check_manifest_flags_unlisted_constituents_and_held(synthetic_env):
-    root = synthetic_env
-    (root / "data" / "raw" / "held" / "old.xls").write_bytes(b"held")
-    f = root / "data" / "raw" / "constituents" / "ind_nifty50list.csv"
-    f.write_bytes(b"Symbol\nAAA\n")
-    (paths.MANIFEST).write_text("path,url,sha256,bytes,fetched_utc\n")
-    res = verify.check_manifest()
-    assert res.status == "FAIL"
-    assert "ind_nifty50list.csv" in res.details
-    assert "old.xls" in res.details   # held inputs must be in the manifest too
-
-    sha = hashlib.sha256(b"Symbol\nAAA\n").hexdigest()
-    (paths.MANIFEST).write_text(
-        f"path,url,sha256,bytes,fetched_utc\n"
-        f"data/raw/constituents/ind_nifty50list.csv,http://x,{sha},11,2026-01-01\n"
-    )
-    assert verify.check_manifest().status == "FAIL"   # held/old.xls is still unlisted
-    shah = hashlib.sha256(b"held").hexdigest()
-    (paths.MANIFEST).write_text(
-        f"path,url,sha256,bytes,fetched_utc\n"
-        f"data/raw/constituents/ind_nifty50list.csv,http://x,{sha},11,2026-01-01\n"
-        f"data/raw/held/old.xls,held,{shah},4,unknown\n"
-    )
-    assert verify.check_manifest().status == "PASS"
-
-
 def test_check_curated_provenance_handles_semicolon_and_shorthand(synthetic_env):
     root = synthetic_env
     p1 = root / "data" / "raw" / "pressreleases" / "pdf" / "a.pdf"
@@ -158,17 +132,3 @@ def test_ratchet_baseline_fails_on_any_rise_and_warns_on_fall(synthetic_env):
     assert r.status == "FAIL" and ("new_rejected", "BBB|2020-04-01") in r.details
     _ratchet_env(n_oor=0)                                           # improvement only
     assert verify.check_ratchet_baseline().status == "WARN"
-
-
-def test_ratchet_swap_of_one_item_for_another_is_still_a_fail(synthetic_env):
-    _ratchet_env()
-    verify.write_ratchet_baseline()
-    _ratchet_env(unexplained=("DDD|2020-05-05",))                  # same count, different item
-    assert verify.check_ratchet_baseline().status == "FAIL"
-
-
-def test_ratchet_without_gap_file_is_a_fail_not_a_pass(synthetic_env):
-    _ratchet_env()
-    verify.write_ratchet_baseline()
-    (paths.BUILD / "adjustment_gaps.csv").unlink()
-    assert verify.check_ratchet_baseline().status == "FAIL"

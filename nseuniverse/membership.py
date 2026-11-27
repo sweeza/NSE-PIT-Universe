@@ -258,6 +258,7 @@ def build(build_dir: Path | None = None) -> dict:
     ev["suggestion"] = [(", ".join(nb.suggest(c)) if n != "OK" else "") for c, n in zip(ev.company, ev.resolution)]
     ev.to_parquet(out / "events_resolved.parquet", index=False, compression="zstd", compression_level=9)
     iv, cov = build_anchored(ev, seg_map, t[["date", "sec_id", "series"]], paths.ROOT, contradictions_out=out / "contradictions.csv")
+    cov = clip_to_launch(cov)
     uni = pd.read_csv(paths.CURATED / "index_universe.csv") if (paths.CURATED / "index_universe.csv").exists() else pd.DataFrame(columns=["category", "index_name", "index_key"])
     scope = dict(zip(uni.index_key, uni.category))
     others = sorted((set(ev.index_key) | set(scope)) - set(ANCHORED))
@@ -381,14 +382,15 @@ FLOORS: dict[str, str] = {
     "NIFTYNEXT50": "2010-01-01",
     "NIFTY100": "2010-01-01",
     "NIFTY500": "2010-01-01",
-    "NIFTY200": "2010-01-01",
+    "NIFTY200": "2011-07-19",   # launched 2011-07-19 (ind_prs18072011)
     "NIFTYLARGEMIDCAP250": "2016-04-01",   # index launched 2016-04-01; earlier history has no documented source (audit S2-4, A10)
     "NIFTYMIDCAP100": "2010-01-01",
     "NIFTYMIDCAP50": "2010-01-01",
     "NIFTYSMALLCAP100": "2010-01-01",
     "NIFTYSMALLCAP50": "2010-01-01",
     "NIFTYAUTO": "2010-01-01", "NIFTYBANK": "2010-01-01", "NIFTYFINANCIALSERVICES": "2010-01-01", "NIFTYFMCG": "2010-01-01",
-    "NIFTYIT": "2010-01-01", "NIFTYMEDIA": "2010-01-01", "NIFTYMETAL": "2010-01-01", "NIFTYPHARMA": "2010-01-01",
+    "NIFTYIT": "2010-01-01", "NIFTYMEDIA": "2010-01-01", "NIFTYMETAL": "2011-07-12",   # launched 2011-07-12 (ind_prs11072011)
+    "NIFTYPHARMA": "2010-01-01",
     "NIFTYPSUBANK": "2010-01-01", "NIFTYREALTY": "2010-01-01",
     "NIFTY500MULTICAP502525": "2010-01-01",
     "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": "2010-01-01",
@@ -398,6 +400,31 @@ FLOORS: dict[str, str] = {
     "NIFTYSMALLCAP250": "2010-01-01",
     "NIFTYFINANCIALSERVICES2550": "2010-01-01",
 }
+# index_key -> public launch date (the release announcing it, in data/raw/pressreleases/pdf/). Nothing before it is
+# VERIFIED: the index did not exist. Applied after composites are derived, because a parent's computed days before its
+# own launch still define a child that did exist (LargeMidcap 250 -> Midcap 150, Smallcap 250).
+LAUNCHED: dict[str, str] = {
+    "NIFTYMIDCAP150": "2016-04-01",                          # ind_prs22022016_1
+    "NIFTYSMALLCAP250": "2016-04-01",                        # ind_prs22022016_1
+    "NIFTYSMALLCAP50": "2016-04-01",                         # ind_prs22022016_1
+    "NIFTYMIDSMALLCAP400": "2016-04-01",                     # ind_prs01042016
+    "NIFTYLARGEMIDCAP250": "2017-11-30",                     # ind_prs30112017
+    "NIFTYFINANCIALSERVICES2550": "2020-05-20",              # ind_prs20052020
+    "NIFTY500MULTICAP502525": "2020-12-02",                  # ind_prs02122020
+    "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": "2024-06-07",   # ind_prs07062024_1
+    "NIFTYMIDSMALLCAP4005050": "2026-02-04",                 # ind_prs04022026
+}
+
+
+def clip_to_launch(cov: pd.DataFrame) -> pd.DataFrame:
+    """Cut coverage rows (VERIFIED and PARTIAL) so none starts before its index existed."""
+    launch = pd.to_datetime(cov.index_key.map(LAUNCHED))
+    out = cov.copy()
+    early = launch.notna() & (out.from_date < launch)
+    out.loc[early, "from_date"] = launch[early]
+    return out[~(early & (out.to_date < launch))].reset_index(drop=True)
+
+
 TRADE_WINDOW = 3     # a member must have traded in an equity series within +-3 sessions of each day
 
 
@@ -643,6 +670,14 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
     days = pd.DatetimeIndex(sorted(t["date"].unique()))
     pos = {d: i for i, d in enumerate(days)}
     traded = {sid: np.array(sorted(pos[d] for d in g["date"].unique())) for sid, g in t.groupby("sec_id")}
+    # curated: listed members with no trade for longer than the window; those days count as present
+    quiet_p = paths.CURATED / "index_no_trade.csv"
+    if quiet_p.exists():
+        for r in pd.read_csv(quiet_p, parse_dates=["from_date", "to_date"]).itertuples():
+            sid = _sid(seg, r.symbol, r.from_date)
+            if sid is not None:
+                extra_pos = np.flatnonzero((days >= r.from_date) & (days <= r.to_date))
+                traded[sid] = np.union1d(traded.get(sid, np.array([], dtype=int)), extra_pos).astype(int)
     cur = pd.read_csv(paths.CURATED / "index_events_press.csv", parse_dates=["date"]) if (paths.CURATED / "index_events_press.csv").exists() else pd.DataFrame()
     exc_p = paths.CURATED / "index_size_exceptions.csv"
     exc = pd.read_csv(exc_p) if exc_p.exists() else pd.DataFrame(columns=["index_key", "from_date", "to_date", "reason", "source"])

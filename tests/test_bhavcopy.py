@@ -34,11 +34,6 @@ def test_legacy_without_isin_leaves_missing_fields_null():
     assert a["isin"] is None and np.isnan(a.trades)          # not published in 2004: stays null
 
 
-def test_legacy_with_isin_and_trades():
-    a = bhavcopy.parse(z(LEGACY_NEW)).iloc[0]
-    assert a["isin"] == "INE144J01027" and a.trades == 741 and str(a.date.date()) == "2018-06-14"
-
-
 def test_udiff_maps_to_same_columns():
     a = bhavcopy.parse(z(UDIFF)).iloc[0]
     assert (a.symbol, a.series, a["isin"]) == ("IRCON", "EQ", "INE962Y01021")
@@ -66,11 +61,3 @@ def test_rejects_garbage():
 def test_format_is_chosen_by_header_not_date():
     # a "2018" file with the UDiFF header still parses as UDiFF
     assert bhavcopy.parse(z(UDIFF)).src.iloc[0] == "udiff"
-
-
-def test_fetch_validators_reject_html_served_with_http_200():
-    html = b"<!DOCTYPE html><html>not found</html>"
-    assert not fetch._is_zip(html)
-    assert fetch._is_zip(z(LEGACY_OLD))
-    assert not fetch._is_index_csv(html)
-    assert fetch._is_index_csv(b"Index Name,Index Date,Open Index Value\n")

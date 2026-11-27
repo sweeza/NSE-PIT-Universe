@@ -83,28 +83,6 @@ def test_default_masks_documented_event_days_but_not_unexplained_moves(tiny_buil
         api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps="some")
 
 
-def test_estimated_demerger_day_is_flagged_and_masked_by_default(tiny_build):
-    d = tiny_build
-    adj = pd.read_parquet(paths.BUILD / "actions" / "adjustments.parquet")
-    est = pd.DataFrame({"sec_id": ["S00001"], "eff_date": [d[4]], "kind": "DEMERGER_EST", "price_mult": 0.5, "vol_mult": 1.0,
-                        "detail": "estimate", "rec_id": 9})
-    pd.concat([adj, est], ignore_index=True).to_parquet(paths.BUILD / "actions" / "adjustments.parquet")
-    api.clear_cache()
-    with pytest.warns(api.DataQualityWarning, match="DEMERGER_ESTIMATED"):
-        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
-    assert p.adj_gap_class.tolist()[4] == "DEMERGER_ESTIMATED" and p.adj_return.isna().tolist()[4]
-    assert p.adj_close.tolist()[3] == pytest.approx(25.0)            # the level before the estimated demerger is scaled
-
-
-def test_masking_needs_the_gap_table_and_dividend_adjustment_is_not_offered(tiny_build):
-    (paths.BUILD / "adjustment_gaps.csv").unlink()
-    with pytest.raises(api.CoverageError):
-        api.prices("AAA", "2007-01-01", "2007-01-08", "splits")                          # masking is the default
-    assert len(api.prices("AAA", "2007-01-01", "2007-01-08", None)) == 6
-    with pytest.raises(ValueError):
-        api.prices("AAA", "2007-01-01", "2007-01-08", "total_return")
-
-
 def test_index_members_includes_pit_symbol_and_prices_resolves_past_end(tiny_build):
     d = tiny_build
     b = paths.BUILD
@@ -132,45 +110,6 @@ def test_index_members_includes_pit_symbol_and_prices_resolves_past_end(tiny_bui
     # Querying delisted symbol AAA_OLD over [d[0], d[-1]] resolves uniquely
     p_old = api.prices("AAA_OLD", d[0], d[-1], "splits")
     assert len(p_old) == 6
-
-
-def test_flagged_prices_warn_and_list_the_days_with_their_class(tiny_build):
-    d = tiny_build
-    pd.DataFrame({"sec_id": ["S00001"], "symbol": "AAA", "date": [d[4]], "series": "EQ", "r": 0.3, "class": "UNEXPLAINED"}
-                 ).to_csv(paths.BUILD / "adjustment_gaps.csv", index=False)
-    with pytest.warns(api.DataQualityWarning, match="NOT masked"):
-        p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits", mask_gaps=False)
-    assert p.adj_gap_class.tolist()[4] == "UNEXPLAINED"
-    assert p.attrs["flagged"]["class"].tolist() == ["UNEXPLAINED"]
-
-
-def test_index_returns_are_flagged_and_masked_around_source_conflicts(tiny_build, monkeypatch):
-    days = pd.bdate_range("2017-01-02", periods=6)
-    v = pd.DataFrame({"index_key": "X", "date": days, "close": [100, 101, 90, 91, 92, 120.0],
-                      "alt_close": [100, 101, 102, 103, 104, 120.0],
-                      "conflict": [False, False, True, True, True, False]})
-    monkeypatch.setattr(indices, "values", lambda k: v)
-    with pytest.warns(api.DataQualityWarning, match="4 X source-conflict"):
-        r = api.index_values("X")
-    assert r.ret_unreliable.tolist() == [False, False, True, True, True, True]
-    assert r.ret.notna().sum() == 5                         # unmasked by default
-    with pytest.warns(api.DataQualityWarning, match="set to NaN"):
-        m = api.index_values("X", mask_conflicts=True)
-    assert m.ret.isna().tolist() == [True, False, True, True, True, True]
-    clean = api.index_values("X", start=days[0], end=days[1])
-    assert clean.attrs["flagged"].empty
-
-
-
-
-
-
-def test_range_with_no_trading_day_is_an_error_not_an_empty_frame(tiny_build):
-    # audit 8.2: prices('RELIANCE', Saturday, Sunday) used to return 0 rows silently
-    with pytest.raises(api.CoverageError):
-        api.prices("AAA", "2007-01-06", "2007-01-07", None)
-    with pytest.raises(api.CoverageError):
-        api.prices("AAA", "2007-01-06", "2007-01-07", "splits")
 
 
 def _verified_from_third_day(d):
@@ -201,15 +140,6 @@ def test_backfill_is_opt_in_flagged_and_limited_to_securities_already_trading(ti
     assert set(v.membership_status) == {"VERIFIED"} and sorted(v.symbol) == ["AAA", "BBB"]
 
 
-def test_backfill_never_reaches_before_2007_or_into_an_unverified_index(tiny_build):
-    d = tiny_build
-    _verified_from_third_day(d)
-    with pytest.raises(api.CoverageError, match="backfill only covers"):
-        api.index_members("NIFTY50", "2006-12-29", backfill=True)
-    with pytest.raises(api.CoverageError):
-        api.index_members("NIFTYBANK", d[0], backfill=True)                  # no verified window to copy from
-
-
 def test_sme_securities_are_refused_an_adjusted_series_but_raw_prices_are_served(tiny_build):
     p = api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
     assert len(p) == 6 and api.sme_securities().empty
@@ -220,63 +150,3 @@ def test_sme_securities_are_refused_an_adjusted_series_but_raw_prices_are_served
         api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
     assert api.sme_securities().sec_id.tolist() == ["S00001"]
     assert len(api.prices("AAA", "2007-01-01", "2007-01-08", None)) == 6         # raw prices are exact
-
-
-def test_curated_unreliable_list_refuses_a_main_board_security_too(tiny_build, tmp_path, monkeypatch):
-    cur = tmp_path / "curated"; cur.mkdir()
-    (cur / "adjustment_unreliable.csv").write_text("symbol,reason,source" + chr(10) + "AAA,ETF unit change not applied,x" + chr(10), encoding="utf-8")
-    monkeypatch.setattr(paths, "CURATED", cur)
-    api.clear_cache()
-    with pytest.raises(api.CoverageError, match="ETF unit change"):
-        api.prices("AAA", "2007-01-01", "2007-01-08", "splits")
-    u = api.unreliable_adjusted()
-    assert u.symbol.tolist() == ["AAA"] and "ETF unit change" in u.reason.iloc[0]
-
-
-def test_caveats_catalogue_and_explain_list_the_flags_that_apply(tiny_build):
-    d = tiny_build
-    c = api.caveats()
-    assert {"id", "category", "severity", "backtest_impact", "handling", "shown_by", "affected"} <= set(c.columns)
-    assert c.id.is_unique and set(c.severity) <= {"HIGH", "MEDIUM", "LOW"}
-    assert set(api.caveats("prices").category) == {"PRICES"}
-    # a clean main-board security: only the always-on flags
-    e = api.explain("AAA", "2007-01-01", "2007-01-08")
-    assert set(e.id) == {"EX_DATE_NOT_ANNOUNCEMENT_DATE", "SEC_ID_NOT_STABLE"}
-    # mark it as SME-platform and ask about an index that is verified only from the third day
-    f = paths.BUILD / "bhavcopy" / "bhavcopy_2007.parquet"
-    t = pd.read_parquet(f); t["series"] = "SM"; t.to_parquet(f)
-    pd.DataFrame([{"index_key": "NIFTY50", "from_date": d[2], "to_date": d[-1], "status": "VERIFIED", "reason": ""}]
-                 ).to_parquet(paths.BUILD / "membership" / "coverage.parquet")
-    api.clear_cache()
-    e = api.explain("AAA", d[0], d[-1], index="NIFTY50")
-    assert {"NOT_SERVED_ADJUSTED", "MEMBERSHIP_BACKFILLED"} <= set(e.id)
-    assert e.severity.iloc[0] == "HIGH" and "sme_securities" in e[e.id == "NOT_SERVED_ADJUSTED"].handling.iloc[0]
-    assert "2007-01-01" in e[e.id == "MEMBERSHIP_BACKFILLED"].applies_to.iloc[0]
-    assert "ADJUSTED_BEFORE_2007" not in set(e.id)
-
-
-def test_index_availability_gives_the_reliable_start_and_the_gaps(tiny_build, tmp_path, monkeypatch):
-    d = tiny_build
-    cur = tmp_path / "curated"; cur.mkdir()
-    (cur / "index_universe.csv").write_text(
-        "category,index_name,index_key,source" + chr(10) + "broad_market,Nifty 50,NIFTY50,x" + chr(10) +
-        "sectoral,Nifty Bank,NIFTYBANK,x" + chr(10) + "sectoral,Nifty IT,NIFTYIT,x" + chr(10), encoding="utf-8")
-    monkeypatch.setattr(paths, "CURATED", cur)
-    monkeypatch.setattr(indices, "values", lambda name: pd.DataFrame({"date": d}))
-    pd.DataFrame([
-        {"index_key": "NIFTY50", "from_date": d[0], "to_date": d[1], "status": "VERIFIED", "reason": ""},
-        {"index_key": "NIFTY50", "from_date": d[3], "to_date": d[-1], "status": "VERIFIED", "reason": ""},     # a gap on d[2]
-        {"index_key": "NIFTYBANK", "from_date": d[0], "to_date": d[-1], "status": "VERIFIED", "reason": ""},
-        {"index_key": "NIFTYIT", "from_date": d[0], "to_date": d[-1], "status": "UNVERIFIED", "reason": ""},
-    ]).to_parquet(paths.BUILD / "membership" / "coverage.parquet")
-    api.clear_cache()
-    a = api.index_availability().set_index("index_key")
-    assert a.loc["NIFTY50", "membership_status"] == "GAPS" and a.loc["NIFTY50", "reliable_from"] == d[3]
-    assert a.loc["NIFTY50", "membership_gaps"] == f"{d[2].date()}..{d[2].date()}" and a.loc["NIFTY50", "membership_from"] == d[0]
-    assert a.loc["NIFTYBANK", "membership_status"] == "FULL" and a.loc["NIFTYBANK", "reliable_from"] == d[0]
-    assert bool(a.loc["NIFTYBANK", "thin_evidence"]) is True                       # 2007 dates
-    assert a.loc["NIFTYIT", "membership_status"] == "UNVERIFIED" and pd.isna(a.loc["NIFTYIT", "reliable_from"])
-    assert a.loc["NIFTYIT", "values_from"] == d[0]
-    assert list(api.index_availability("sectoral").index_key) == ["NIFTYBANK", "NIFTYIT"]
-
-

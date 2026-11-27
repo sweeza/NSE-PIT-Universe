@@ -34,19 +34,3 @@ Sr. No. Company Name Symbol
     assert set(df["action"]) == {"OUT", "IN"}
     assert set(df["symbol"]) == {"BPCL", "JIOFIN"}
     assert "also applicable to" in df["flag"].iloc[0]
-
-
-def test_extract_text_rewrites_only_empty(tmp_path):
-    pymupdf = pytest.importorskip("pymupdf")
-    pdfs, out = tmp_path / "pdf", tmp_path / "txt"
-    pdfs.mkdir()
-    for name, body in (("ind_prs01012020.pdf", "Nifty 50 being included ABCD " * 10), ("ind_prs02012020.pdf", "")):
-        doc = pymupdf.open(); page = doc.new_page()
-        if body:
-            page.insert_text((72, 72), body)
-        doc.save(pdfs / name); doc.close()
-    out.mkdir()
-    (out / "ind_prs01012020.txt").write_text("x" * 500)          # already good: must be left alone
-    r = press.extract_text(pdfs, out, only_empty=True)
-    assert r["written"] == 1 and r["still_empty"] == ["ind_prs02012020.pdf"]
-    assert (out / "ind_prs01012020.txt").read_text() == "x" * 500

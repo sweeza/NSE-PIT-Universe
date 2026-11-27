@@ -8,13 +8,14 @@ ROOT = Path(os.environ.get("NSEUNIVERSE_ROOT", Path(__file__).resolve().parents[
 DATA = ROOT / "data"
 RAW = DATA / "raw"            # exactly as downloaded; never edited
 CURATED = DATA / "curated"    # hand-entered facts, each citing a file in raw/
-BUILD = DATA / "build"        # derived; safe to delete and regenerate
+FINAL = DATA / "final"        # the tables you use; derived, safe to delete and regenerate
+BUILD = FINAL / "_work"       # intermediates behind them
 
 BHAV_RAW = RAW / "bhavcopy"
 INDEX_DAILY_RAW = RAW / "indexdaily"
 INDEX_HIST_RAW = RAW / "indexhist"
 PRESS_RAW = RAW / "pressreleases"
-MARKET_RAW = RAW / "market"      # delivery (MTO), price-band changes, security lists, F&O ban lists, deals
+MARKET_RAW = RAW              # delivery (MTO) files sit in raw/delivery/
 HELD = RAW / "held"           # inputs obtained before this rebuild (origin not re-verified)
 
 MANIFEST = RAW / "manifest.csv"   # path,url,sha256,bytes,fetched_utc

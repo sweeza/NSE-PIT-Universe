@@ -1,6 +1,6 @@
 """Delivery quantity (NSE MTO file) attached to the bhavcopy.
 
-Raw files live in data/raw/market/delivery/ (fetch.py). The parser returns what the file says; nothing is filled.
+Raw files live in data/raw/delivery/ (fetch.py). The parser returns what the file says; nothing is filled.
 Every row is attached to a security (sec_id) through the bhavcopy row of the same day, symbol and series.
 
 Table written to data/build/market/:

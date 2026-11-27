@@ -1,0 +1,2 @@
+child,parent,symbol,from_date,to_date,reason,source
+NIFTY100,NIFTY500,TTML,2010-01-04,2010-09-30,In CNX 100 until 2010-10-01 but not in NSE's own CNX 500 list (capture matches the build 500 of 500 on 2009-12-15),data/raw/constituents_archive/ind_cnx500list_20100102131654.csv; data/raw/pressreleases/pdf/ind_prs18082010.pdf

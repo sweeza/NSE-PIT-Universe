@@ -29,8 +29,9 @@ data/raw/indexhist/price/
 data/raw/indexhist/tri/
 data/raw/indexhist/pepb/
 data/raw/pressreleases/
-data/build/*
-!data/build/checksums.txt
+data/final/
+data/raw/delivery/
+tools/nubra_candles.csv
 __pycache__/
 .pytest_cache/
 

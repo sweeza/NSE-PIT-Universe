@@ -28,6 +28,10 @@ NIFTY500,2026-09-07,2026-11-15,1,HEG demerger: dummy entity DUMMYHEG (HEG Graphi
 NIFTY500,2025-10-15,2025-12-14,1,"SKF India demerger: dummy entity DUMMYSKFIN (SKF India (Industrial) Ltd., later SKFINDUS) held in Nifty 500 at zero price from 2025-10-15 until its exclusion effective 2025-12-15",data/raw/pressreleases/pdf/ind_prs11122025_1.pdf
 NIFTY200,2023-07-20,2023-09-06,1,Jio Financial Services demerger: dummy entity DUMMYJIOFIN held at zero price from 2023-07-20 until exclusion effective 2023-09-07,data/raw/pressreleases/pdf/ind_prs17072023.pdf; data/raw/pressreleases/pdf/ind_prs05092023.pdf
 NIFTYLARGEMIDCAP250,2023-07-20,2023-09-06,1,Jio Financial Services demerger: dummy entity DUMMYJIOFIN held at zero price from 2023-07-20 until exclusion effective 2023-09-07,data/raw/pressreleases/pdf/ind_prs17072023.pdf; data/raw/pressreleases/pdf/ind_prs05092023.pdf
-NIFTYBANK,2025-12-31,2026-11-19,2,Index expanded from 12 to 14 constituents effective 2025-12-31,data/raw/pressreleases/pdf/ind_prs01122025.pdf
-NIFTYPHARMA,2021-09-30,2026-11-19,10,Index expanded from 10 to 20 constituents effective 2021-09-30,data/raw/pressreleases/pdf/ind_prs23082021.pdf
+NIFTYBANK,2025-12-31,2099-12-31,2,Index expanded from 12 to 14 constituents effective 2025-12-31,data/raw/pressreleases/pdf/ind_prs01122025.pdf
+NIFTYPHARMA,2021-09-30,2099-12-31,10,Index expanded from 10 to 20 constituents effective 2021-09-30,data/raw/pressreleases/pdf/ind_prs23082021.pdf
 NIFTYPSUBANK,2021-03-31,2022-03-30,1,13 constituents between PSB inclusion (2021-03-31) and J&KBANK exclusion (2022-03-31),data/raw/pressreleases/pdf/ind_prs23022021.pdf
+NIFTYMETAL,2015-03-27,2015-09-27,-1,"14 constituents between 2015-03-27 and 2015-09-28 (three excluded, two included)",data/raw/pressreleases/pdf/ind_prs20022015.pdf
+NIFTYMETAL,2015-09-28,2016-03-31,-2,"13 constituents between 2015-09-28 and 2016-04-01 (three excluded, two included)",data/raw/pressreleases/pdf/ind_prs12082015.pdf; data/raw/pressreleases/pdf/ind_prs22022016_2.pdf
+NIFTYPSUBANK,2016-09-30,2017-09-28,-1,11 constituents between IOB exclusion without replacement and Indian Bank inclusion,data/raw/pressreleases/pdf/ind_prs12082016.pdf; data/raw/pressreleases/pdf/ind_prs28082017.pdf
+NIFTYPSUBANK,2019-12-27,2020-06-25,1,"13 constituents between the 2019-12-27 criteria change (four included, three excluded) and 2020-06-26",data/raw/pressreleases/pdf/ind_prs16122019.pdf

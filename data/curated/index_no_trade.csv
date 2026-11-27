@@ -1,0 +1,4 @@
+symbol,from_date,to_date,reason,source
+DYNAMATECH,2013-07-30,2013-08-09,Nifty 500 member with no trade in any series; traded before and after,data/raw/bhavcopy/legacy/2013/cm30JUL2013bhav.csv.zip; data/raw/bhavcopy/legacy/2013/cm12AUG2013bhav.csv.zip
+DYNAMATECH,2013-08-14,2013-08-27,Nifty 500 member with no trade in any series; traded before and after,data/raw/bhavcopy/legacy/2013/cm13AUG2013bhav.csv.zip; data/raw/bhavcopy/legacy/2013/cm28AUG2013bhav.csv.zip
+ZODIACLOTH,2013-08-15,2013-08-28,Nifty 500 member with no trade in any series; traded before and after,data/raw/bhavcopy/legacy/2013/cm14AUG2013bhav.csv.zip; data/raw/bhavcopy/legacy/2013/cm29AUG2013bhav.csv.zip

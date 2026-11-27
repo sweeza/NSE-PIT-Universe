@@ -243,3 +243,8 @@ Tata Sponge Iron Ltd.,TATASPONGE,curated 2026-11-19: data/raw/held/EQUITY_L.csv;
 Max India Ltd.,MAXINDIA,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (MAXINDIA S02293 from 2016-07-01),2016-07-01,,yes
 Essar Ports Ltd.,ESSARSHIP,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (ESSARSHIP S01383 through 2011-05-17),,2011-05-20,yes
 Styrolution ABS (India) Ltd.,INEOSSTYRO,curated 2026-11-19: data/raw/held/EQUITY_L.csv; data/raw/held/raw_corporate_actions_1995_2026.json (STYLUS->INEOSSTYRO),,,
+AGC Networks Ltd.,AGCNET,data/raw/held/symbolchange.csv (AVAYAGCL -> AGCNET 2010-06-08 -> BBOX); bhavcopy,2010-06-08,2012-12-31,
+Himachal Fut Com Ltd.- Old,HIMACHLFUT,data/raw/held/IndexInclExcl.xls exclusion 2011-02-08; HIMACHLFUT last traded 2011-02-07 in the bhavcopy,2007-01-01,2011-03-08,
+Nagarjuna Fertilizers & Chemicals Ltd.,NAGARFERT,NAGARFERT traded to 2011-08-26 in the bhavcopy; data/raw/held/IndexInclExcl.xls exclusion 2011-08-29,2007-01-01,2011-12-31,
+Future Consumer Enterprise Ltd.,FUTUREVENT,data/raw/pressreleases/pdf/ind_prs17112011.pdf (includes Future Ventures India on 2011-11-22); ISIN INE220J01017 later INE220J01025 (FVIL),2011-05-10,2013-06-30,True
+Asian Hotels (North) Ltd.,ASIANHOTEL,"data/raw/held/IndexInclExcl.xls exclusion 2010-02-24; ASIANHOTEL last traded 2010-02-23 in the bhavcopy, ASIANHOTNR first traded 2010-04-07 (demerger relisting)",2007-01-01,2010-02-28,True

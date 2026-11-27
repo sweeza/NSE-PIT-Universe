@@ -426,7 +426,7 @@ def check_indices() -> Result:
 
 def check_curated_provenance() -> Result:
     """Every data/raw/... reference in data/curated/*.csv must exist on disk."""
-    files = ["index_events_press.csv", "index_dual_class.csv", "index_size_exceptions.csv",
+    files = ["index_events_press.csv", "index_dual_class.csv", "index_size_exceptions.csv", "index_no_trade.csv", "index_subset_exceptions.csv",
              "identity_links.csv", "name_aliases.csv", "actions_price_evidenced.csv", "adjustment_unreliable.csv", "gate_overrides.csv", "demerger_estimates.csv"]
     checked = 0
     n_files = 0
@@ -544,6 +544,17 @@ def check_membership() -> Result:
                             out.add(sid)
         return out
 
+    # documented cases where NSE's own lists break the nesting (curated; each row cites its evidence)
+    ex_p = paths.CURATED / "index_subset_exceptions.csv"
+    ex_rows = pd.read_csv(ex_p, parse_dates=["from_date", "to_date"]) if ex_p.exists() else pd.DataFrame()
+
+    def _excepted(child: str, parent: str, t: pd.Timestamp) -> set[str]:
+        out = set()
+        for r in ex_rows.itertuples(index=False):
+            if r.child == child and r.parent == parent and r.from_date <= t <= r.to_date:
+                out.add(membership._sid(seg, r.symbol, t))
+        return out
+
     # Pre-filter trading days to those where at least 2 relevant indices are verified
     relevant = set(["NIFTY50", "NIFTYNEXT50", "NIFTY100"]) | {c for p in _SUBSET_PAIRS for c in p}
     active = {k: wl for k, wl in ver_windows.items() if k in relevant}
@@ -582,7 +593,7 @@ def check_membership() -> Result:
                 if child == "NIFTYMIDCAP100" and parent in {"NIFTY200", "NIFTYMIDCAP150", "NIFTY500"} and t < _MIDCAP100_RESTRUCTURE_DATE:
                     continue
                 if child in mem and parent in mem:
-                    diff = mem[child] - mem[parent]
+                    diff = mem[child] - mem[parent] - _excepted(child, parent, t)
                     if diff:
                         problems.append(("subset_violation", child, parent, str(t.date()), len(diff)))
 
