@@ -1,6 +1,6 @@
 # NSE Point-in-Time Equity Data
 
-Daily prices and delivery, point-in-time membership of 27 NSE equity indices, index levels and the bhavcopy archive,
+Daily prices and delivery, point-in-time membership of 29 NSE equity indices, index levels and the bhavcopy archive,
 built from files NSE published. Audited in-house only; no independent review has been recorded.
 
 ## Layout
@@ -48,8 +48,9 @@ From Python, `import nseuniverse.api as nse`: `nse.prices(...)`, `nse.delivery(.
   month-end into `data/raw/corporate_actions/`.
 - Index levels before an index's launch are NSE's back-calculation.
 - Two weekend sessions (2010-05-16, 2012-11-11) are partial.
-- Indices without verified history (Total Market, Microcap 250, Private Bank, Healthcare, Oil & Gas and others) are not
-  included.
+- Indices without verified history (Private Bank, Healthcare, Oil & Gas and others) are not included.
+- Microcap 250 is replayed back from Total Market minus Nifty 500 (no Microcap list of the build date is held). Four
+  archived NSE lists in `data/raw/constituents_archive/` (2021, 2024, 2025, 2026) matched exactly when it was added.
 
 ## Commands
 

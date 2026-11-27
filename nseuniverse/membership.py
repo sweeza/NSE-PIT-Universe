@@ -359,11 +359,16 @@ ANCHORED = {"NIFTY50": (50, "data/raw/constituents/2026-11-15/ind_nifty50list.cs
             "NIFTYMETAL": (15, "data/raw/constituents/2026-11-19/ind_niftymetallist.csv"),
             "NIFTYPHARMA": (10, "data/raw/constituents/2026-11-19/ind_niftypharmalist.csv"),
             "NIFTYPSUBANK": (12, "data/raw/constituents/2026-11-19/ind_niftypsubanklist.csv"),
-            "NIFTYREALTY": (10, "data/raw/constituents/2026-11-19/ind_niftyrealtylist.csv")}
+            "NIFTYREALTY": (10, "data/raw/constituents/2026-11-19/ind_niftyrealtylist.csv"),
+            "NIFTYMICROCAP250": (250, "data/raw/constituents/2026-11-19/ind_niftytotalmarket_list.csv")}
+
+# No Microcap 250 list is held. Total Market is Nifty 500 plus Microcap 250 (release ind_prs13102021), so the
+# anchor is the Total Market list minus the Nifty 500 list of the same day.
+ANCHOR_MINUS = {"NIFTYMICROCAP250": "data/raw/constituents/2026-11-19/ind_nifty500list.csv"}
 
 # Verified Composite / Identical-Constituent Index Support:
 # index_key -> (official size, anchor file on 2026-11-19, rule tuple)
-# Rule is ("EQ", parent) or ("DIFF", parent1, parent2)
+# Rule is ("EQ", parent), ("DIFF", parent1, parent2) or ("UNION", parent1, parent2)
 COMPOSITE_ANCHORS: dict[str, tuple[int, str, tuple[str, ...]]] = {
     "NIFTY500MULTICAP502525": (500, "data/raw/constituents/2026-11-19/ind_nifty500multicap502525_list.csv", ("EQ", "NIFTY500")),
     "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": (500, "data/raw/constituents/2026-11-19/ind_nifty500largemidsmallequalcapweighted_list.csv", ("EQ", "NIFTY500")),
@@ -372,6 +377,7 @@ COMPOSITE_ANCHORS: dict[str, tuple[int, str, tuple[str, ...]]] = {
     "NIFTYMIDCAP150": (150, "data/raw/constituents/2026-11-19/ind_niftymidcap150list.csv", ("DIFF", "NIFTYLARGEMIDCAP250", "NIFTY100")),
     "NIFTYSMALLCAP250": (250, "data/raw/constituents/2026-11-19/ind_niftysmallcap250list.csv", ("DIFF", "NIFTY500", "NIFTYLARGEMIDCAP250")),
     "NIFTYFINANCIALSERVICES2550": (20, "data/raw/constituents/2026-11-19/ind_niftyfinancialservices25-50list.csv", ("EQ", "NIFTYFINANCIALSERVICES")),
+    "NIFTYTOTALMARKET": (750, "data/raw/constituents/2026-11-19/ind_niftytotalmarket_list.csv", ("UNION", "NIFTY500", "NIFTYMICROCAP250")),
 }
 
 # index_key -> first date that must be verified. New indices use 2007-01-01 (adjusted prices are not verified before it, and the
@@ -399,6 +405,8 @@ FLOORS: dict[str, str] = {
     "NIFTYMIDCAP150": "2010-01-01",
     "NIFTYSMALLCAP250": "2010-01-01",
     "NIFTYFINANCIALSERVICES2550": "2010-01-01",
+    "NIFTYMICROCAP250": "2021-05-10",   # launched 2021-05-10 (ind_prs10052021)
+    "NIFTYTOTALMARKET": "2021-10-13",   # launched 2021-10-13 (ind_prs13102021)
 }
 # index_key -> public launch date (the release announcing it, in data/raw/pressreleases/pdf/). Nothing before it is
 # VERIFIED: the index did not exist. Applied after composites are derived, because a parent's computed days before its
@@ -413,6 +421,8 @@ LAUNCHED: dict[str, str] = {
     "NIFTY500MULTICAP502525": "2020-12-02",                  # ind_prs02122020
     "NIFTY500LARGEMIDSMALLEQUALCAPWEIGHTED": "2024-06-07",   # ind_prs07062024_1
     "NIFTYMIDSMALLCAP4005050": "2026-02-04",                 # ind_prs04022026
+    "NIFTYMICROCAP250": "2021-05-10",                        # ind_prs10052021
+    "NIFTYTOTALMARKET": "2021-10-13",                        # ind_prs13102021
 }
 
 
@@ -515,6 +525,7 @@ def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.Datetim
         "NIFTY100": "data/raw/constituents/2026-11-19/ind_nifty100list.csv",
         "NIFTYLARGEMIDCAP250": "data/raw/constituents/2026-11-19/ind_niftylargemidcap250list.csv",
         "NIFTYFINANCIALSERVICES": "data/raw/constituents/2026-11-19/ind_niftyfinancelist.csv",
+        "NIFTYMICROCAP250": "data/raw/constituents/2026-11-19/ind_niftytotalmarket_list.csv",
     }
 
     def _get_clean_syms(p_rel: str) -> set[str]:
@@ -532,8 +543,16 @@ def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.Datetim
         if not p1_file or not (root / p1_file).exists():
             continue
         p1_syms = _get_clean_syms(p1_file)
+        if p1 in ANCHOR_MINUS:
+            p1_syms -= _get_clean_syms(ANCHOR_MINUS[p1])
         if op == "EQ":
             diff = comp_syms.symmetric_difference(p1_syms)
+        elif op == "UNION":
+            p2 = rule[2]
+            p2_syms = _get_clean_syms(parent_anchor_files[p2])
+            if p2 in ANCHOR_MINUS:
+                p2_syms -= _get_clean_syms(ANCHOR_MINUS[p2])
+            diff = comp_syms.symmetric_difference(p1_syms | p2_syms)
         elif op == "DIFF":
             p2 = rule[2]
             p2_file = parent_anchor_files.get(p2)
@@ -577,6 +596,17 @@ def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.Datetim
             # Direct interval copy with new index_key
             iv_comp = all_iv[all_iv.index_key == p1].copy()
             iv_comp["index_key"] = k
+        elif op == "UNION":
+            p2 = rule[2]
+            parents = [p1, p2]
+            if any(p not in masks_by_index or p not in v_days_by_index for p in parents):
+                continue
+            parent_v = v_days_by_index[p1] & v_days_by_index[p2]
+            comp_masks = dict(masks_by_index[p1])
+            for sid, m_arr in masks_by_index[p2].items():
+                comp_masks[sid] = comp_masks[sid] | m_arr if sid in comp_masks else m_arr
+            dual = dual_by_index.get(p1, np.zeros(n_days, dtype=int))   # the parents' DVR is carried over
+            iv_comp = _masks_to_intervals(days, comp_masks, k)
         elif op == "DIFF":
             p2 = rule[2]
             parents = [p1, p2]
@@ -630,7 +660,7 @@ def build_composites(ivs: list[pd.DataFrame], cov: list[tuple], days: pd.Datetim
         for a, b in good:
             nx = int((extra[(days >= a) & (days <= b)] > 0).sum())
             nd = int((dual[(days >= a) & (days <= b)] > 0).sum())
-            parents_str = rule[1] if op == "EQ" else f"{rule[1]} - {rule[2]}"
+            parents_str = rule[1] if op == "EQ" else f"{rule[1]} {'+' if op == 'UNION' else '-'} {rule[2]}"
             cov.append((k, a, b, "VERIFIED", f"composite {op} parity (sym_diff == 0) with verified parent ({parents_str}); "
                                              f"exactly {n} members on every trading day and every member traded within +-{TRADE_WINDOW} sessions"
                         + (f"; {nd} of these days held {n + 1} securities of {n} companies (a DVR, index_dual_class.csv)" if nd else "")
@@ -696,6 +726,9 @@ def build_anchored(ev_resolved: pd.DataFrame, seg: pd.DataFrame, t: pd.DataFrame
         frames_to_cat = [f for f in (w, c) if len(f)]
         events = pd.concat(frames_to_cat, ignore_index=True).drop_duplicates(["date", "sec_id", "action"]) if frames_to_cat else pd.DataFrame(columns=["date", "sec_id", "action"])
         anchor_syms = pd.read_csv(root / anchor_file).Symbol.tolist()
+        if k in ANCHOR_MINUS:
+            minus = set(pd.read_csv(root / ANCHOR_MINUS[k]).Symbol)
+            anchor_syms = [s for s in anchor_syms if s not in minus]
         anchor_date = pd.Timestamp(Path(anchor_file).parent.name)
         real_syms = [s for s in anchor_syms if not str(s).startswith("DUMMY")]
         asid_map = {s: _sid(seg, s, days[-1] - pd.Timedelta(days=2)) for s in real_syms}

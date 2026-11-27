@@ -56,6 +56,8 @@ def test_every_anchor_file_exists_and_matches_its_declared_size():
     exc = pd.read_csv(exc_p) if exc_p.exists() else pd.DataFrame()
     for k, (n, f) in m.ANCHORED.items():
         lst = pd.read_csv(paths.ROOT / f)
+        if k in m.ANCHOR_MINUS:   # derived anchor: this list minus another one of the same day
+            lst = lst[~lst.Symbol.isin(pd.read_csv(paths.ROOT / m.ANCHOR_MINUS[k]).Symbol)]
         adate = Path(f).parent.name
         has_exp = len(exc) and exc[exc.index_key == k]["reason"].fillna("").str.contains("expanded|constituents between", case=False).any()
         ext = int(m.extra_members(pd.DatetimeIndex([adate]), exc, k)[0]) if has_exp else 0
